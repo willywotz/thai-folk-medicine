@@ -29,9 +29,11 @@ backend/
 ├── internal/
 │   ├── domain/
 │   │   ├── location/                   # Province, District, Repository interface
-│   │   ├── healer/                     # Healer entity, events, Repository interface
+│   │   ├── healer/                     # Healer entity, events, ErrReferenced
+│   │   ├── remedy/                     # Remedy entity, events, ErrReferenced
+│   │   ├── treatmentcase/              # TreatmentCase entity, events (age+sex only)
 │   │   └── event/                      # pure Event port (EventName)
-│   ├── usecase/                        # LocationService, HealerService, Publisher port
+│   ├── usecase/                        # Location/Healer/Remedy/TreatmentCase services, Publisher port
 │   ├── adapter/
 │   │   ├── http/                       # Gin router (RouteRegistrar), handlers, DTOs
 │   │   └── repository/                 # Postgres repo + sqlc-generated db/
@@ -51,7 +53,7 @@ backend/
   TanStack Query, react-hook-form + zod, httpOnly cookie + Next.js proxy.
 - **Auth (planned):** golang-jwt + bcrypt, one staff type.
 
-## Current state — Plan 1 + Plan 2 done
+## Current state — Plan 1 + Plan 2 + Plan 3 done
 
 **Plan 1 — backend foundation + location browse (public read):**
 - Config from environment; `GET /health`.
@@ -70,10 +72,24 @@ backend/
   - `GET /api/v1/healers/{healerId}` (public)
   - `POST` / `PUT /api/v1/healers/{healerId}` / `DELETE /api/v1/healers/{healerId}` (staff write)
 
+**Plan 3 — remedy + treatment case:**
+- Remedy aggregate (belongs to a healer): domain, migration `000004_create_remedy`,
+  sqlc, repository, use case (events `remedy.created/updated/deleted`).
+  - `GET /api/v1/healers/{healerId}/remedies`, `GET /api/v1/remedies/{remedyId}` (public)
+  - `POST` / `PUT` / `DELETE /api/v1/remedies/{remedyId}` (staff write)
+- Treatment Case aggregate (belongs to remedy + healer): domain, migration
+  `000005_create_treatment_case`, sqlc, repository, use case (events
+  `treatmentcase.created/updated/deleted`). Patient data = **age + sex only** (PDPA-safe).
+  `treatedOn` is an ISO date string (`2006-01-02`) at the API.
+  - `GET /api/v1/remedies/{remedyId}/treatment-cases`, `GET /api/v1/treatment-cases/{treatmentCaseId}` (public)
+  - `POST` / `PUT` / `DELETE /api/v1/treatment-cases/{treatmentCaseId}` (staff write)
+- Deleting a referenced healer or remedy returns **409** (domain `ErrReferenced`,
+  from a shared FK-violation helper), not 500.
+
 Full test suite green (unit + testcontainers integration). Whole-branch review: **SHIP**.
 
-**SECURITY NOTE:** the healer write routes are **not** guarded yet. JWT auth arrives
-in Plan 4. Do not deploy publicly before then.
+**SECURITY NOTE:** all staff write routes (healer, remedy, treatment case) are **not**
+guarded yet. JWT auth arrives in Plan 4. Do not deploy publicly before then.
 
 ## How to run
 
@@ -93,10 +109,10 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Design spec: `docs/superpowers/specs/2026-08-13-thai-folk-medicine-design.md`
 - Plan 1: `docs/superpowers/plans/2026-08-13-backend-foundation-location.md`
 - Plan 2: `docs/superpowers/plans/2026-08-13-healer-and-event-bus.md`
+- Plan 3: `docs/superpowers/plans/2026-08-14-remedy-and-treatment-case.md`
 
 ## Next plans
 
-3. Remedy + treatment case.
 4. Auth (JWT login, middleware) + photos (PhotoStore).
 5. Next.js frontend.
 

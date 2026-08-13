@@ -169,11 +169,14 @@ func (h *HealerHandler) Delete(c *gin.Context) {
 		return
 	}
 	if err := h.service.Delete(c.Request.Context(), id); err != nil {
-		if errors.Is(err, healer.ErrNotFound) {
+		switch {
+		case errors.Is(err, healer.ErrNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "healer not found"})
-			return
+		case errors.Is(err, healer.ErrReferenced):
+			c.JSON(http.StatusConflict, gin.H{"error": "healer has remedies or cases; delete them first"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot delete healer"})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot delete healer"})
 		return
 	}
 	c.Status(http.StatusNoContent)

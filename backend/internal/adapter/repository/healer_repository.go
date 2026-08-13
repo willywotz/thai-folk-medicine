@@ -92,10 +92,13 @@ func (r *Healer) Update(ctx context.Context, p healer.UpdateParams) (healer.Heal
 	return toHealer(row), nil
 }
 
-// Delete removes a healer or returns healer.ErrNotFound.
+// Delete removes a healer, or returns healer.ErrNotFound / healer.ErrReferenced.
 func (r *Healer) Delete(ctx context.Context, id int64) error {
 	rows, err := r.q.DeleteHealer(ctx, id)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return healer.ErrReferenced
+		}
 		return err
 	}
 	if rows == 0 {

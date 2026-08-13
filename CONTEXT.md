@@ -53,9 +53,11 @@ backend/
 
 - **Backend:** Go 1.26.5, Gin, pgx/v5 + sqlc, golang-migrate, caarlos0/env, log/slog,
   testify, testcontainers-go.
-- **Frontend (planned):** Next.js App Router + TypeScript, Tailwind + shadcn/ui,
-  TanStack Query, react-hook-form + zod, httpOnly cookie + Next.js proxy.
-- **Auth:** golang-jwt (HS256) + bcrypt, one staff type. **Done.**
+- **Frontend:** Next.js App Router + TypeScript, Tailwind. Public browse = server-rendered.
+  Staff admin = shadcn/ui + TanStack Query + react-hook-form + zod, with a **BFF** layer
+  (`/bff/*` route handlers) that turns the httpOnly `session` cookie into a `Bearer`
+  header for the Go API. (Auth is Server-Action-free: BFF route handlers + TanStack Query.)
+- **Auth:** golang-jwt (HS256) + bcrypt, one staff type. Token kept in an httpOnly cookie.
 
 ## Frontend layout (`frontend/`)
 
@@ -63,15 +65,18 @@ backend/
 frontend/
 ├── next.config.ts                      # /api/* proxy → Go API (INTERNAL_API_URL)
 ├── src/
-│   ├── app/                            # App Router server-component pages
-│   │   ├── page.tsx                    # home: Yasothon districts
-│   │   ├── districts/[districtId]/     # healers in a district
-│   │   ├── healers/[healerId]/         # healer detail + remedies
-│   │   ├── remedies/[remedyId]/        # remedy detail + treatment cases
-│   │   ├── not-found.tsx
-│   │   └── layout.tsx                  # Thai font shell (Noto Sans Thai)
-│   ├── components/                     # RecordCard, Breadcrumb, EmptyState, DefinitionList, PhotoImage
-│   └── lib/                            # api.ts (typed server client), api-types.ts, format.ts
+│   ├── proxy.ts                        # route guard: /staff/* needs session cookie (Next 16 middleware)
+│   ├── app/
+│   │   ├── page.tsx                    # public home: Yasothon districts
+│   │   ├── districts/ healers/ remedies/   # public browse pages
+│   │   ├── login/                      # staff login
+│   │   ├── staff/                      # guarded: dashboard → district → healer list/new/edit
+│   │   ├── bff/session/                # POST login / DELETE logout (sets httpOnly cookie)
+│   │   ├── bff/healers/                # POST / [healerId] PUT·DELETE (cookie → Bearer → Go)
+│   │   └── layout.tsx                  # Thai font shell (Noto Sans Thai) + TanStack Query Providers
+│   ├── components/                     # public: RecordCard, Breadcrumb, …; staff: LoginForm, HealerAdminList, HealerForm, LogoutButton
+│   │   └── ui/                         # shadcn/ui primitives
+│   └── lib/                            # api.ts, api-types.ts, format.ts, session.ts, bff-forward.ts, staff-queries.ts, *-schema.ts
 └── vitest.config.ts                    # Vitest + RTL (jsdom)
 ```
 
@@ -133,10 +138,19 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 - Server-rendered public browse: home (districts) → district (healers) → healer
   (remedies) → remedy (treatment cases). Thai typography, breadcrumbs, empty/not-found
   states. Photos render via `GET /api/v1/photos/{id}` through the `/api` proxy.
-- Read-only; no login. Vitest + RTL cover the API client, formatters, and components.
-- Run: `cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev` (with the API up).
+- Public browse is read-only; no login. Run: `cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev` (with the API up).
 - `withinlazy`: no photo-gallery-by-owner (needs a backend `GET /{owner}/{id}/photos`
   endpoint); breadcrumb shows a static "District" label (needs `GET /districts/{id}`).
+
+**Plan 6 — staff admin (auth + healer management):**
+- Staff log in at `/login`; the JWT is kept in an httpOnly `session` cookie set by the
+  `/bff/session` route handler. `src/proxy.ts` guards `/staff/*`.
+- Staff dashboard → pick a district → list/create/edit/delete healers. Writes go through
+  `/bff/healers*` route handlers that attach the `Bearer` token server-side (the token
+  never reaches the browser). TanStack Query drives the list + mutations; react-hook-form
+  + zod validate the forms.
+- `STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD` (backend env) bootstrap the first login.
+- Vitest + RTL cover schemas, the API/staff client, and every component/form.
 
 ## How to run
 
@@ -159,11 +173,13 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 3: `docs/superpowers/plans/2026-08-14-remedy-and-treatment-case.md`
 - Plan 4: `docs/superpowers/plans/2026-08-14-auth-and-photos.md`
 - Plan 5: `docs/superpowers/plans/2026-08-14-frontend-public-browse.md`
+- Plan 6: `docs/superpowers/plans/2026-08-14-staff-admin-healer.md`
 
 ## Next plans
 
-6. Staff-admin frontend (login + CRUD forms + photo upload) — brings in shadcn/ui,
-   TanStack Query, react-hook-form, zod, httpOnly-cookie auth via the Next.js proxy.
+7. Staff admin for **remedies + treatment cases** — replicate the healer pattern
+   (`/bff/*` routes + TanStack Query forms) for the remaining record types.
+8. Staff **photo upload** UI (multipart upload/delete via a `/bff/photos` route).
 - Possible backend follow-ups: `GET /districts/{id}` and photo-gallery-by-owner endpoints
   (see the `withinlazy` notes above); search by symptom/herb.
 

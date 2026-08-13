@@ -32,15 +32,19 @@ backend/
 │   │   ├── healer/                     # Healer entity, events, ErrReferenced
 │   │   ├── remedy/                     # Remedy entity, events, ErrReferenced
 │   │   ├── treatmentcase/              # TreatmentCase entity, events (age+sex only)
+│   │   ├── staff/                      # Staff (login) entity, Repository
+│   │   ├── photo/                      # Photo entity, Store port, events
 │   │   └── event/                      # pure Event port (EventName)
-│   ├── usecase/                        # Location/Healer/Remedy/TreatmentCase services, Publisher port
+│   ├── usecase/                        # Location/Healer/Remedy/TreatmentCase/Auth/Photo services
 │   ├── adapter/
-│   │   ├── http/                       # Gin router (RouteRegistrar), handlers, DTOs
+│   │   ├── http/                       # Gin router (public + JWT-protected groups), handlers
 │   │   └── repository/                 # Postgres repo + sqlc-generated db/
 │   └── platform/
 │       ├── config/                     # env config (caarlos0/env)
 │       ├── database/                   # pgx pool + golang-migrate
-│       └── eventbus/                   # in-process event bus (slog audit)
+│       ├── eventbus/                   # in-process event bus (slog audit)
+│       ├── token/                      # JWT manager (golang-jwt, HS256)
+│       └── photostore/                 # local-disk photo Store (S3 later)
 ├── migrations/                         # SQL + Yasothon seed
 └── sqlc.yaml
 ```
@@ -51,9 +55,9 @@ backend/
   testify, testcontainers-go.
 - **Frontend (planned):** Next.js App Router + TypeScript, Tailwind + shadcn/ui,
   TanStack Query, react-hook-form + zod, httpOnly cookie + Next.js proxy.
-- **Auth (planned):** golang-jwt + bcrypt, one staff type.
+- **Auth:** golang-jwt (HS256) + bcrypt, one staff type. **Done.**
 
-## Current state — Plan 1 + Plan 2 + Plan 3 done
+## Current state — Plan 1 + Plan 2 + Plan 3 + Plan 4 done (backend API complete)
 
 **Plan 1 — backend foundation + location browse (public read):**
 - Config from environment; `GET /health`.
@@ -86,10 +90,26 @@ backend/
 - Deleting a referenced healer or remedy returns **409** (domain `ErrReferenced`,
   from a shared FK-violation helper), not 500.
 
+**Plan 4 — auth (JWT) + photos:**
+- Staff aggregate + `platform/token` JWT manager (HS256) + `AuthService` (bcrypt).
+  - `POST /api/v1/authentication/login` → returns a JWT.
+- **Every write route (healer/remedy/treatment-case/photo POST·PUT·DELETE) is now
+  behind JWT middleware.** Public GET routes and login stay open. The Plan 2–3
+  security gap is **closed**.
+- First staff user: env bootstrap (`STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD`),
+  created only when the table is empty; no default password.
+- Photo aggregate: `Store` port + local-disk store (path-traversal guarded),
+  migration `000007_create_photo` (polymorphic owner: healer|remedy|case), repository,
+  use case (events `photo.created`/`photo.deleted`).
+  - `POST /api/v1/photos` (multipart upload, guarded), `DELETE /api/v1/photos/{photoId}` (guarded),
+    `GET /api/v1/photos/{photoId}` (public — serves the image).
+
 Full test suite green (unit + testcontainers integration). Whole-branch review: **SHIP**.
 
-**SECURITY NOTE:** all staff write routes (healer, remedy, treatment case) are **not**
-guarded yet. JWT auth arrives in Plan 4. Do not deploy publicly before then.
+**The backend API is feature-complete.** New required env vars: `JWT_SECRET`,
+`PHOTO_STORAGE_DIR` (default `./storage/photo`), `STAFF_ADMIN_USERNAME`,
+`STAFF_ADMIN_PASSWORD`. Photo storage is local disk (`withinlazy`: not multi-instance
+safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 
 ## How to run
 
@@ -110,11 +130,11 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 1: `docs/superpowers/plans/2026-08-13-backend-foundation-location.md`
 - Plan 2: `docs/superpowers/plans/2026-08-13-healer-and-event-bus.md`
 - Plan 3: `docs/superpowers/plans/2026-08-14-remedy-and-treatment-case.md`
+- Plan 4: `docs/superpowers/plans/2026-08-14-auth-and-photos.md`
 
 ## Next plans
 
-4. Auth (JWT login, middleware) + photos (PhotoStore).
-5. Next.js frontend.
+5. Next.js frontend (public browse + staff pages).
 
 **Carry-forward note:** `sqlc.yaml` points `schema:` at the whole `migrations/`
 directory. As new entity migrations land, keep DML seed migrations free of

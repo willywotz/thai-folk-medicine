@@ -1,6 +1,7 @@
-import type { Healer, Remedy } from "@/lib/api-types";
+import type { Healer, Remedy, TreatmentCase } from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
+import type { TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
 export function healerListKey(districtId: number) {
   return ["healers", districtId] as const;
@@ -74,4 +75,43 @@ export async function updateRemedy(id: number, input: RemedyInput): Promise<void
 export async function deleteRemedy(id: number): Promise<void> {
   const res = await fetch(`/bff/remedies/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("cannot delete remedy");
+}
+
+export function caseListKey(remedyId: number) {
+  return ["treatment-cases", remedyId] as const;
+}
+
+/** fetchCases reads a remedy's treatment cases through the /api proxy. */
+export async function fetchCases(remedyId: number): Promise<TreatmentCase[]> {
+  const res = await fetch(`/api/v1/remedies/${remedyId}/treatment-cases`, { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load treatment cases");
+  return (await res.json()) as TreatmentCase[];
+}
+
+/** createCase posts a new case (with remedyId + healerId) through the BFF. */
+export async function createCase(
+  input: TreatmentCaseInput & { remedyId: number; healerId: number },
+): Promise<void> {
+  const res = await fetch("/bff/treatment-cases", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot create treatment case");
+}
+
+/** updateCase PUTs changes to a case through the BFF (no remedy/healer change). */
+export async function updateCase(id: number, input: TreatmentCaseInput): Promise<void> {
+  const res = await fetch(`/bff/treatment-cases/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot update treatment case");
+}
+
+/** deleteCase removes a case through the BFF. */
+export async function deleteCase(id: number): Promise<void> {
+  const res = await fetch(`/bff/treatment-cases/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete treatment case");
 }

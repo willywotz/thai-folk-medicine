@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getHealer,
   getRemedy,
+  getTreatmentCase,
   listCasesByRemedy,
   listDistricts,
   listHealersByDistrict,
@@ -51,6 +52,19 @@ describe("getRemedy", () => {
     mockFetchOnce(200, { id: 5, healerId: 2, name: "ยาต้ม" });
     const got = await getRemedy(5);
     expect(got?.name).toBe("ยาต้ม");
+  });
+});
+
+describe("getTreatmentCase", () => {
+  it("returns the case", async () => {
+    mockFetchOnce(200, { id: 8, remedyId: 5, patientAge: 40 });
+    const got = await getTreatmentCase(8);
+    expect(got?.patientAge).toBe(40);
+  });
+
+  it("returns null on 404", async () => {
+    mockFetchOnce(404, { error: "case not found" });
+    expect(await getTreatmentCase(999)).toBeNull();
   });
 });
 

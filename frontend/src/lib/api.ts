@@ -71,6 +71,10 @@ export async function listCasesByRemedy(remedyId: number): Promise<TreatmentCase
   return getJson<TreatmentCase[]>(`/remedies/${remedyId}/treatment-cases`);
 }
 
+export async function getTreatmentCase(id: number): Promise<TreatmentCase | null> {
+  return getOrNull<TreatmentCase>(`/treatment-cases/${id}`);
+}
+
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */
 export function photoUrl(photoId: number): string {
   return `/api/v1/photos/${photoId}`;

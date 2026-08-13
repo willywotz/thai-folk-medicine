@@ -2,12 +2,16 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
-	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/http"
+	httpapi "github.com/willywotz/thai-folk-medicine/backend/internal/adapter/http"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/config"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/database"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
 func main() {
@@ -24,7 +28,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	router := httpapi.NewRouter()
+	pool, err := database.NewPool(context.Background(), cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("open pool", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	queries := db.New(pool)
+	locationRepo := repository.NewLocation(queries)
+	locationService := usecase.NewLocationService(locationRepo)
+	locationHandler := httpapi.NewLocationHandler(locationService)
+
+	router := httpapi.NewRouter(locationHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

@@ -45,6 +45,14 @@ type Remedy struct {
 	UpdatedAt         pgtype.Timestamptz
 }
 
+type StaffUser struct {
+	ID           int64
+	Username     string
+	Email        string
+	PasswordHash string
+	CreatedAt    pgtype.Timestamptz
+}
+
 type TreatmentCase struct {
 	ID         int64
 	RemedyID   int64

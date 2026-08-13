@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { PhotoManager } from "@/components/PhotoManager";
 import { RemedyForm } from "@/components/RemedyForm";
 import { getRemedy } from "@/lib/api";
 
@@ -20,6 +21,9 @@ export default async function EditRemedyPage({
     <section>
       <h1 className="mb-4 text-xl font-bold">Edit remedy</h1>
       <RemedyForm healerId={hId} remedy={remedy} />
+      <div className="mt-8">
+        <PhotoManager ownerType="remedy" ownerId={remedy.id} />
+      </div>
     </section>
   );
 }

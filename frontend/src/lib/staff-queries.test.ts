@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { deleteHealer, fetchHealers, healerListKey } from "./staff-queries";
+import {
+  deleteHealer,
+  deletePhoto,
+  fetchHealers,
+  fetchPhotos,
+  healerListKey,
+  photoListKey,
+  uploadPhoto,
+} from "./staff-queries";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -27,5 +35,45 @@ describe("deleteHealer", () => {
   it("DELETEs through the bff and throws on failure", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 409 })) as unknown as typeof fetch);
     await expect(deleteHealer(1)).rejects.toThrow();
+  });
+});
+
+describe("photoListKey", () => {
+  it("namespaces by owner", () => {
+    expect(photoListKey("healer", 2)).toEqual(["photos", "healer", 2]);
+  });
+});
+
+describe("fetchPhotos", () => {
+  it("reads the list endpoint with owner query", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [{ id: 1 }] }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    const got = await fetchPhotos("healer", 2);
+    expect(got).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/photos?ownerType=healer&ownerId=2", expect.anything());
+  });
+});
+
+describe("uploadPhoto", () => {
+  it("posts multipart form data to the bff", async () => {
+    const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({ id: 9 }),
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    const file = new File(["bytes"], "p.jpg", { type: "image/jpeg" });
+    await uploadPhoto({ ownerType: "healer", ownerId: 2, file, caption: "c" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/bff/photos");
+    expect((init as { method: string }).method).toBe("POST");
+    expect((init as { body: unknown }).body).toBeInstanceOf(FormData);
+  });
+});
+
+describe("deletePhoto", () => {
+  it("throws when the bff delete fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404 })) as unknown as typeof fetch);
+    await expect(deletePhoto(1)).rejects.toThrow();
   });
 });

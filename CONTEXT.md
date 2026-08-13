@@ -175,14 +175,30 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 
 ## How to run
 
+**Whole stack (Postgres + API + web) — from the repo root:**
+
 ```bash
-cd backend
-cp .env.example .env            # then export the vars, or use a loader
-docker compose up -d            # Postgres
-go run ./cmd/api                # starts on HTTP_PORT (default 8080)
+docker compose up --build          # then open http://localhost:3000
 ```
 
-Tests: `go test ./...`
+The root `docker-compose.yml` builds `backend/Dockerfile` (static Go binary) and
+`frontend/Dockerfile` (Next.js standalone), starts Postgres, runs the migrations +
+Yasothon seed, and bootstraps the admin from `STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD`
+(default `admin`/`change-me`). Only the frontend is published (`:3000`); it reaches the
+API at `http://backend:8080` over the compose network. Override `JWT_SECRET` and the admin
+creds via a root `.env`. To hit the API directly from the host, uncomment the backend
+`ports:` block. Data persists in the `postgres_data` and `photo_data` volumes.
+
+**Backend alone, for development:**
+
+```bash
+cd backend
+cp .env.example .env             # then export the vars, or use a loader
+docker compose up -d             # Postgres only (backend/docker-compose.yml)
+go run ./cmd/api                 # starts on HTTP_PORT (default 8080)
+```
+
+Tests: `go test ./...` (backend), `pnpm test` (frontend).
 Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=true`
 (local Docker config quirk, not a code issue).
 

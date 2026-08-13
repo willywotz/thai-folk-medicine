@@ -1,0 +1,60 @@
+# Full stack: Postgres + Go API + Next.js.
+# Run from the repo root:  docker compose up --build
+# Then open http://localhost:3000  (API on http://localhost:8080)
+#
+# Override the secrets in a root .env file or the shell before running:
+#   JWT_SECRET, STAFF_ADMIN_USERNAME, STAFF_ADMIN_PASSWORD
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: folk
+      POSTGRES_PASSWORD: folk
+      POSTGRES_DB: folk_medicine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U folk -d folk_medicine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      HTTP_PORT: "8080"
+      DATABASE_URL: postgres://folk:folk@postgres:5432/folk_medicine?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PHOTO_STORAGE_DIR: /data/photo
+      STAFF_ADMIN_USERNAME: ${STAFF_ADMIN_USERNAME:-admin}
+      STAFF_ADMIN_PASSWORD: ${STAFF_ADMIN_PASSWORD:-change-me}
+      STAFF_ADMIN_EMAIL: ${STAFF_ADMIN_EMAIL:-admin@example.local}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - photo_data:/data/photo
+    expose:
+      - "8080"
+    # The frontend reaches the API over the compose network, so no host port is
+    # needed. Uncomment to hit the API directly from the host:
+    # ports:
+    #   - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the /api rewrite AND used at runtime by the server components.
+        INTERNAL_API_URL: http://backend:8080
+    environment:
+      INTERNAL_API_URL: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  photo_data:

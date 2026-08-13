@@ -12,6 +12,10 @@ import (
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
+// maxUploadBytes caps a single photo upload to prevent an authenticated
+// caller from filling the storage disk.
+const maxUploadBytes = 10 << 20 // 10 MiB
+
 // PhotoHandler serves photo upload, serve, and delete.
 type PhotoHandler struct {
 	service *usecase.PhotoService
@@ -45,6 +49,10 @@ func (h *PhotoHandler) Upload(c *gin.Context) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "a file is required"})
+		return
+	}
+	if fileHeader.Size > maxUploadBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "file too large (max 10 MiB)"})
 		return
 	}
 	ownerType := c.PostForm("ownerType")

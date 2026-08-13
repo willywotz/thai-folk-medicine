@@ -94,6 +94,17 @@ func TestUploadPhotoRejectsMissingFile(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
+func TestUploadPhotoRejectsFileOverMaxSize(t *testing.T) {
+	oversized := string(bytes.Repeat([]byte("a"), 10<<20+1))
+	body, ct := multipartUpload(t, map[string]string{"ownerType": "healer", "ownerId": "2"}, "file", "p.jpg", oversized)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/photos", body)
+	req.Header.Set("Content-Type", ct)
+	photoRouter().ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
+}
+
 func TestServePhotoEndpoint(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/photos/1", nil)

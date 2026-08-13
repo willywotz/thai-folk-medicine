@@ -66,6 +66,9 @@ func TestLoginFailsWithWrongPassword(t *testing.T) {
 	assert.ErrorIs(t, err, ErrInvalidCredentials)
 }
 
+// TestLoginFailsForUnknownUser locks in the collapsed error for an unknown
+// user. Login still performs a dummy bcrypt comparison on this path so that
+// response timing does not reveal whether the username exists.
 func TestLoginFailsForUnknownUser(t *testing.T) {
 	repo := &fakeStaffRepo{user: staffWithPassword(t, "secret")}
 	service := NewAuthService(repo, &fakeIssuer{})

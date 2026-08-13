@@ -4,11 +4,26 @@
 
 package db
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 type District struct {
 	ID          int64
 	ProvinceID  int64
 	NameThai    string
 	NameEnglish string
+}
+
+type Healer struct {
+	ID          int64
+	DistrictID  int64
+	FullName    string
+	SubDistrict string
+	Specialty   string
+	Biography   string
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
 }
 
 type Province struct {

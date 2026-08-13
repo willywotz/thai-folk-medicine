@@ -17,6 +17,7 @@ import (
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/config"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/database"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/eventbus"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/photostore"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/token"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
@@ -59,6 +60,14 @@ func main() {
 	bus.Subscribe("treatmentcase.created", auditHandler(logger))
 	bus.Subscribe("treatmentcase.updated", auditHandler(logger))
 	bus.Subscribe("treatmentcase.deleted", auditHandler(logger))
+	bus.Subscribe("photo.created", auditHandler(logger))
+	bus.Subscribe("photo.deleted", auditHandler(logger))
+
+	photoStore, err := photostore.NewLocal(cfg.PhotoStorageDir)
+	if err != nil {
+		logger.Error("open photo store", "error", err)
+		os.Exit(1)
+	}
 
 	locationHandler := httpapi.NewLocationHandler(
 		usecase.NewLocationService(repository.NewLocation(queries)),
@@ -72,12 +81,15 @@ func main() {
 	treatmentCaseHandler := httpapi.NewTreatmentCaseHandler(
 		usecase.NewTreatmentCaseService(repository.NewTreatmentCase(queries), bus),
 	)
+	photoHandler := httpapi.NewPhotoHandler(
+		usecase.NewPhotoService(repository.NewPhoto(queries), photoStore, bus),
+	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

@@ -44,6 +44,12 @@ export function HealerAdminList({ districtId }: { districtId: number }) {
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Link
+                  href={`/staff/healers/${h.id}/remedies`}
+                  className="text-stone-700 underline"
+                >
+                  Remedies
+                </Link>
+                <Link
                   href={`/staff/districts/${districtId}/healers/${h.id}/edit`}
                   className="text-stone-700 underline"
                 >

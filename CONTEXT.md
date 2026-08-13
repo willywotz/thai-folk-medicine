@@ -152,6 +152,16 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 - `STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD` (backend env) bootstrap the first login.
 - Vitest + RTL cover schemas, the API/staff client, and every component/form.
 
+**Plan 7 — staff admin for remedies + treatment cases:**
+- Same BFF + TanStack Query + rhf/zod pattern, extended to the remaining record types.
+- From the staff healer list → **Remedies** → list/create/edit/delete a healer's remedies
+  (`/bff/remedies*`); a remedy → **Cases** → list/create/edit/delete its treatment cases
+  (`/bff/treatment-cases*`). Case form uses native `<input type="date">` for `treatedOn`
+  and a number input for patient age (coerced, ≥ 0).
+- Deleting a remedy that still has cases surfaces a 409 error (no silent failure).
+- **Staff can now manage the full record tree (healer → remedy → case) in the browser.**
+  Only photo upload UI remains (Plan 8).
+
 ## How to run
 
 ```bash
@@ -174,12 +184,12 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 4: `docs/superpowers/plans/2026-08-14-auth-and-photos.md`
 - Plan 5: `docs/superpowers/plans/2026-08-14-frontend-public-browse.md`
 - Plan 6: `docs/superpowers/plans/2026-08-14-staff-admin-healer.md`
+- Plan 7: `docs/superpowers/plans/2026-08-14-staff-admin-remedy-case.md`
 
 ## Next plans
 
-7. Staff admin for **remedies + treatment cases** — replicate the healer pattern
-   (`/bff/*` routes + TanStack Query forms) for the remaining record types.
-8. Staff **photo upload** UI (multipart upload/delete via a `/bff/photos` route).
+8. Staff **photo upload** UI (multipart upload/delete via a `/bff/photos` route) — the
+   last piece of the staff experience.
 - Possible backend follow-ups: `GET /districts/{id}` and photo-gallery-by-owner endpoints
   (see the `withinlazy` notes above); search by symptom/herb.
 

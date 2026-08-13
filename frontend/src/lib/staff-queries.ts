@@ -1,5 +1,7 @@
-import type { Healer } from "@/lib/api-types";
+import type { Healer, Remedy, TreatmentCase } from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
+import type { RemedyInput } from "@/lib/remedy-schema";
+import type { TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
 export function healerListKey(districtId: number) {
   return ["healers", districtId] as const;
@@ -36,4 +38,80 @@ export async function updateHealer(id: number, input: HealerInput & { districtId
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot update healer");
+}
+
+export function remedyListKey(healerId: number) {
+  return ["remedies", healerId] as const;
+}
+
+/** fetchRemedies reads a healer's remedies through the same-origin /api proxy. */
+export async function fetchRemedies(healerId: number): Promise<Remedy[]> {
+  const res = await fetch(`/api/v1/healers/${healerId}/remedies`, { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load remedies");
+  return (await res.json()) as Remedy[];
+}
+
+/** createRemedy posts a new remedy (with its healerId) through the BFF. */
+export async function createRemedy(input: RemedyInput & { healerId: number }): Promise<void> {
+  const res = await fetch("/bff/remedies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot create remedy");
+}
+
+/** updateRemedy PUTs changes to a remedy through the BFF (no healer change). */
+export async function updateRemedy(id: number, input: RemedyInput): Promise<void> {
+  const res = await fetch(`/bff/remedies/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot update remedy");
+}
+
+/** deleteRemedy removes a remedy through the BFF. */
+export async function deleteRemedy(id: number): Promise<void> {
+  const res = await fetch(`/bff/remedies/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete remedy");
+}
+
+export function caseListKey(remedyId: number) {
+  return ["treatment-cases", remedyId] as const;
+}
+
+/** fetchCases reads a remedy's treatment cases through the /api proxy. */
+export async function fetchCases(remedyId: number): Promise<TreatmentCase[]> {
+  const res = await fetch(`/api/v1/remedies/${remedyId}/treatment-cases`, { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load treatment cases");
+  return (await res.json()) as TreatmentCase[];
+}
+
+/** createCase posts a new case (with remedyId + healerId) through the BFF. */
+export async function createCase(
+  input: TreatmentCaseInput & { remedyId: number; healerId: number },
+): Promise<void> {
+  const res = await fetch("/bff/treatment-cases", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot create treatment case");
+}
+
+/** updateCase PUTs changes to a case through the BFF (no remedy/healer change). */
+export async function updateCase(id: number, input: TreatmentCaseInput): Promise<void> {
+  const res = await fetch(`/bff/treatment-cases/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot update treatment case");
+}
+
+/** deleteCase removes a case through the BFF. */
+export async function deleteCase(id: number): Promise<void> {
+  const res = await fetch(`/bff/treatment-cases/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete treatment case");
 }

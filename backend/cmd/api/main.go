@@ -7,6 +7,7 @@ import (
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/http"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/config"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/database"
 )
 
 func main() {
@@ -15,6 +16,11 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Error("load config", "error", err)
+		os.Exit(1)
+	}
+
+	if err := database.Migrate(cfg.DatabaseURL); err != nil {
+		logger.Error("run migrations", "error", err)
 		os.Exit(1)
 	}
 

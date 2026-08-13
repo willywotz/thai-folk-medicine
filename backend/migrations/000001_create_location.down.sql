@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS district;
+DROP TABLE IF EXISTS province;

@@ -27,14 +27,18 @@ Patient data in a case holds only age and sex (PDPA-safe).
 backend/
 ├── cmd/api/main.go                     # server start: config → migrate → wire → run
 ├── internal/
-│   ├── domain/location/                # Province, District, Repository interface
-│   ├── usecase/                        # LocationService
+│   ├── domain/
+│   │   ├── location/                   # Province, District, Repository interface
+│   │   ├── healer/                     # Healer entity, events, Repository interface
+│   │   └── event/                      # pure Event port (EventName)
+│   ├── usecase/                        # LocationService, HealerService, Publisher port
 │   ├── adapter/
-│   │   ├── http/                       # Gin router, handlers, DTOs (package httpapi)
+│   │   ├── http/                       # Gin router (RouteRegistrar), handlers, DTOs
 │   │   └── repository/                 # Postgres repo + sqlc-generated db/
 │   └── platform/
 │       ├── config/                     # env config (caarlos0/env)
-│       └── database/                   # pgx pool + golang-migrate
+│       ├── database/                   # pgx pool + golang-migrate
+│       └── eventbus/                   # in-process event bus (slog audit)
 ├── migrations/                         # SQL + Yasothon seed
 └── sqlc.yaml
 ```
@@ -47,17 +51,29 @@ backend/
   TanStack Query, react-hook-form + zod, httpOnly cookie + Next.js proxy.
 - **Auth (planned):** golang-jwt + bcrypt, one staff type.
 
-## Current state — Plan 1 done
+## Current state — Plan 1 + Plan 2 done
 
-**Done:** backend foundation + location browse (public read).
+**Plan 1 — backend foundation + location browse (public read):**
 - Config from environment; `GET /health`.
 - Postgres pool + migrations; seed = 1 province (Yasothon) + 9 districts.
-- Endpoints:
-  - `GET /api/v1/provinces`
-  - `GET /api/v1/provinces/{provinceId}/districts`
-- Full test suite green (unit + testcontainers integration).
+- `GET /api/v1/provinces`
+- `GET /api/v1/provinces/{provinceId}/districts`
 
-Whole-branch review verdict: **SHIP**.
+**Plan 2 — healer + in-process event bus:**
+- Event port (`domain/event`) + in-process bus (`platform/eventbus`); an audit
+  handler logs each event.
+- Healer aggregate: domain, migration `000003_create_healer`, sqlc queries, repository.
+- Healer use case validates input and publishes `healer.created` / `healer.updated` /
+  `healer.deleted` after each successful write.
+- Endpoints:
+  - `GET /api/v1/districts/{districtId}/healers` (public)
+  - `GET /api/v1/healers/{healerId}` (public)
+  - `POST` / `PUT /api/v1/healers/{healerId}` / `DELETE /api/v1/healers/{healerId}` (staff write)
+
+Full test suite green (unit + testcontainers integration). Whole-branch review: **SHIP**.
+
+**SECURITY NOTE:** the healer write routes are **not** guarded yet. JWT auth arrives
+in Plan 4. Do not deploy publicly before then.
 
 ## How to run
 
@@ -76,10 +92,10 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 
 - Design spec: `docs/superpowers/specs/2026-08-13-thai-folk-medicine-design.md`
 - Plan 1: `docs/superpowers/plans/2026-08-13-backend-foundation-location.md`
+- Plan 2: `docs/superpowers/plans/2026-08-13-healer-and-event-bus.md`
 
 ## Next plans
 
-2. Healer + the in-process event bus (first write path, EDA).
 3. Remedy + treatment case.
 4. Auth (JWT login, middleware) + photos (PhotoStore).
 5. Next.js frontend.

@@ -38,7 +38,7 @@ func newTestRouter(repo location.Repository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	service := usecase.NewLocationService(repo)
 	handler := NewLocationHandler(service)
-	return NewRouter(handler)
+	return NewRouter(noAuth, handler)
 }
 
 func TestListProvinceEndpoint(t *testing.T) {

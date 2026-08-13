@@ -22,14 +22,13 @@ func NewRemedyHandler(service *usecase.RemedyService) *RemedyHandler {
 	return &RemedyHandler{service: service}
 }
 
-// RegisterRoutes mounts the remedy routes.
-func (h *RemedyHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/healers/:healerId/remedies", h.ListByHealer)
-	rg.GET("/remedies/:remedyId", h.Get)
-	// withinlazy: unguarded until Plan 4 adds JWT middleware on the write routes.
-	rg.POST("/remedies", h.Create)
-	rg.PUT("/remedies/:remedyId", h.Update)
-	rg.DELETE("/remedies/:remedyId", h.Delete)
+// RegisterRoutes mounts the remedy routes: reads public, writes JWT-guarded.
+func (h *RemedyHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
+	public.GET("/healers/:healerId/remedies", h.ListByHealer)
+	public.GET("/remedies/:remedyId", h.Get)
+	protected.POST("/remedies", h.Create)
+	protected.PUT("/remedies/:remedyId", h.Update)
+	protected.DELETE("/remedies/:remedyId", h.Delete)
 }
 
 type remedyDTO struct {

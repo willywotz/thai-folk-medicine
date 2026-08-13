@@ -24,14 +24,13 @@ func NewTreatmentCaseHandler(service *usecase.TreatmentCaseService) *TreatmentCa
 	return &TreatmentCaseHandler{service: service}
 }
 
-// RegisterRoutes mounts the treatment-case routes.
-func (h *TreatmentCaseHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/remedies/:remedyId/treatment-cases", h.ListByRemedy)
-	rg.GET("/treatment-cases/:treatmentCaseId", h.Get)
-	// withinlazy: unguarded until Plan 4 adds JWT middleware on the write routes.
-	rg.POST("/treatment-cases", h.Create)
-	rg.PUT("/treatment-cases/:treatmentCaseId", h.Update)
-	rg.DELETE("/treatment-cases/:treatmentCaseId", h.Delete)
+// RegisterRoutes mounts the treatment-case routes: reads public, writes JWT-guarded.
+func (h *TreatmentCaseHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
+	public.GET("/remedies/:remedyId/treatment-cases", h.ListByRemedy)
+	public.GET("/treatment-cases/:treatmentCaseId", h.Get)
+	protected.POST("/treatment-cases", h.Create)
+	protected.PUT("/treatment-cases/:treatmentCaseId", h.Update)
+	protected.DELETE("/treatment-cases/:treatmentCaseId", h.Delete)
 }
 
 type treatmentCaseDTO struct {

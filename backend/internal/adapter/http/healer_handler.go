@@ -22,14 +22,13 @@ func NewHealerHandler(service *usecase.HealerService) *HealerHandler {
 	return &HealerHandler{service: service}
 }
 
-// RegisterRoutes mounts the healer routes.
-func (h *HealerHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/districts/:districtId/healers", h.ListByDistrict)
-	rg.GET("/healers/:healerId", h.Get)
-	// withinlazy: unguarded until Plan 4 adds JWT middleware on the write routes.
-	rg.POST("/healers", h.Create)
-	rg.PUT("/healers/:healerId", h.Update)
-	rg.DELETE("/healers/:healerId", h.Delete)
+// RegisterRoutes mounts the healer routes: reads public, writes JWT-guarded.
+func (h *HealerHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
+	public.GET("/districts/:districtId/healers", h.ListByDistrict)
+	public.GET("/healers/:healerId", h.Get)
+	protected.POST("/healers", h.Create)
+	protected.PUT("/healers/:healerId", h.Update)
+	protected.DELETE("/healers/:healerId", h.Delete)
 }
 
 type healerDTO struct {

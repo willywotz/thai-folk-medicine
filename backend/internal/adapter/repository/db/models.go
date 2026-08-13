@@ -26,6 +26,15 @@ type Healer struct {
 	UpdatedAt   pgtype.Timestamptz
 }
 
+type Photo struct {
+	ID        int64
+	OwnerType string
+	OwnerID   int64
+	ObjectKey string
+	Caption   string
+	CreatedAt pgtype.Timestamptz
+}
+
 type Province struct {
 	ID          int64
 	NameThai    string
@@ -43,6 +52,14 @@ type Remedy struct {
 	Note              string
 	CreatedAt         pgtype.Timestamptz
 	UpdatedAt         pgtype.Timestamptz
+}
+
+type StaffUser struct {
+	ID           int64
+	Username     string
+	Email        string
+	PasswordHash string
+	CreatedAt    pgtype.Timestamptz
 }
 
 type TreatmentCase struct {

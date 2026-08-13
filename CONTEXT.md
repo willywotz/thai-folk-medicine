@@ -159,8 +159,19 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   (`/bff/treatment-cases*`). Case form uses native `<input type="date">` for `treatedOn`
   and a number input for patient age (coerced, ≥ 0).
 - Deleting a remedy that still has cases surfaces a 409 error (no silent failure).
-- **Staff can now manage the full record tree (healer → remedy → case) in the browser.**
-  Only photo upload UI remains (Plan 8).
+
+**Plan 8 — photo management (backend list + staff upload UI):**
+- Backend: new public `GET /api/v1/photos?ownerType={healer|remedy|case}&ownerId={id}`
+  (list photo metadata by owner; validates owner type; no object key leaked).
+- Frontend: a `PhotoManager` (gallery + upload + delete) embedded on each staff **edit**
+  page (healer / remedy / case). Upload is a multipart POST through `/bff/photos` (the
+  BFF forwards the FormData with the Bearer token server-side — the token never reaches
+  the browser); delete via `/bff/photos/{id}`. Images serve via public `GET /api/v1/photos/{id}`.
+- Upload/delete failures (incl. the 10 MiB 413 cap) are surfaced. The `withinlazy`
+  list-photos gap from Plan 5 is now closed.
+
+**The planned scope is complete:** backend API, public browse site, and full staff admin
+(healers, remedies, treatment cases, and photos) all work end to end.
 
 ## How to run
 
@@ -185,11 +196,15 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 5: `docs/superpowers/plans/2026-08-14-frontend-public-browse.md`
 - Plan 6: `docs/superpowers/plans/2026-08-14-staff-admin-healer.md`
 - Plan 7: `docs/superpowers/plans/2026-08-14-staff-admin-remedy-case.md`
+- Plan 8: `docs/superpowers/plans/2026-08-14-photo-management.md`
 
-## Next plans
+## Possible future work
 
-8. Staff **photo upload** UI (multipart upload/delete via a `/bff/photos` route) — the
-   last piece of the staff experience.
+- Search by symptom / herb (public + a search box).
+- `GET /districts/{id}` so staff breadcrumbs show the district name.
+- Swap the local-disk `photo.Store` for S3/MinIO before horizontal scaling.
+- Staff roles (admin vs normal) if the team grows.
+- End-to-end tests (Playwright) across the login → manage → browse flow.
 - Possible backend follow-ups: `GET /districts/{id}` and photo-gallery-by-owner endpoints
   (see the `withinlazy` notes above); search by symptom/herb.
 

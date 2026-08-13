@@ -1,0 +1,89 @@
+# CONTEXT
+
+This project is a web app. It keeps Thai folk-medicine records (ตำรายาหมอพื้นบ้าน)
+for one province. It groups all data by district (อำเภอ). The app saves the
+knowledge of local healers, and it shows the knowledge to the public.
+
+First province: **Yasothon** (ยโสธร). The design allows more provinces later.
+
+## Architecture
+
+- **Backend:** Go API (`backend/`), Clean Architecture, 15-Factor, event-driven (planned).
+- **Frontend:** Next.js (planned, not started).
+- **Database:** PostgreSQL.
+
+Dependencies point inward: `domain` ← `usecase` ← `adapter` / `platform`.
+Gin, pgx, and sqlc code stay only in the outer layers.
+
+## Domain model
+
+`Province (1) → District (1) → Healer (1) → Remedy (1) → Case`.
+Photos attach to healer, remedy, or case. Staff log in to write; the public reads.
+Patient data in a case holds only age and sex (PDPA-safe).
+
+## Backend layout
+
+```
+backend/
+├── cmd/api/main.go                     # server start: config → migrate → wire → run
+├── internal/
+│   ├── domain/location/                # Province, District, Repository interface
+│   ├── usecase/                        # LocationService
+│   ├── adapter/
+│   │   ├── http/                       # Gin router, handlers, DTOs (package httpapi)
+│   │   └── repository/                 # Postgres repo + sqlc-generated db/
+│   └── platform/
+│       ├── config/                     # env config (caarlos0/env)
+│       └── database/                   # pgx pool + golang-migrate
+├── migrations/                         # SQL + Yasothon seed
+└── sqlc.yaml
+```
+
+## Tech stack
+
+- **Backend:** Go 1.26.5, Gin, pgx/v5 + sqlc, golang-migrate, caarlos0/env, log/slog,
+  testify, testcontainers-go.
+- **Frontend (planned):** Next.js App Router + TypeScript, Tailwind + shadcn/ui,
+  TanStack Query, react-hook-form + zod, httpOnly cookie + Next.js proxy.
+- **Auth (planned):** golang-jwt + bcrypt, one staff type.
+
+## Current state — Plan 1 done
+
+**Done:** backend foundation + location browse (public read).
+- Config from environment; `GET /health`.
+- Postgres pool + migrations; seed = 1 province (Yasothon) + 9 districts.
+- Endpoints:
+  - `GET /api/v1/provinces`
+  - `GET /api/v1/provinces/{provinceId}/districts`
+- Full test suite green (unit + testcontainers integration).
+
+Whole-branch review verdict: **SHIP**.
+
+## How to run
+
+```bash
+cd backend
+cp .env.example .env            # then export the vars, or use a loader
+docker compose up -d            # Postgres
+go run ./cmd/api                # starts on HTTP_PORT (default 8080)
+```
+
+Tests: `go test ./...`
+Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=true`
+(local Docker config quirk, not a code issue).
+
+## Docs
+
+- Design spec: `docs/superpowers/specs/2026-08-13-thai-folk-medicine-design.md`
+- Plan 1: `docs/superpowers/plans/2026-08-13-backend-foundation-location.md`
+
+## Next plans
+
+2. Healer + the in-process event bus (first write path, EDA).
+3. Remedy + treatment case.
+4. Auth (JWT login, middleware) + photos (PhotoStore).
+5. Next.js frontend.
+
+**Carry-forward note:** `sqlc.yaml` points `schema:` at the whole `migrations/`
+directory. As new entity migrations land, keep DML seed migrations free of
+constructs the sqlc catalog cannot model.

@@ -9,8 +9,10 @@ import (
 	httpapi "github.com/willywotz/thai-folk-medicine/backend/internal/adapter/http"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/event"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/config"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/database"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/eventbus"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
@@ -36,15 +38,32 @@ func main() {
 	defer pool.Close()
 
 	queries := db.New(pool)
-	locationRepo := repository.NewLocation(queries)
-	locationService := usecase.NewLocationService(locationRepo)
-	locationHandler := httpapi.NewLocationHandler(locationService)
 
-	router := httpapi.NewRouter(locationHandler)
+	bus := eventbus.New(logger)
+	bus.Subscribe("healer.created", auditHandler(logger))
+	bus.Subscribe("healer.updated", auditHandler(logger))
+	bus.Subscribe("healer.deleted", auditHandler(logger))
+
+	locationHandler := httpapi.NewLocationHandler(
+		usecase.NewLocationService(repository.NewLocation(queries)),
+	)
+	healerHandler := httpapi.NewHealerHandler(
+		usecase.NewHealerService(repository.NewHealer(queries), bus),
+	)
+
+	router := httpapi.NewRouter(locationHandler, healerHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
+	}
+}
+
+// auditHandler logs each domain event. It is the first event subscriber.
+func auditHandler(logger *slog.Logger) event.Handler {
+	return func(ctx context.Context, e event.Event) error {
+		logger.InfoContext(ctx, "audit", "event", e.EventName())
+		return nil
 	}
 }

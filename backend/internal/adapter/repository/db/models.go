@@ -26,6 +26,15 @@ type Healer struct {
 	UpdatedAt   pgtype.Timestamptz
 }
 
+type Photo struct {
+	ID        int64
+	OwnerType string
+	OwnerID   int64
+	ObjectKey string
+	Caption   string
+	CreatedAt pgtype.Timestamptz
+}
+
 type Province struct {
 	ID          int64
 	NameThai    string

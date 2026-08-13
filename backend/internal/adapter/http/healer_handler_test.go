@@ -46,7 +46,7 @@ func (noopPublisher) Publish(context.Context, event.Event) {}
 func newHealerRouter(repo healer.Repository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	service := usecase.NewHealerService(repo, noopPublisher{})
-	return NewRouter(NewHealerHandler(service))
+	return NewRouter(noAuth, NewHealerHandler(service))
 }
 
 func TestCreateHealerEndpoint(t *testing.T) {

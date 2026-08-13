@@ -19,10 +19,10 @@ func NewLocationHandler(service *usecase.LocationService) *LocationHandler {
 	return &LocationHandler{service: service}
 }
 
-// RegisterRoutes mounts the province and district read routes.
-func (h *LocationHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/provinces", h.ListProvince)
-	rg.GET("/provinces/:provinceId/districts", h.ListDistrictByProvince)
+// RegisterRoutes mounts the province and district read routes (all public).
+func (h *LocationHandler) RegisterRoutes(public, _ *gin.RouterGroup) {
+	public.GET("/provinces", h.ListProvince)
+	public.GET("/provinces/:provinceId/districts", h.ListDistrictByProvince)
 }
 
 type provinceDTO struct {

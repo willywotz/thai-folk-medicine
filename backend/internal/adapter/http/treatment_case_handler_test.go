@@ -38,7 +38,7 @@ func (s *stubCaseRepo) Delete(context.Context, int64) error { return nil }
 func newCaseRouter(repo treatmentcase.Repository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	service := usecase.NewTreatmentCaseService(repo, noopPub{})
-	return NewRouter(NewTreatmentCaseHandler(service))
+	return NewRouter(noAuth, NewTreatmentCaseHandler(service))
 }
 
 func TestCreateCaseEndpoint(t *testing.T) {

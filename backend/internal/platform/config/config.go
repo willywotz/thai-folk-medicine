@@ -5,8 +5,13 @@ import "github.com/caarlos0/env/v11"
 
 // Config holds all runtime settings.
 type Config struct {
-	HTTPPort    string `env:"HTTP_PORT" envDefault:"8080"`
-	DatabaseURL string `env:"DATABASE_URL,required"`
+	HTTPPort           string `env:"HTTP_PORT" envDefault:"8080"`
+	DatabaseURL        string `env:"DATABASE_URL,required"`
+	JWTSecret          string `env:"JWT_SECRET,required"`
+	PhotoStorageDir    string `env:"PHOTO_STORAGE_DIR" envDefault:"./storage/photo"`
+	StaffAdminUsername string `env:"STAFF_ADMIN_USERNAME"`
+	StaffAdminPassword string `env:"STAFF_ADMIN_PASSWORD"`
+	StaffAdminEmail    string `env:"STAFF_ADMIN_EMAIL" envDefault:"admin@example.local"`
 }
 
 // Load reads the configuration from the environment.

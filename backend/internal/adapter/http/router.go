@@ -3,21 +3,24 @@ package httpapi
 
 import "github.com/gin-gonic/gin"
 
-// RouteRegistrar registers its routes onto the versioned API group.
+// RouteRegistrar registers its public (open) and protected (JWT-guarded) routes.
 type RouteRegistrar interface {
-	RegisterRoutes(rg *gin.RouterGroup)
+	RegisterRoutes(public, protected *gin.RouterGroup)
 }
 
-// NewRouter builds the Gin engine, mounts /health, and lets each registrar add
-// its routes under /api/v1.
-func NewRouter(registrar ...RouteRegistrar) *gin.Engine {
+// NewRouter builds the Gin engine. Public GET routes are open; protected routes
+// go through the auth middleware. /health is always open.
+func NewRouter(auth gin.HandlerFunc, registrar ...RouteRegistrar) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.GET("/health", Health)
 
-	v1 := r.Group("/api/v1")
+	public := r.Group("/api/v1")
+	protected := r.Group("/api/v1")
+	protected.Use(auth)
+
 	for _, reg := range registrar {
-		reg.RegisterRoutes(v1)
+		reg.RegisterRoutes(public, protected)
 	}
 	return r
 }

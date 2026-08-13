@@ -43,7 +43,7 @@ func (noopPub) Publish(context.Context, event.Event) {}
 func newRemedyRouter(repo remedy.Repository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	service := usecase.NewRemedyService(repo, noopPub{})
-	return NewRouter(NewRemedyHandler(service))
+	return NewRouter(noAuth, NewRemedyHandler(service))
 }
 
 func TestCreateRemedyEndpoint(t *testing.T) {

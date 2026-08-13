@@ -47,4 +47,21 @@ describe("HealerAdminList", () => {
     await userEvent.click(screen.getByRole("button", { name: /delete/i }));
     await waitFor(() => expect(screen.queryByText("หมอ ก")).toBeNull());
   });
+
+  it("shows an error and keeps the row when delete fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, opts?: { method?: string }) => {
+        if (opts?.method === "DELETE") return { ok: false, status: 409 };
+        return { ok: true, json: async () => [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }] };
+      }) as unknown as typeof fetch,
+    );
+    renderWithClient(<HealerAdminList districtId={3} />);
+    await screen.findByText("หมอ ก");
+    await userEvent.click(screen.getByRole("button", { name: /delete/i }));
+    expect(
+      await screen.findByText("Could not delete this healer. It may still have remedies or cases."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("หมอ ก")).toBeInTheDocument();
+  });
 });

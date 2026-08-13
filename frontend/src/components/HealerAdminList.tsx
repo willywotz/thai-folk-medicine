@@ -23,6 +23,9 @@ export function HealerAdminList({ districtId }: { districtId: number }) {
 
   return (
     <div className="space-y-4">
+      {remove.isError ? (
+        <p className="text-red-600">Could not delete this healer. It may still have remedies or cases.</p>
+      ) : null}
       <Link
         href={`/staff/districts/${districtId}/healers/new`}
         className="inline-block rounded bg-stone-800 px-3 py-2 text-sm text-white"

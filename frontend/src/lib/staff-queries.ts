@@ -18,13 +18,6 @@ export async function deleteHealer(id: number): Promise<void> {
   if (!res.ok) throw new Error("cannot delete healer");
 }
 
-/** fetchHealer reads one healer (public) for the edit form. */
-export async function fetchHealer(id: number): Promise<Healer> {
-  const res = await fetch(`/api/v1/healers/${id}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("cannot load healer");
-  return (await res.json()) as Healer;
-}
-
 /** createHealer posts a new healer (with its districtId) through the BFF. */
 export async function createHealer(input: HealerInput & { districtId: number }): Promise<void> {
   const res = await fetch("/bff/healers", {

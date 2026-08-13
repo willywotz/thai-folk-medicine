@@ -72,3 +72,42 @@ func (q *Queries) GetPhoto(ctx context.Context, id int64) (Photo, error) {
 	)
 	return i, err
 }
+
+const listPhotoByOwner = `-- name: ListPhotoByOwner :many
+SELECT id, owner_type, owner_id, object_key, caption, created_at
+FROM photo
+WHERE owner_type = $1 AND owner_id = $2
+ORDER BY id
+`
+
+type ListPhotoByOwnerParams struct {
+	OwnerType string
+	OwnerID   int64
+}
+
+func (q *Queries) ListPhotoByOwner(ctx context.Context, arg ListPhotoByOwnerParams) ([]Photo, error) {
+	rows, err := q.db.Query(ctx, listPhotoByOwner, arg.OwnerType, arg.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Photo{}
+	for rows.Next() {
+		var i Photo
+		if err := rows.Scan(
+			&i.ID,
+			&i.OwnerType,
+			&i.OwnerID,
+			&i.ObjectKey,
+			&i.Caption,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

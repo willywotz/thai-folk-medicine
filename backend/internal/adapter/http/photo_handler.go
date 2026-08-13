@@ -29,6 +29,7 @@ func NewPhotoHandler(service *usecase.PhotoService) *PhotoHandler {
 // RegisterRoutes mounts the photo routes: serve public, upload/delete guarded.
 func (h *PhotoHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/photos/:photoId", h.Serve)
+	public.GET("/photos", h.ListByOwner)
 	protected.POST("/photos", h.Upload)
 	protected.DELETE("/photos/:photoId", h.Delete)
 }
@@ -125,6 +126,30 @@ func (h *PhotoHandler) Delete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// ListByOwner handles GET /api/v1/photos?ownerType=&ownerId=.
+func (h *PhotoHandler) ListByOwner(c *gin.Context) {
+	ownerType := c.Query("ownerType")
+	ownerID, err := strconv.ParseInt(c.Query("ownerId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ownerId must be a number"})
+		return
+	}
+	list, err := h.service.ListByOwner(c.Request.Context(), ownerType, ownerID)
+	if err != nil {
+		if errors.Is(err, usecase.ErrInvalidPhoto) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ownerType must be healer|remedy|case and ownerId must be valid"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list photos"})
+		return
+	}
+	out := make([]photoDTO, 0, len(list))
+	for _, p := range list {
+		out = append(out, toPhotoDTO(p))
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // mimeByExt maps a file extension to a content type for common image formats.

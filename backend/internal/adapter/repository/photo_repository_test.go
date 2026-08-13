@@ -32,3 +32,20 @@ func TestPhotoCreateGetDelete(t *testing.T) {
 	err = repo.Delete(ctx, created.ID)
 	assert.True(t, errors.Is(err, photo.ErrNotFound))
 }
+
+func TestPhotoListByOwner(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewPhoto(queries)
+
+	_, err := repo.Create(ctx, photo.CreateParams{OwnerType: photo.OwnerHealer, OwnerID: 1, ObjectKey: "a.jpg"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, photo.CreateParams{OwnerType: photo.OwnerHealer, OwnerID: 1, ObjectKey: "b.jpg"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, photo.CreateParams{OwnerType: photo.OwnerRemedy, OwnerID: 1, ObjectKey: "c.jpg"})
+	require.NoError(t, err)
+
+	got, err := repo.ListByOwner(ctx, photo.OwnerHealer, 1)
+	require.NoError(t, err)
+	assert.Len(t, got, 2)
+	assert.Equal(t, photo.OwnerHealer, got[0].OwnerType)
+}

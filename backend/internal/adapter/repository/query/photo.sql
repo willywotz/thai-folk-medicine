@@ -10,3 +10,9 @@ WHERE id = $1;
 
 -- name: DeletePhoto :execrows
 DELETE FROM photo WHERE id = $1;
+
+-- name: ListPhotoByOwner :many
+SELECT id, owner_type, owner_id, object_key, caption, created_at
+FROM photo
+WHERE owner_type = $1 AND owner_id = $2
+ORDER BY id;

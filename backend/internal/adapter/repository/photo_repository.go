@@ -68,3 +68,19 @@ func (r *Photo) Delete(ctx context.Context, id int64) error {
 	}
 	return nil
 }
+
+// ListByOwner returns the photos attached to one owner.
+func (r *Photo) ListByOwner(ctx context.Context, ownerType string, ownerID int64) ([]photo.Photo, error) {
+	rows, err := r.q.ListPhotoByOwner(ctx, db.ListPhotoByOwnerParams{
+		OwnerType: ownerType,
+		OwnerID:   ownerID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]photo.Photo, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, toPhoto(row))
+	}
+	return result, nil
+}

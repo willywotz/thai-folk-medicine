@@ -56,6 +56,14 @@ func (s *PhotoService) OpenFile(ctx context.Context, p photo.Photo) (io.ReadClos
 	return s.store.Open(ctx, p.ObjectKey)
 }
 
+// ListByOwner returns the photos of one owner after validating the owner type.
+func (s *PhotoService) ListByOwner(ctx context.Context, ownerType string, ownerID int64) ([]photo.Photo, error) {
+	if !photo.ValidOwnerType(ownerType) || ownerID <= 0 {
+		return nil, ErrInvalidPhoto
+	}
+	return s.repo.ListByOwner(ctx, ownerType, ownerID)
+}
+
 // Delete removes the row and the file, then publishes DeletedEvent.
 func (s *PhotoService) Delete(ctx context.Context, id int64) error {
 	found, err := s.repo.GetByID(ctx, id)

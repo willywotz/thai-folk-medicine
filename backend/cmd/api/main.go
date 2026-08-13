@@ -43,6 +43,9 @@ func main() {
 	bus.Subscribe("healer.created", auditHandler(logger))
 	bus.Subscribe("healer.updated", auditHandler(logger))
 	bus.Subscribe("healer.deleted", auditHandler(logger))
+	bus.Subscribe("remedy.created", auditHandler(logger))
+	bus.Subscribe("remedy.updated", auditHandler(logger))
+	bus.Subscribe("remedy.deleted", auditHandler(logger))
 
 	locationHandler := httpapi.NewLocationHandler(
 		usecase.NewLocationService(repository.NewLocation(queries)),
@@ -50,8 +53,11 @@ func main() {
 	healerHandler := httpapi.NewHealerHandler(
 		usecase.NewHealerService(repository.NewHealer(queries), bus),
 	)
+	remedyHandler := httpapi.NewRemedyHandler(
+		usecase.NewRemedyService(repository.NewRemedy(queries), bus),
+	)
 
-	router := httpapi.NewRouter(locationHandler, healerHandler)
+	router := httpapi.NewRouter(locationHandler, healerHandler, remedyHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

@@ -29,6 +29,9 @@ func (s *stubPhotoRepo) GetByID(_ context.Context, id int64) (photo.Photo, error
 	return photo.Photo{ID: id, ObjectKey: "k.jpg", OwnerType: photo.OwnerHealer, OwnerID: 2}, nil
 }
 func (s *stubPhotoRepo) Delete(context.Context, int64) error { return nil }
+func (s *stubPhotoRepo) ListByOwner(_ context.Context, ownerType string, ownerID int64) ([]photo.Photo, error) {
+	return []photo.Photo{{ID: 1, OwnerType: ownerType, OwnerID: ownerID, Caption: "x"}}, nil
+}
 
 type memStore struct{}
 
@@ -112,4 +115,23 @@ func TestServePhotoEndpoint(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "image-bytes", rec.Body.String())
+}
+
+func TestListPhotoByOwnerEndpoint(t *testing.T) {
+	router := photoRouter()
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/photos?ownerType=healer&ownerId=2", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), "\"ownerType\":\"healer\"")
+}
+
+func TestListPhotoByOwnerRejectsBadType(t *testing.T) {
+	router := photoRouter()
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/photos?ownerType=district&ownerId=2", nil)
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }

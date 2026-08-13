@@ -34,6 +34,9 @@ func (f *fakePhotoRepo) GetByID(_ context.Context, id int64) (photo.Photo, error
 	return photo.Photo{ID: id, ObjectKey: "k.jpg"}, nil
 }
 func (f *fakePhotoRepo) Delete(context.Context, int64) error { return nil }
+func (f *fakePhotoRepo) ListByOwner(_ context.Context, ownerType string, ownerID int64) ([]photo.Photo, error) {
+	return []photo.Photo{{ID: 1, OwnerType: ownerType, OwnerID: ownerID}}, nil
+}
 
 type fakeStore struct {
 	saved   string
@@ -92,6 +95,12 @@ func TestUploadDeletesFileWhenRowFails(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, "obj.jpg", store.deleted, "file should be cleaned up when the row write fails")
+}
+
+func TestListByOwnerRejectsBadOwnerType(t *testing.T) {
+	service := NewPhotoService(&fakePhotoRepo{}, &fakeStore{}, &photoRecorder{})
+	_, err := service.ListByOwner(context.Background(), "district", 1)
+	assert.ErrorIs(t, err, ErrInvalidPhoto)
 }
 
 func TestDeletePublishesEvent(t *testing.T) {

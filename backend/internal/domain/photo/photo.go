@@ -47,6 +47,7 @@ type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Photo, error)
 	GetByID(ctx context.Context, id int64) (Photo, error)
 	Delete(ctx context.Context, id int64) error
+	ListByOwner(ctx context.Context, ownerType string, ownerID int64) ([]Photo, error)
 }
 
 // Store keeps the image bytes. The object key identifies a stored file.

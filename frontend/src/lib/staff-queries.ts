@@ -1,4 +1,4 @@
-import type { Healer, Remedy, TreatmentCase } from "@/lib/api-types";
+import type { Healer, Photo, Remedy, TreatmentCase } from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
 import type { TreatmentCaseInput } from "@/lib/treatment-case-schema";
@@ -114,4 +114,37 @@ export async function updateCase(id: number, input: TreatmentCaseInput): Promise
 export async function deleteCase(id: number): Promise<void> {
   const res = await fetch(`/bff/treatment-cases/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("cannot delete treatment case");
+}
+
+export function photoListKey(ownerType: string, ownerId: number) {
+  return ["photos", ownerType, ownerId] as const;
+}
+
+/** fetchPhotos reads an owner's photos through the /api proxy. */
+export async function fetchPhotos(ownerType: string, ownerId: number): Promise<Photo[]> {
+  const res = await fetch(`/api/v1/photos?ownerType=${ownerType}&ownerId=${ownerId}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load photos");
+  return (await res.json()) as Photo[];
+}
+
+/** uploadPhoto posts a multipart photo (file + owner + caption) through the BFF. */
+export async function uploadPhoto(input: {
+  ownerType: string;
+  ownerId: number;
+  file: File;
+  caption: string;
+}): Promise<void> {
+  const form = new FormData();
+  form.append("file", input.file);
+  form.append("ownerType", input.ownerType);
+  form.append("ownerId", String(input.ownerId));
+  form.append("caption", input.caption);
+  const res = await fetch("/bff/photos", { method: "POST", body: form });
+  if (!res.ok) throw new Error("cannot upload photo");
+}
+
+/** deletePhoto removes a photo through the BFF. */
+export async function deletePhoto(id: number): Promise<void> {
+  const res = await fetch(`/bff/photos/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete photo");
 }

@@ -31,3 +31,16 @@ type Province struct {
 	NameThai    string
 	NameEnglish string
 }
+
+type Remedy struct {
+	ID                int64
+	HealerID          int64
+	Name              string
+	Symptoms          string
+	Ingredients       string
+	PreparationMethod string
+	Usage             string
+	Note              string
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}

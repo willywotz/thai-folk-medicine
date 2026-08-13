@@ -11,6 +11,9 @@ import (
 // ErrNotFound means no healer has the given id.
 var ErrNotFound = errors.New("healer not found")
 
+// ErrReferenced means the healer still has remedies or cases and cannot be deleted.
+var ErrReferenced = errors.New("healer is referenced by other records")
+
 // Healer is one local folk-medicine healer (หมอพื้นบ้าน).
 type Healer struct {
 	ID          int64

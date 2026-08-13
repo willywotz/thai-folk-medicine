@@ -8,8 +8,8 @@ First province: **Yasothon** (ยโสธร). The design allows more provinces
 
 ## Architecture
 
-- **Backend:** Go API (`backend/`), Clean Architecture, 15-Factor, event-driven (planned).
-- **Frontend:** Next.js (planned, not started).
+- **Backend:** Go API (`backend/`), Clean Architecture, 15-Factor, event-driven.
+- **Frontend:** Next.js (`frontend/`), App Router, public browse (server-rendered).
 - **Database:** PostgreSQL.
 
 Dependencies point inward: `domain` ← `usecase` ← `adapter` / `platform`.
@@ -57,7 +57,25 @@ backend/
   TanStack Query, react-hook-form + zod, httpOnly cookie + Next.js proxy.
 - **Auth:** golang-jwt (HS256) + bcrypt, one staff type. **Done.**
 
-## Current state — Plan 1 + Plan 2 + Plan 3 + Plan 4 done (backend API complete)
+## Frontend layout (`frontend/`)
+
+```
+frontend/
+├── next.config.ts                      # /api/* proxy → Go API (INTERNAL_API_URL)
+├── src/
+│   ├── app/                            # App Router server-component pages
+│   │   ├── page.tsx                    # home: Yasothon districts
+│   │   ├── districts/[districtId]/     # healers in a district
+│   │   ├── healers/[healerId]/         # healer detail + remedies
+│   │   ├── remedies/[remedyId]/        # remedy detail + treatment cases
+│   │   ├── not-found.tsx
+│   │   └── layout.tsx                  # Thai font shell (Noto Sans Thai)
+│   ├── components/                     # RecordCard, Breadcrumb, EmptyState, DefinitionList, PhotoImage
+│   └── lib/                            # api.ts (typed server client), api-types.ts, format.ts
+└── vitest.config.ts                    # Vitest + RTL (jsdom)
+```
+
+## Current state — Plan 1 + Plan 2 + Plan 3 + Plan 4 (backend) + Plan 5 (public frontend) done
 
 **Plan 1 — backend foundation + location browse (public read):**
 - Config from environment; `GET /health`.
@@ -111,6 +129,15 @@ Full test suite green (unit + testcontainers integration). Whole-branch review: 
 `STAFF_ADMIN_PASSWORD`. Photo storage is local disk (`withinlazy`: not multi-instance
 safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 
+**Plan 5 — public frontend (Next.js):**
+- Server-rendered public browse: home (districts) → district (healers) → healer
+  (remedies) → remedy (treatment cases). Thai typography, breadcrumbs, empty/not-found
+  states. Photos render via `GET /api/v1/photos/{id}` through the `/api` proxy.
+- Read-only; no login. Vitest + RTL cover the API client, formatters, and components.
+- Run: `cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev` (with the API up).
+- `withinlazy`: no photo-gallery-by-owner (needs a backend `GET /{owner}/{id}/photos`
+  endpoint); breadcrumb shows a static "District" label (needs `GET /districts/{id}`).
+
 ## How to run
 
 ```bash
@@ -131,10 +158,14 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 2: `docs/superpowers/plans/2026-08-13-healer-and-event-bus.md`
 - Plan 3: `docs/superpowers/plans/2026-08-14-remedy-and-treatment-case.md`
 - Plan 4: `docs/superpowers/plans/2026-08-14-auth-and-photos.md`
+- Plan 5: `docs/superpowers/plans/2026-08-14-frontend-public-browse.md`
 
 ## Next plans
 
-5. Next.js frontend (public browse + staff pages).
+6. Staff-admin frontend (login + CRUD forms + photo upload) — brings in shadcn/ui,
+   TanStack Query, react-hook-form, zod, httpOnly-cookie auth via the Next.js proxy.
+- Possible backend follow-ups: `GET /districts/{id}` and photo-gallery-by-owner endpoints
+  (see the `withinlazy` notes above); search by symptom/herb.
 
 **Carry-forward note:** `sqlc.yaml` points `schema:` at the whole `migrations/`
 directory. As new entity migrations land, keep DML seed migrations free of

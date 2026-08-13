@@ -44,3 +44,17 @@ type Remedy struct {
 	CreatedAt         pgtype.Timestamptz
 	UpdatedAt         pgtype.Timestamptz
 }
+
+type TreatmentCase struct {
+	ID         int64
+	RemedyID   int64
+	HealerID   int64
+	PatientAge int32
+	PatientSex string
+	Symptoms   string
+	Result     string
+	Note       string
+	TreatedOn  pgtype.Date
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+}

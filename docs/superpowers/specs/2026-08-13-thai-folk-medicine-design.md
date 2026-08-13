@@ -193,10 +193,42 @@ Red → green → refactor for every unit.
   code.
 - **Event-Driven:** use cases emit domain events through an `EventPublisher`.
 
-## 13. Open items for the plan
+## 13. Tech stack (decided)
 
-- Choose the Go router (stdlib `net/http` with Go 1.22 routing, or a light
-  library).
-- Choose the Postgres driver / query approach (`pgx` + `sqlc`, or plain `pgx`).
-- Migration tool (for example `golang-migrate`).
-- Next.js pages come after the API is stable.
+### 13.1 Backend (Go 1.26.5+)
+
+| Concern | Choice | Rule |
+|---|---|---|
+| HTTP framework | **Gin** | Only in `adapter/http`. Domain and usecase never import it. |
+| Postgres access | **pgx + sqlc** | Write SQL; sqlc generates typed Go. |
+| Migrations | **golang-migrate** | Plain SQL `up`/`down` files. Pairs with sqlc. |
+| Auth token | **golang-jwt/jwt** | Signed JWT; secret from environment. |
+| Password hash | **golang.org/x/crypto/bcrypt** | Standard. |
+| Config | **caarlos0/env** | Environment only (12-Factor). |
+| Logging | **log/slog** (stdlib) | Structured JSON to stdout. No zap for now. |
+| Testing | **testing + testify** | Asserts. |
+| Integration DB | **testcontainers-go** | Real Postgres for repository tests. |
+
+### 13.2 Frontend (Node 24+)
+
+| Concern | Choice |
+|---|---|
+| Framework | **Next.js App Router + TypeScript** |
+| Public pages | Server components fetch the Go API |
+| Styling / components | **Tailwind CSS + shadcn/ui** |
+| Staff data | **TanStack Query** |
+| Staff forms | **react-hook-form + zod** |
+| Auth token | **httpOnly cookie**; Next.js proxies `/api` to keep it same-origin |
+| Package manager | **pnpm** |
+| Unit tests | **Vitest + React Testing Library** |
+| End-to-end (later) | **Playwright** |
+| Lint / format | **ESLint (Next.js) + Prettier** |
+
+### 13.3 Notes
+
+- Gin, pgx, sqlc-generated code, and golang-jwt all stay in the outer layers
+  (`adapter`, `platform`). The `domain` and `usecase` layers stay free of these
+  dependencies.
+- `slog` can be swapped for `zap` later through the `slog` handler bridge, with
+  no change to call sites.
+- Build the API first. Add the Next.js pages after the API is stable.

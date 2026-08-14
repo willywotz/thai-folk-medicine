@@ -125,6 +125,56 @@ func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Rem
 	return items, nil
 }
 
+const searchRemedy = `-- name: SearchRemedy :many
+SELECT r.id, r.name, r.symptoms, r.ingredients, r.healer_id, h.full_name AS healer_full_name
+FROM remedy r
+JOIN healer h ON h.id = r.healer_id
+WHERE r.name ILIKE '%' || $1::text || '%'
+   OR r.symptoms ILIKE '%' || $1::text || '%'
+   OR r.ingredients ILIKE '%' || $1::text || '%'
+ORDER BY GREATEST(
+    similarity(r.name, $1::text),
+    similarity(r.symptoms, $1::text),
+    similarity(r.ingredients, $1::text)
+) DESC, r.name
+`
+
+type SearchRemedyRow struct {
+	ID             int64
+	Name           string
+	Symptoms       string
+	Ingredients    string
+	HealerID       int64
+	HealerFullName string
+}
+
+func (q *Queries) SearchRemedy(ctx context.Context, searchTerm string) ([]SearchRemedyRow, error) {
+	rows, err := q.db.Query(ctx, searchRemedy, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchRemedyRow{}
+	for rows.Next() {
+		var i SearchRemedyRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Symptoms,
+			&i.Ingredients,
+			&i.HealerID,
+			&i.HealerFullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateRemedy = `-- name: UpdateRemedy :one
 UPDATE remedy
 SET name = $2, symptoms = $3, ingredients = $4, preparation_method = $5, usage = $6, note = $7, updated_at = now()

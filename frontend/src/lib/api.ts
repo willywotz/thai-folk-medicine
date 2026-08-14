@@ -3,6 +3,7 @@ import type {
   Healer,
   Province,
   Remedy,
+  SearchResponse,
   TreatmentCase,
 } from "./api-types";
 
@@ -78,4 +79,8 @@ export async function getTreatmentCase(id: number): Promise<TreatmentCase | null
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */
 export function photoUrl(photoId: number): string {
   return `/api/v1/photos/${photoId}`;
+}
+
+export async function search(term: string): Promise<SearchResponse> {
+  return getJson<SearchResponse>(`/search?searchTerm=${encodeURIComponent(term)}`);
 }

@@ -8,6 +8,7 @@ import {
   listDistricts,
   listHealersByDistrict,
   photoUrl,
+  search,
 } from "./api";
 
 function mockFetchOnce(status: number, body: unknown) {
@@ -81,5 +82,29 @@ describe("listHealersByDistrict / listCasesByRemedy", () => {
 describe("photoUrl", () => {
   it("builds the proxy path", () => {
     expect(photoUrl(7)).toBe("/api/v1/photos/7");
+  });
+});
+
+describe("search", () => {
+  it("encodes the term and returns the parsed body", async () => {
+    const captured: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        captured.push(url);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ remedies: [{ id: 1, name: "ยา" }], healers: [] }),
+        };
+      }) as unknown as typeof fetch,
+    );
+
+    const got = await search("ฟ้า ทะลาย");
+
+    expect(captured[0]).toContain("/search?searchTerm=");
+    expect(captured[0]).toContain(encodeURIComponent("ฟ้า ทะลาย"));
+    expect(got.remedies).toHaveLength(1);
+    expect(got.healers).toHaveLength(0);
   });
 });

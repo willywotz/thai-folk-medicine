@@ -22,3 +22,17 @@ RETURNING id, district_id, full_name, sub_district, specialty, biography, create
 
 -- name: DeleteHealer :execrows
 DELETE FROM healer WHERE id = $1;
+
+-- name: SearchHealer :many
+SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
+FROM healer
+WHERE full_name ILIKE '%' || @search_term::text || '%'
+   OR specialty ILIKE '%' || @search_term::text || '%'
+   OR biography ILIKE '%' || @search_term::text || '%'
+   OR sub_district ILIKE '%' || @search_term::text || '%'
+ORDER BY GREATEST(
+    similarity(full_name, @search_term::text),
+    similarity(specialty, @search_term::text),
+    similarity(biography, @search_term::text),
+    similarity(sub_district, @search_term::text)
+) DESC, full_name;

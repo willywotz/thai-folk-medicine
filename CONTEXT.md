@@ -170,8 +170,25 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 - Upload/delete failures (incl. the 10 MiB 413 cap) are surfaced. The `withinlazy`
   list-photos gap from Plan 5 is now closed.
 
+**Plan 9 — search by symptom or herb:**
+- Full-text search that works with **Thai**, using the Postgres **`pg_trgm`** extension
+  (character trigrams — language-agnostic, no word segmentation) instead of `to_tsvector`,
+  which cannot segment Thai. Migration `000008_add_search_index` adds the extension + GIN
+  trigram indexes on the searched columns.
+- Searches **remedies** (name, symptoms, ingredients) and **healers** (full name,
+  specialty, biography, sub-district). `SearchRemedy` joins healer for `healer_full_name`;
+  results rank by trigram `similarity()`.
+- `usecase/search` composes two consumer-side reader interfaces (not added to the aggregate
+  `Repository` interfaces); read-only (no events). Minimum term = **2 runes**
+  (`utf8.RuneCountInString`, not byte length).
+  - `GET /api/v1/search?searchTerm={q}` (public) → `{ remedies:[…], healers:[…] }`.
+    Term shorter than 2 runes → **400**.
+- Frontend: a `/search` server-rendered page with two result groups (remedies →
+  `/remedies/{id}`, healers → `/healers/{id}`) and a `SearchBox` in the site header.
+
 **The planned scope is complete:** backend API, public browse site, and full staff admin
-(healers, remedies, treatment cases, and photos) all work end to end.
+(healers, remedies, treatment cases, and photos) all work end to end. Public search across
+remedies and healers is live.
 
 ## How to run
 
@@ -213,16 +230,17 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 6: `docs/superpowers/plans/2026-08-14-staff-admin-healer.md`
 - Plan 7: `docs/superpowers/plans/2026-08-14-staff-admin-remedy-case.md`
 - Plan 8: `docs/superpowers/plans/2026-08-14-photo-management.md`
+- Plan 9: `docs/superpowers/plans/2026-08-14-search-symptom-herb.md`
 
 ## Possible future work
 
-- Search by symptom / herb (public + a search box).
 - `GET /districts/{id}` so staff breadcrumbs show the district name.
 - Swap the local-disk `photo.Store` for S3/MinIO before horizontal scaling.
 - Staff roles (admin vs normal) if the team grows.
 - End-to-end tests (Playwright) across the login → manage → browse flow.
-- Possible backend follow-ups: `GET /districts/{id}` and photo-gallery-by-owner endpoints
-  (see the `withinlazy` notes above); search by symptom/herb.
+- Search follow-ups: filter by district/field, pagination, and match highlighting
+  (all deliberately out of scope for Plan 9).
+- Possible backend follow-up: photo-gallery-by-owner endpoints (see the `withinlazy` notes).
 
 **Carry-forward note:** `sqlc.yaml` points `schema:` at the whole `migrations/`
 directory. As new entity migrations land, keep DML seed migrations free of

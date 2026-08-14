@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { SearchBox } from "@/components/SearchBox";
-
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
@@ -9,9 +7,6 @@ export function SiteHeader() {
         <Link href="/" className="whitespace-nowrap font-serif text-lg font-semibold text-ink">
           ตำรายา<span className="text-brand">พื้นบ้าน</span>
         </Link>
-        <div className="hidden flex-1 sm:block">
-          <SearchBox />
-        </div>
         <Link
           href="/staff"
           prefetch={false}

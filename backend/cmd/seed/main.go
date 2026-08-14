@@ -15,6 +15,7 @@ import (
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/photo"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/config"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/database"
@@ -59,7 +60,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 	if reset {
 		// withinlazy: leaves old photo files orphaned on disk; sweep PHOTO_STORAGE_DIR
 		// manually if it matters. Demo tool only, so orphaned placeholder jpgs are harmless.
-		if _, err := pool.Exec(ctx, `TRUNCATE photo, treatment_case, remedy, healer RESTART IDENTITY CASCADE`); err != nil {
+		if _, err := pool.Exec(ctx, `TRUNCATE photo, treatment_case, remedy_herb, remedy, herb, healer RESTART IDENTITY CASCADE`); err != nil {
 			return err
 		}
 		logger.Info("demo tables truncated")
@@ -77,6 +78,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 	queries := db.New(pool)
 	locationRepo := repository.NewLocation(queries)
 	healerRepo := repository.NewHealer(queries)
+	herbRepo := repository.NewHerb(queries)
 	remedyRepo := repository.NewRemedy(pool)
 	caseRepo := repository.NewTreatmentCase(queries)
 	photoRepo := repository.NewPhoto(queries)
@@ -106,6 +108,38 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 	rng := rand.New(rand.NewSource(randomSeed))
 	now := time.Now()
 
+	herbIDs := make([]int64, 0, len(herbSeedPool))
+	for i, hs := range herbSeedPool {
+		hb, err := herbRepo.Create(ctx, herb.CreateParams{
+			NameThai:       hs.NameThai,
+			NameEnglish:    hs.NameEnglish,
+			ScientificName: hs.ScientificName,
+			Properties:     hs.Properties,
+			Description:    "สมุนไพรพื้นบ้าน",
+		})
+		if err != nil {
+			return err
+		}
+		herbIDs = append(herbIDs, hb.ID)
+
+		// Attach a placeholder photo to the first few herbs.
+		if i < photoCount {
+			key, err := store.Save(ctx, bytes.NewReader(placeholderJPEG(int(hb.ID)*11)), ".jpg")
+			if err != nil {
+				return err
+			}
+			if _, err := photoRepo.Create(ctx, photo.CreateParams{
+				OwnerType: photo.OwnerHerb,
+				OwnerID:   hb.ID,
+				ObjectKey: key,
+				Caption:   "ภาพตัวอย่างสมุนไพร",
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	logger.Info("herbs seeded", "count", len(herbIDs))
+
 	var healers, remedies, cases, photos int
 	for i := range healerCount {
 		district := districts[i%len(districts)]
@@ -117,7 +151,9 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 
 		nRemedy := minRemedy + rng.Intn(maxRemedy-minRemedy+1)
 		for range nRemedy {
-			rm, err := remedyRepo.Create(ctx, randomRemedy(rng, h.ID))
+			rp := randomRemedy(rng, h.ID)
+			rp.Herbs = pickHerbRefs(rng, herbIDs)
+			rm, err := remedyRepo.Create(ctx, rp)
 			if err != nil {
 				return err
 			}

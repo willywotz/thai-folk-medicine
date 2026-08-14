@@ -51,7 +51,31 @@ var (
 	}
 	resultPool = []string{"อาการทุเลาลงภายในสามวัน", "หายเป็นปกติหลังใช้ยาครบสัปดาห์", "อาการดีขึ้นอย่างชัดเจน", "ทุเลาบางส่วน แนะนำให้ใช้ยาต่อ"}
 	sexPool    = []string{"ชาย", "หญิง"}
+	amountPool = []string{"1 กำมือ", "2 กำมือ", "1 ช้อนโต๊ะ", "ครึ่งกิโลกรัม", "3 หัว", "1 กอบ"}
 )
+
+// herbSeed is one curated herb for the demo.
+type herbSeed struct {
+	NameThai       string
+	NameEnglish    string
+	ScientificName string
+	Properties     string
+}
+
+var herbSeedPool = []herbSeed{
+	{"ฟ้าทะลายโจร", "Andrographis", "Andrographis paniculata", "แก้ไข้ เจ็บคอ"},
+	{"ขมิ้นชัน", "Turmeric", "Curcuma longa", "แก้ท้องอืด สมานแผล"},
+	{"ไพล", "Cassumunar ginger", "Zingiber cassumunar", "แก้ปวดเมื่อย"},
+	{"กระชายดำ", "Black galingale", "Kaempferia parviflora", "บำรุงกำลัง"},
+	{"บอระเพ็ด", "Tinospora", "Tinospora crispa", "แก้ไข้ เจริญอาหาร"},
+	{"ขิง", "Ginger", "Zingiber officinale", "ขับลม แก้คลื่นไส้"},
+	{"ตะไคร้", "Lemongrass", "Cymbopogon citratus", "ขับลม แก้ท้องอืด"},
+	{"ว่านหางจระเข้", "Aloe vera", "Aloe vera", "สมานแผล แก้ร้อนใน"},
+	{"รางจืด", "Blue trumpet vine", "Thunbergia laurifolia", "ถอนพิษ"},
+	{"ย่านาง", "Bamboo grass", "Tiliacora triandra", "ลดไข้ บำรุง"},
+	{"มะขามป้อม", "Indian gooseberry", "Phyllanthus emblica", "แก้ไอ ขับเสมหะ"},
+	{"เพชรสังฆาต", "Veldt grape", "Cissus quadrangularis", "แก้ริดสีดวง"},
+}
 
 func pick(r *rand.Rand, pool []string) string { return pool[r.Intn(len(pool))] }
 
@@ -76,6 +100,23 @@ func randomHealer(r *rand.Rand, districtID int64) healer.CreateParams {
 		Specialty:   spec,
 		Biography:   fmt.Sprintf("สืบทอดวิชา%sจากบรรพบุรุษ รักษาชาวบ้านในพื้นที่มากว่า %d ปี", spec, 10+r.Intn(40)),
 	}
+}
+
+// randomAmount returns a Thai amount string for a herb link.
+func randomAmount(r *rand.Rand) string { return pick(r, amountPool) }
+
+// pickHerbRefs picks 2..4 distinct herb ids with a random amount each.
+func pickHerbRefs(r *rand.Rand, herbIDs []int64) []remedy.HerbRef {
+	n := 2 + r.Intn(3)
+	if n > len(herbIDs) {
+		n = len(herbIDs)
+	}
+	perm := r.Perm(len(herbIDs))
+	refs := make([]remedy.HerbRef, 0, n)
+	for i := range n {
+		refs = append(refs, remedy.HerbRef{HerbID: herbIDs[perm[i]], Amount: randomAmount(r)})
+	}
+	return refs
 }
 
 func randomRemedy(r *rand.Rand, healerID int64) remedy.CreateParams {

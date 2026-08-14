@@ -91,3 +91,24 @@ func TestPlaceholderJPEG(t *testing.T) {
 		t.Errorf("decode: %v", err)
 	}
 }
+
+func TestHerbPool(t *testing.T) {
+	if len(herbSeedPool) == 0 {
+		t.Fatal("herbSeedPool is empty")
+	}
+	if herbSeedPool[0].NameThai == "" {
+		t.Error("herbSeedPool[0].NameThai is empty")
+	}
+}
+
+func TestPickHerbRefs(t *testing.T) {
+	refs := pickHerbRefs(newRand(), []int64{1, 2, 3, 4, 5})
+	if len(refs) < 1 {
+		t.Fatalf("len(refs) = %d, want >= 1", len(refs))
+	}
+	for _, ref := range refs {
+		if ref.HerbID == 0 {
+			t.Error("ref.HerbID is zero")
+		}
+	}
+}

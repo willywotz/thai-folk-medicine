@@ -26,6 +26,7 @@ Patient data in a case holds only age and sex (PDPA-safe).
 ```
 backend/
 ├── cmd/api/main.go                     # server start: config → migrate → wire → run
+├── cmd/seed/                           # demo-data command: generated healers/remedies/cases/photos
 ├── internal/
 │   ├── domain/
 │   │   ├── location/                   # Province, District, Repository interface
@@ -206,6 +207,14 @@ API at `http://backend:8080` over the compose network. Override `JWT_SECRET` and
 creds via a root `.env`. To hit the API directly from the host, uncomment the backend
 `ports:` block. Data persists in the `postgres_data` and `photo_data` volumes.
 
+Load demo data into the running stack with the profile-gated one-shot `seed` service
+(shares the `photo_data` volume, so seeded images are served by the stack):
+
+```bash
+docker compose --profile seed run --rm seed          # fill an empty DB
+docker compose --profile seed run --rm seed -reset   # wipe demo tables + reseed
+```
+
 **Backend alone, for development:**
 
 ```bash
@@ -213,7 +222,15 @@ cd backend
 cp .env.example .env             # then export the vars, or use a loader
 docker compose up -d             # Postgres only (backend/docker-compose.yml)
 go run ./cmd/api                 # starts on HTTP_PORT (default 8080)
+go run ./cmd/seed                # fill an empty DB with generated demo data
+go run ./cmd/seed -reset         # truncate demo tables, then reseed
 ```
+
+`cmd/seed` writes ~50 healers, ~140 remedies, ~280 cases, and 5 placeholder photos
+through the repository ports. It refuses to run when the `healer` table is not empty
+(unless `-reset`), so it never doubles data and never runs in production unless invoked.
+The Thai content is generated from curated pools in `cmd/seed/generate.go` with a fixed
+random seed, so runs are reproducible.
 
 Tests: `go test ./...` (backend), `pnpm test` (frontend).
 Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=true`

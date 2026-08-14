@@ -284,6 +284,10 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 9: `docs/superpowers/plans/2026-08-14-search-symptom-herb.md`
 - Plan 10: `docs/superpowers/plans/2026-08-14-herb-remedy-focus.md`
   (spec: `docs/superpowers/specs/2026-08-14-herb-remedy-focus-design.md`)
+- Public zone redesign spec (view-layer only, not yet built):
+  `docs/superpowers/specs/2026-08-15-public-zone-redesign-design.md`
+  Direction "Modern Utility", province-neutral. Preview:
+  https://claude.ai/code/artifact/fda8c118-958f-4b5b-82e8-300903933240
 
 ## Possible future work
 

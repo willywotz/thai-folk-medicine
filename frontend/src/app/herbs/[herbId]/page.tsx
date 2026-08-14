@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { DefinitionList } from "@/components/DefinitionList";
+import { ContentBlock } from "@/components/ContentBlock";
+import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { RecordCard } from "@/components/RecordCard";
+import { FactPanel } from "@/components/FactPanel";
+import { LinkRow } from "@/components/LinkRow";
 import { getHerb, listRemediesByHerb } from "@/lib/api";
 
 export default async function HerbPage({ params }: { params: Promise<{ herbId: string }> }) {
@@ -19,33 +21,47 @@ export default async function HerbPage({ params }: { params: Promise<{ herbId: s
     <section>
       <Breadcrumb
         items={[
-          { label: "Home", href: "/" },
+          { label: "หน้าแรก", href: "/" },
           { label: "สมุนไพร", href: "/herbs" },
           { label: herb.nameThai },
         ]}
       />
-      <h1 className="text-2xl font-bold">{herb.nameThai}</h1>
-      {herb.nameEnglish ? <p className="mt-1 text-stone-600">{herb.nameEnglish}</p> : null}
-      <div className="mt-4">
-        <DefinitionList
-          items={[
-            { term: "ชื่อวิทยาศาสตร์", value: herb.scientificName },
-            { term: "สรรพคุณ", value: herb.properties },
-            { term: "รายละเอียด", value: herb.description },
-          ]}
-        />
-      </div>
+      <div className="grid items-start gap-8 md:grid-cols-[1fr_296px]">
+        <div>
+          <DetailHeader
+            titleThai={herb.nameThai}
+            subtitle={herb.nameEnglish}
+            editHref={`/staff/herbs/${herb.id}/edit`}
+          />
+          {herb.properties ? (
+            <ContentBlock titleThai="สรรพคุณ" titleEnglish="Properties">
+              {herb.properties}
+            </ContentBlock>
+          ) : null}
+          {herb.description ? (
+            <ContentBlock titleThai="ลักษณะและรายละเอียด" titleEnglish="Description">
+              {herb.description}
+            </ContentBlock>
+          ) : null}
 
-      <h2 className="mb-3 mt-8 text-xl font-semibold">ตำรับยาที่ใช้สมุนไพรนี้ (Remedies using this herb)</h2>
-      {remedies.length === 0 ? (
-        <EmptyState message="No remedies use this herb yet." />
-      ) : (
-        <div className="grid gap-3">
-          {remedies.map((r) => (
-            <RecordCard key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
-          ))}
+          <h2 className="mb-3 mt-8 font-serif text-lg text-ink">ตำรับยาที่ใช้สมุนไพรนี้</h2>
+          {remedies.length === 0 ? (
+            <EmptyState message="No remedies use this herb yet." />
+          ) : (
+            <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+              {remedies.map((r) => (
+                <LinkRow key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+        <aside className="md:sticky md:top-24">
+          <FactPanel
+            title="ข้อมูลสมุนไพร · Quick facts"
+            facts={[{ key: "ชื่อวิทยาศาสตร์", value: herb.scientificName }]}
+          />
+        </aside>
+      </div>
     </section>
   );
 }

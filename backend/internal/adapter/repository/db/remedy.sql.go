@@ -158,7 +158,7 @@ func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Rem
 }
 
 const searchRemedy = `-- name: SearchRemedy :many
-SELECT DISTINCT r.id, r.name, r.symptoms, r.healer_id, h.full_name AS healer_full_name
+SELECT r.id, r.name, r.symptoms, r.healer_id, h.full_name AS healer_full_name
 FROM remedy r
 JOIN healer h ON h.id = r.healer_id
 LEFT JOIN remedy_herb rh ON rh.remedy_id = r.id
@@ -167,7 +167,13 @@ WHERE r.name ILIKE '%' || $1::text || '%'
    OR r.symptoms ILIKE '%' || $1::text || '%'
    OR hb.name_thai ILIKE '%' || $1::text || '%'
    OR hb.name_english ILIKE '%' || $1::text || '%'
-ORDER BY r.name
+GROUP BY r.id, r.name, r.symptoms, r.healer_id, h.full_name
+ORDER BY GREATEST(
+    similarity(r.name, $1::text),
+    similarity(r.symptoms, $1::text),
+    max(similarity(hb.name_thai, $1::text)),
+    max(similarity(hb.name_english, $1::text))
+) DESC, r.name
 `
 
 type SearchRemedyRow struct {

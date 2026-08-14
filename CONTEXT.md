@@ -208,10 +208,10 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   (→ `herb.ErrReferenced`), deleting a remedy cascades its links.
 - **Recent-list endpoints** for the home page: `GET /api/v1/remedies?limit=`,
   `GET /api/v1/treatment-cases?limit=` (public).
-- **Search** gained a **herb** result group and now matches linked herb names (join). NOTE:
-  remedy search ranking was simplified from trigram `similarity()` to substring `ILIKE …
-  ORDER BY name` (the pg_trgm GIN indexes still accelerate the `ILIKE`); relevance ranking is
-  a deferred follow-up.
+- **Search** gained a **herb** result group and now matches linked herb names (join).
+  Remedy search ranks by trigram `similarity()`: `GROUP BY` the remedy (the herb join is
+  one-to-many), then `ORDER BY GREATEST(similarity(name), similarity(symptoms),
+  max(similarity(herb name_thai)), max(similarity(herb name_english))) DESC, name`.
 - **Public site is remedy/herb-first:** home = search box → Herbs grid → recent Remedies →
   recent Cases (each "see all →"), plus a secondary "browse by district" link. New pages
   `/herbs`, `/herbs/{id}` (profile + remedies using it), `/remedies`, `/treatment-cases`,

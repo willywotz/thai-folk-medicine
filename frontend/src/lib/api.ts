@@ -1,6 +1,7 @@
 import type {
   District,
   Healer,
+  Herb,
   Province,
   Remedy,
   SearchResponse,
@@ -74,6 +75,26 @@ export async function listCasesByRemedy(remedyId: number): Promise<TreatmentCase
 
 export async function getTreatmentCase(id: number): Promise<TreatmentCase | null> {
   return getOrNull<TreatmentCase>(`/treatment-cases/${id}`);
+}
+
+export async function listHerbs(): Promise<Herb[]> {
+  return getJson<Herb[]>("/herbs");
+}
+
+export async function getHerb(id: number): Promise<Herb | null> {
+  return getOrNull<Herb>(`/herbs/${id}`);
+}
+
+export async function listRemediesByHerb(herbId: number): Promise<Remedy[]> {
+  return getJson<Remedy[]>(`/herbs/${herbId}/remedies`);
+}
+
+export async function listRecentRemedies(limit = 6): Promise<Remedy[]> {
+  return getJson<Remedy[]>(`/remedies?limit=${limit}`);
+}
+
+export async function listRecentCases(limit = 6): Promise<TreatmentCase[]> {
+  return getJson<TreatmentCase[]>(`/treatment-cases?limit=${limit}`);
 }
 
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */

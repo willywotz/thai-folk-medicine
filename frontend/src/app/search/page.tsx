@@ -29,7 +29,10 @@ export default async function SearchPage({
   }
 
   const empty =
-    result !== null && result.remedies.length === 0 && result.healers.length === 0;
+    result !== null &&
+    result.remedies.length === 0 &&
+    result.healers.length === 0 &&
+    result.herbs.length === 0;
 
   return (
     <section>
@@ -74,6 +77,22 @@ export default async function SearchPage({
                 href={`/healers/${h.id}`}
                 title={h.fullName}
                 subtitle={h.specialty}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {result !== null && result.herbs.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="mb-3 text-xl font-semibold">สมุนไพร (Herbs)</h2>
+          <div className="grid gap-3">
+            {result.herbs.map((h) => (
+              <RecordCard
+                key={h.id}
+                href={`/herbs/${h.id}`}
+                title={h.nameThai}
+                subtitle={h.nameEnglish || h.scientificName}
               />
             ))}
           </div>

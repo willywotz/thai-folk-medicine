@@ -22,12 +22,30 @@ export interface Healer {
   updatedAt: string;
 }
 
+export interface Herb {
+  id: number;
+  nameThai: string;
+  nameEnglish: string;
+  scientificName: string;
+  properties: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RemedyHerb {
+  herbId: number;
+  nameThai: string;
+  nameEnglish: string;
+  amount: string;
+}
+
 export interface Remedy {
   id: number;
   healerId: number;
   name: string;
   symptoms: string;
-  ingredients: string;
+  herbs: RemedyHerb[];
   preparationMethod: string;
   usage: string;
   note: string;
@@ -60,7 +78,6 @@ export interface RemedySearchResult {
   id: number;
   name: string;
   symptoms: string;
-  ingredients: string;
   healerId: number;
   healerFullName: string;
 }
@@ -73,7 +90,15 @@ export interface HealerSearchResult {
   districtId: number;
 }
 
+export interface HerbSearchResult {
+  id: number;
+  nameThai: string;
+  nameEnglish: string;
+  scientificName: string;
+}
+
 export interface SearchResponse {
   remedies: RemedySearchResult[];
   healers: HealerSearchResult[];
+  herbs: HerbSearchResult[];
 }

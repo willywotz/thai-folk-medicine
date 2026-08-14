@@ -40,9 +40,6 @@ func TestRandomRemedy(t *testing.T) {
 	if rm.Symptoms == "" {
 		t.Error("Symptoms is empty")
 	}
-	if rm.Ingredients == "" {
-		t.Error("Ingredients is empty")
-	}
 	if rm.PreparationMethod == "" {
 		t.Error("PreparationMethod is empty")
 	}

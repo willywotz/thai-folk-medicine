@@ -45,6 +45,11 @@ func (s *TreatmentCaseService) ListByRemedy(ctx context.Context, remedyID int64)
 	return s.repo.ListByRemedy(ctx, remedyID)
 }
 
+// ListRecent returns the most recently treated cases.
+func (s *TreatmentCaseService) ListRecent(ctx context.Context, limit int) ([]treatmentcase.TreatmentCase, error) {
+	return s.repo.ListRecent(ctx, int32(limit))
+}
+
 // Update validates and changes a case, then publishes UpdatedEvent.
 func (s *TreatmentCaseService) Update(ctx context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	if p.PatientAge < 0 || strings.TrimSpace(p.PatientSex) == "" {

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
@@ -37,10 +38,16 @@ func (s *stubHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb
 }
 func (s *stubHerbRepo) Delete(context.Context, int64) error { return nil }
 
+type stubHerbRemedyReader struct{}
+
+func (stubHerbRemedyReader) ListByHerb(_ context.Context, herbID int64) ([]remedy.Remedy, error) {
+	return []remedy.Remedy{{ID: 1, Name: "ยาต้ม", HealerID: herbID}}, nil
+}
+
 func newHerbRouter(repo herb.Repository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	service := usecase.NewHerbService(repo, noopPublisher{})
-	return NewRouter(noAuth, NewHerbHandler(service))
+	return NewRouter(noAuth, NewHerbHandler(service, stubHerbRemedyReader{}))
 }
 
 func TestHerbHandler_CreateAndGet(t *testing.T) {
@@ -92,4 +99,18 @@ func TestHerbHandler_ListEndpoint(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
 	require.Len(t, got, 1)
 	assert.Equal(t, "ไพล", got[0]["nameThai"])
+}
+
+func TestHerbHandler_ListRemediesEndpoint(t *testing.T) {
+	router := newHerbRouter(&stubHerbRepo{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/herbs/1/remedies", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got []map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	require.Len(t, got, 1)
+	assert.Equal(t, "ยาต้ม", got[0]["name"])
 }

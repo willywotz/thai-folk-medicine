@@ -77,7 +77,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 	queries := db.New(pool)
 	locationRepo := repository.NewLocation(queries)
 	healerRepo := repository.NewHealer(queries)
-	remedyRepo := repository.NewRemedy(queries)
+	remedyRepo := repository.NewRemedy(pool)
 	caseRepo := repository.NewTreatmentCase(queries)
 	photoRepo := repository.NewPhoto(queries)
 

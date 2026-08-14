@@ -25,48 +25,73 @@ func NewRemedyHandler(service *usecase.RemedyService) *RemedyHandler {
 // RegisterRoutes mounts the remedy routes: reads public, writes JWT-guarded.
 func (h *RemedyHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/healers/:healerId/remedies", h.ListByHealer)
+	public.GET("/remedies", h.ListRecent)
 	public.GET("/remedies/:remedyId", h.Get)
 	protected.POST("/remedies", h.Create)
 	protected.PUT("/remedies/:remedyId", h.Update)
 	protected.DELETE("/remedies/:remedyId", h.Delete)
 }
 
+type remedyHerbDTO struct {
+	HerbID      int64  `json:"herbId"`
+	NameThai    string `json:"nameThai"`
+	NameEnglish string `json:"nameEnglish"`
+	Amount      string `json:"amount"`
+}
+
+type remedyHerbRequest struct {
+	HerbID int64  `json:"herbId"`
+	Amount string `json:"amount"`
+}
+
 type remedyDTO struct {
-	ID                int64     `json:"id"`
-	HealerID          int64     `json:"healerId"`
-	Name              string    `json:"name"`
-	Symptoms          string    `json:"symptoms"`
-	Ingredients       string    `json:"ingredients"`
-	PreparationMethod string    `json:"preparationMethod"`
-	Usage             string    `json:"usage"`
-	Note              string    `json:"note"`
-	CreatedAt         time.Time `json:"createdAt"`
-	UpdatedAt         time.Time `json:"updatedAt"`
+	ID                int64           `json:"id"`
+	HealerID          int64           `json:"healerId"`
+	Name              string          `json:"name"`
+	Symptoms          string          `json:"symptoms"`
+	PreparationMethod string          `json:"preparationMethod"`
+	Usage             string          `json:"usage"`
+	Note              string          `json:"note"`
+	Herbs             []remedyHerbDTO `json:"herbs"`
+	CreatedAt         time.Time       `json:"createdAt"`
+	UpdatedAt         time.Time       `json:"updatedAt"`
 }
 
 func toRemedyDTO(r remedy.Remedy) remedyDTO {
+	herbs := make([]remedyHerbDTO, 0, len(r.Herbs))
+	for _, l := range r.Herbs {
+		herbs = append(herbs, remedyHerbDTO{HerbID: l.HerbID, NameThai: l.NameThai, NameEnglish: l.NameEnglish, Amount: l.Amount})
+	}
 	return remedyDTO{
 		ID:                r.ID,
 		HealerID:          r.HealerID,
 		Name:              r.Name,
 		Symptoms:          r.Symptoms,
-		Ingredients:       r.Ingredients,
 		PreparationMethod: r.PreparationMethod,
 		Usage:             r.Usage,
 		Note:              r.Note,
+		Herbs:             herbs,
 		CreatedAt:         r.CreatedAt,
 		UpdatedAt:         r.UpdatedAt,
 	}
 }
 
 type remedyRequest struct {
-	HealerID          int64  `json:"healerId"`
-	Name              string `json:"name"`
-	Symptoms          string `json:"symptoms"`
-	Ingredients       string `json:"ingredients"`
-	PreparationMethod string `json:"preparationMethod"`
-	Usage             string `json:"usage"`
-	Note              string `json:"note"`
+	HealerID          int64               `json:"healerId"`
+	Name              string              `json:"name"`
+	Symptoms          string              `json:"symptoms"`
+	PreparationMethod string              `json:"preparationMethod"`
+	Usage             string              `json:"usage"`
+	Note              string              `json:"note"`
+	Herbs             []remedyHerbRequest `json:"herbs"`
+}
+
+func toHerbRefs(req []remedyHerbRequest) []remedy.HerbRef {
+	refs := make([]remedy.HerbRef, 0, len(req))
+	for _, h := range req {
+		refs = append(refs, remedy.HerbRef{HerbID: h.HerbID, Amount: h.Amount})
+	}
+	return refs
 }
 
 // ListByHealer handles GET /api/v1/healers/:healerId/remedies.
@@ -77,6 +102,21 @@ func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 		return
 	}
 	list, err := h.service.ListByHealer(c.Request.Context(), healerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
+		return
+	}
+	out := make([]remedyDTO, 0, len(list))
+	for _, item := range list {
+		out = append(out, toRemedyDTO(item))
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// ListRecent handles GET /api/v1/remedies?limit=N (default 12).
+func (h *RemedyHandler) ListRecent(c *gin.Context) {
+	limit := parseLimit(c.Query("limit"), 12)
+	list, err := h.service.ListRecent(c.Request.Context(), limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return
@@ -118,10 +158,10 @@ func (h *RemedyHandler) Create(c *gin.Context) {
 		HealerID:          req.HealerID,
 		Name:              req.Name,
 		Symptoms:          req.Symptoms,
-		Ingredients:       req.Ingredients,
 		PreparationMethod: req.PreparationMethod,
 		Usage:             req.Usage,
 		Note:              req.Note,
+		Herbs:             toHerbRefs(req.Herbs),
 	})
 	if err != nil {
 		if errors.Is(err, usecase.ErrInvalidRemedy) {
@@ -150,10 +190,10 @@ func (h *RemedyHandler) Update(c *gin.Context) {
 		ID:                id,
 		Name:              req.Name,
 		Symptoms:          req.Symptoms,
-		Ingredients:       req.Ingredients,
 		PreparationMethod: req.PreparationMethod,
 		Usage:             req.Usage,
 		Note:              req.Note,
+		Herbs:             toHerbRefs(req.Herbs),
 	})
 	if err != nil {
 		switch {

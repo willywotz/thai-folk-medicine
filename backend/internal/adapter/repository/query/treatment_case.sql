@@ -14,6 +14,12 @@ FROM treatment_case
 WHERE remedy_id = $1
 ORDER BY treated_on DESC, id DESC;
 
+-- name: ListRecentTreatmentCase :many
+SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
+FROM treatment_case
+ORDER BY treated_on DESC, id DESC
+LIMIT $1;
+
 -- name: UpdateTreatmentCase :one
 UPDATE treatment_case
 SET patient_age = $2, patient_sex = $3, symptoms = $4, result = $5, note = $6, treated_on = $7, updated_at = now()

@@ -79,8 +79,9 @@ func main() {
 	healerHandler := httpapi.NewHealerHandler(
 		usecase.NewHealerService(repository.NewHealer(queries), bus),
 	)
+	remedyRepo := repository.NewRemedy(pool)
 	remedyHandler := httpapi.NewRemedyHandler(
-		usecase.NewRemedyService(repository.NewRemedy(queries), bus),
+		usecase.NewRemedyService(remedyRepo, bus),
 	)
 	treatmentCaseHandler := httpapi.NewTreatmentCaseHandler(
 		usecase.NewTreatmentCaseService(repository.NewTreatmentCase(queries), bus),
@@ -89,10 +90,11 @@ func main() {
 		usecase.NewPhotoService(repository.NewPhoto(queries), photoStore, bus),
 	)
 	searchHandler := httpapi.NewSearchHandler(
-		search.NewService(repository.NewRemedy(queries), repository.NewHealer(queries)),
+		search.NewService(remedyRepo, repository.NewHealer(queries)),
 	)
 	herbHandler := httpapi.NewHerbHandler(
 		usecase.NewHerbService(repository.NewHerb(queries), bus),
+		remedyRepo,
 	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)

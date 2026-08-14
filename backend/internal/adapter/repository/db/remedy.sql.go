@@ -10,16 +10,15 @@ import (
 )
 
 const createRemedy = `-- name: CreateRemedy :one
-INSERT INTO remedy (healer_id, name, symptoms, ingredients, preparation_method, usage, note)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, healer_id, name, symptoms, ingredients, preparation_method, usage, note, created_at, updated_at
+INSERT INTO remedy (healer_id, name, symptoms, preparation_method, usage, note)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 `
 
 type CreateRemedyParams struct {
 	HealerID          int64
 	Name              string
 	Symptoms          string
-	Ingredients       string
 	PreparationMethod string
 	Usage             string
 	Note              string
@@ -30,7 +29,6 @@ func (q *Queries) CreateRemedy(ctx context.Context, arg CreateRemedyParams) (Rem
 		arg.HealerID,
 		arg.Name,
 		arg.Symptoms,
-		arg.Ingredients,
 		arg.PreparationMethod,
 		arg.Usage,
 		arg.Note,
@@ -41,7 +39,6 @@ func (q *Queries) CreateRemedy(ctx context.Context, arg CreateRemedyParams) (Rem
 		&i.HealerID,
 		&i.Name,
 		&i.Symptoms,
-		&i.Ingredients,
 		&i.PreparationMethod,
 		&i.Usage,
 		&i.Note,
@@ -64,7 +61,7 @@ func (q *Queries) DeleteRemedy(ctx context.Context, id int64) (int64, error) {
 }
 
 const getRemedy = `-- name: GetRemedy :one
-SELECT id, healer_id, name, symptoms, ingredients, preparation_method, usage, note, created_at, updated_at
+SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 WHERE id = $1
 `
@@ -77,7 +74,6 @@ func (q *Queries) GetRemedy(ctx context.Context, id int64) (Remedy, error) {
 		&i.HealerID,
 		&i.Name,
 		&i.Symptoms,
-		&i.Ingredients,
 		&i.PreparationMethod,
 		&i.Usage,
 		&i.Note,
@@ -87,8 +83,45 @@ func (q *Queries) GetRemedy(ctx context.Context, id int64) (Remedy, error) {
 	return i, err
 }
 
+const listRecentRemedy = `-- name: ListRecentRemedy :many
+SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
+FROM remedy
+ORDER BY created_at DESC, id DESC
+LIMIT $1
+`
+
+func (q *Queries) ListRecentRemedy(ctx context.Context, limit int32) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRecentRemedy, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Remedy{}
+	for rows.Next() {
+		var i Remedy
+		if err := rows.Scan(
+			&i.ID,
+			&i.HealerID,
+			&i.Name,
+			&i.Symptoms,
+			&i.PreparationMethod,
+			&i.Usage,
+			&i.Note,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRemedyByHealer = `-- name: ListRemedyByHealer :many
-SELECT id, healer_id, name, symptoms, ingredients, preparation_method, usage, note, created_at, updated_at
+SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 WHERE healer_id = $1
 ORDER BY name
@@ -108,7 +141,6 @@ func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Rem
 			&i.HealerID,
 			&i.Name,
 			&i.Symptoms,
-			&i.Ingredients,
 			&i.PreparationMethod,
 			&i.Usage,
 			&i.Note,
@@ -126,24 +158,22 @@ func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Rem
 }
 
 const searchRemedy = `-- name: SearchRemedy :many
-SELECT r.id, r.name, r.symptoms, r.ingredients, r.healer_id, h.full_name AS healer_full_name
+SELECT DISTINCT r.id, r.name, r.symptoms, r.healer_id, h.full_name AS healer_full_name
 FROM remedy r
 JOIN healer h ON h.id = r.healer_id
+LEFT JOIN remedy_herb rh ON rh.remedy_id = r.id
+LEFT JOIN herb hb ON hb.id = rh.herb_id
 WHERE r.name ILIKE '%' || $1::text || '%'
    OR r.symptoms ILIKE '%' || $1::text || '%'
-   OR r.ingredients ILIKE '%' || $1::text || '%'
-ORDER BY GREATEST(
-    similarity(r.name, $1::text),
-    similarity(r.symptoms, $1::text),
-    similarity(r.ingredients, $1::text)
-) DESC, r.name
+   OR hb.name_thai ILIKE '%' || $1::text || '%'
+   OR hb.name_english ILIKE '%' || $1::text || '%'
+ORDER BY r.name
 `
 
 type SearchRemedyRow struct {
 	ID             int64
 	Name           string
 	Symptoms       string
-	Ingredients    string
 	HealerID       int64
 	HealerFullName string
 }
@@ -161,7 +191,6 @@ func (q *Queries) SearchRemedy(ctx context.Context, searchTerm string) ([]Search
 			&i.ID,
 			&i.Name,
 			&i.Symptoms,
-			&i.Ingredients,
 			&i.HealerID,
 			&i.HealerFullName,
 		); err != nil {
@@ -177,16 +206,15 @@ func (q *Queries) SearchRemedy(ctx context.Context, searchTerm string) ([]Search
 
 const updateRemedy = `-- name: UpdateRemedy :one
 UPDATE remedy
-SET name = $2, symptoms = $3, ingredients = $4, preparation_method = $5, usage = $6, note = $7, updated_at = now()
+SET name = $2, symptoms = $3, preparation_method = $4, usage = $5, note = $6, updated_at = now()
 WHERE id = $1
-RETURNING id, healer_id, name, symptoms, ingredients, preparation_method, usage, note, created_at, updated_at
+RETURNING id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 `
 
 type UpdateRemedyParams struct {
 	ID                int64
 	Name              string
 	Symptoms          string
-	Ingredients       string
 	PreparationMethod string
 	Usage             string
 	Note              string
@@ -197,7 +225,6 @@ func (q *Queries) UpdateRemedy(ctx context.Context, arg UpdateRemedyParams) (Rem
 		arg.ID,
 		arg.Name,
 		arg.Symptoms,
-		arg.Ingredients,
 		arg.PreparationMethod,
 		arg.Usage,
 		arg.Note,
@@ -208,7 +235,6 @@ func (q *Queries) UpdateRemedy(ctx context.Context, arg UpdateRemedyParams) (Rem
 		&i.HealerID,
 		&i.Name,
 		&i.Symptoms,
-		&i.Ingredients,
 		&i.PreparationMethod,
 		&i.Usage,
 		&i.Note,

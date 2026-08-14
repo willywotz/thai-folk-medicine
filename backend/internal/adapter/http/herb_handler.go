@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -9,23 +10,31 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
+// RemedyReader lists remedies that use a herb (for the herb profile page).
+type RemedyReader interface {
+	ListByHerb(ctx context.Context, herbID int64) ([]remedy.Remedy, error)
+}
+
 // HerbHandler serves the herb read and write endpoints.
 type HerbHandler struct {
-	service *usecase.HerbService
+	service      *usecase.HerbService
+	remedyReader RemedyReader
 }
 
 // NewHerbHandler builds the herb handler.
-func NewHerbHandler(service *usecase.HerbService) *HerbHandler {
-	return &HerbHandler{service: service}
+func NewHerbHandler(service *usecase.HerbService, remedyReader RemedyReader) *HerbHandler {
+	return &HerbHandler{service: service, remedyReader: remedyReader}
 }
 
 // RegisterRoutes mounts the herb routes: reads public, writes JWT-guarded.
 func (h *HerbHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/herbs", h.List)
 	public.GET("/herbs/:herbId", h.Get)
+	public.GET("/herbs/:herbId/remedies", h.ListRemedies)
 	protected.POST("/herbs", h.Create)
 	protected.PUT("/herbs/:herbId", h.Update)
 	protected.DELETE("/herbs/:herbId", h.Delete)
@@ -94,6 +103,25 @@ func (h *HerbHandler) Get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, toHerbDTO(found))
+}
+
+// ListRemedies handles GET /api/v1/herbs/:herbId/remedies.
+func (h *HerbHandler) ListRemedies(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("herbId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "herb id must be a number"})
+		return
+	}
+	list, err := h.remedyReader.ListByHerb(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies for herb"})
+		return
+	}
+	out := make([]remedyDTO, 0, len(list))
+	for _, item := range list {
+		out = append(out, toRemedyDTO(item))
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // Create handles POST /api/v1/herbs.

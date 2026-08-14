@@ -55,6 +55,7 @@ type Repository interface {
 	Create(ctx context.Context, p CreateParams) (TreatmentCase, error)
 	GetByID(ctx context.Context, id int64) (TreatmentCase, error)
 	ListByRemedy(ctx context.Context, remedyID int64) ([]TreatmentCase, error)
+	ListRecent(ctx context.Context, limit int32) ([]TreatmentCase, error)
 	Update(ctx context.Context, p UpdateParams) (TreatmentCase, error)
 	Delete(ctx context.Context, id int64) error
 }

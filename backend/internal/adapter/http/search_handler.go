@@ -30,7 +30,6 @@ type remedyMatchDTO struct {
 	ID             int64  `json:"id"`
 	Name           string `json:"name"`
 	Symptoms       string `json:"symptoms"`
-	Ingredients    string `json:"ingredients"`
 	HealerID       int64  `json:"healerId"`
 	HealerFullName string `json:"healerFullName"`
 }
@@ -53,7 +52,6 @@ func toRemedyMatchDTO(r remedy.SearchResult) remedyMatchDTO {
 		ID:             r.ID,
 		Name:           r.Name,
 		Symptoms:       r.Symptoms,
-		Ingredients:    r.Ingredients,
 		HealerID:       r.HealerID,
 		HealerFullName: r.HealerFullName,
 	}

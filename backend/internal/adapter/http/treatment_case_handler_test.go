@@ -30,6 +30,9 @@ func (s *stubCaseRepo) GetByID(_ context.Context, id int64) (treatmentcase.Treat
 func (s *stubCaseRepo) ListByRemedy(_ context.Context, remedyID int64) ([]treatmentcase.TreatmentCase, error) {
 	return []treatmentcase.TreatmentCase{{ID: 1, RemedyID: remedyID}}, nil
 }
+func (s *stubCaseRepo) ListRecent(context.Context, int32) ([]treatmentcase.TreatmentCase, error) {
+	return []treatmentcase.TreatmentCase{{ID: 1}}, nil
+}
 func (s *stubCaseRepo) Update(_ context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	return treatmentcase.TreatmentCase{ID: p.ID}, nil
 }
@@ -76,6 +79,17 @@ func TestGetCaseNotFound(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/treatment-cases/1", nil)
 	router.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestListRecentCaseEndpoint(t *testing.T) {
+	router := newCaseRouter(&stubCaseRepo{})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/treatment-cases?limit=5", nil)
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got []map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	require.Len(t, got, 1)
 }
 
 func TestListCaseByRemedyEndpoint(t *testing.T) {

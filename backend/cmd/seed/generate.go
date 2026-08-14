@@ -85,7 +85,6 @@ func randomRemedy(r *rand.Rand, healerID int64) remedy.CreateParams {
 		HealerID:          healerID,
 		Name:              fmt.Sprintf("%s%s", form, herb),
 		Symptoms:          pickSome(r, symptomPool, 3),
-		Ingredients:       pickSome(r, herbPool, 4),
 		PreparationMethod: pick(r, preparationPool),
 		Usage:             pick(r, usagePool),
 		Note:              pick(r, notePool),

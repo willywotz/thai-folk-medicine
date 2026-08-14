@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -14,6 +15,14 @@ import (
 )
 
 func newTestPool(t *testing.T) (context.Context, *db.Queries) {
+	t.Helper()
+	ctx, pool := newTestPoolConn(t)
+	return ctx, db.New(pool)
+}
+
+// newTestPoolConn spins up a migrated Postgres testcontainer and returns the
+// raw pool, for repositories (like Remedy) that need to run transactions.
+func newTestPoolConn(t *testing.T) (context.Context, *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 
@@ -34,7 +43,7 @@ func newTestPool(t *testing.T) (context.Context, *db.Queries) {
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 
-	return ctx, db.New(pool)
+	return ctx, pool
 }
 
 func TestLocationListProvinceReturnsYasothon(t *testing.T) {

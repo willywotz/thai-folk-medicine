@@ -207,6 +207,14 @@ API at `http://backend:8080` over the compose network. Override `JWT_SECRET` and
 creds via a root `.env`. To hit the API directly from the host, uncomment the backend
 `ports:` block. Data persists in the `postgres_data` and `photo_data` volumes.
 
+Load demo data into the running stack with the profile-gated one-shot `seed` service
+(shares the `photo_data` volume, so seeded images are served by the stack):
+
+```bash
+docker compose --profile seed run --rm seed          # fill an empty DB
+docker compose --profile seed run --rm seed -reset   # wipe demo tables + reseed
+```
+
 **Backend alone, for development:**
 
 ```bash

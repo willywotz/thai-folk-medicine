@@ -42,6 +42,25 @@ services:
     # ports:
     #   - "8080:8080"
 
+  # One-shot demo-data loader. Not started by `up`; run it on demand:
+  #   docker compose --profile seed run --rm seed          # fill an empty DB
+  #   docker compose --profile seed run --rm seed -reset   # wipe + reseed
+  # It shares the photo volume so seeded images are served by the running stack.
+  seed:
+    build: ./backend
+    entrypoint: ["/usr/local/bin/seed"]
+    environment:
+      DATABASE_URL: postgres://folk:folk@postgres:5432/folk_medicine?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PHOTO_STORAGE_DIR: /data/photo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - photo_data:/data/photo
+    profiles:
+      - seed
+
   frontend:
     build:
       context: ./frontend

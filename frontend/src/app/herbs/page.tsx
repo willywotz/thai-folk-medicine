@@ -1,10 +1,13 @@
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordCard } from "@/components/RecordCard";
-import { listHerbs } from "@/lib/api";
+import { firstPhotoUrl, listHerbs } from "@/lib/api";
 
 export default async function HerbsPage() {
   const herbs = await listHerbs();
+  const covers = await Promise.all(
+    herbs.map((h) => firstPhotoUrl("herb", h.id).catch(() => undefined)),
+  );
   return (
     <section>
       <Breadcrumb items={[{ label: "หน้าแรก", href: "/" }, { label: "สมุนไพร" }]} />
@@ -15,8 +18,14 @@ export default async function HerbsPage() {
         <EmptyState message="No herbs yet." />
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-          {herbs.map((h) => (
-            <RecordCard key={h.id} href={`/herbs/${h.id}`} title={h.nameThai} subtitle={h.nameEnglish} />
+          {herbs.map((h, i) => (
+            <RecordCard
+              key={h.id}
+              href={`/herbs/${h.id}`}
+              title={h.nameThai}
+              subtitle={h.nameEnglish}
+              imageUrl={covers[i]}
+            />
           ))}
         </div>
       )}

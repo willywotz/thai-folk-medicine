@@ -5,7 +5,7 @@ import { RecordCard } from "@/components/RecordCard";
 import { SearchBox } from "@/components/SearchBox";
 import { SectionHead } from "@/components/SectionHead";
 import { formatThaiDate } from "@/lib/format";
-import { listHerbs, listProvinces, listRecentCases, listRecentRemedies } from "@/lib/api";
+import { firstPhotoUrl, listHerbs, listProvinces, listRecentCases, listRecentRemedies } from "@/lib/api";
 
 export default async function HomePage() {
   const [herbs, remedies, cases, provinces] = await Promise.all([
@@ -14,6 +14,10 @@ export default async function HomePage() {
     listRecentCases(6),
     listProvinces(),
   ]);
+  const shownHerbs = herbs.slice(0, 4);
+  const herbCovers = await Promise.all(
+    shownHerbs.map((h) => firstPhotoUrl("herb", h.id).catch(() => undefined)),
+  );
 
   return (
     <section>
@@ -30,8 +34,14 @@ export default async function HomePage() {
         <EmptyState message="No herbs yet." />
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-          {herbs.slice(0, 4).map((h) => (
-            <RecordCard key={h.id} href={`/herbs/${h.id}`} title={h.nameThai} subtitle={h.nameEnglish} />
+          {shownHerbs.map((h, i) => (
+            <RecordCard
+              key={h.id}
+              href={`/herbs/${h.id}`}
+              title={h.nameThai}
+              subtitle={h.nameEnglish}
+              imageUrl={herbCovers[i]}
+            />
           ))}
         </div>
       )}

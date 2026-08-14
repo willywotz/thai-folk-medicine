@@ -1,3 +1,4 @@
+import { Leaf } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -6,7 +7,7 @@ import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
 import { LinkRow } from "@/components/LinkRow";
-import { getHerb, listRemediesByHerb } from "@/lib/api";
+import { getHerb, listPhotosByOwner, listRemediesByHerb, photoUrl } from "@/lib/api";
 
 export default async function HerbPage({ params }: { params: Promise<{ herbId: string }> }) {
   const { herbId } = await params;
@@ -15,7 +16,11 @@ export default async function HerbPage({ params }: { params: Promise<{ herbId: s
 
   const herb = await getHerb(id);
   if (!herb) notFound();
-  const remedies = await listRemediesByHerb(id);
+  const [remedies, photos] = await Promise.all([
+    listRemediesByHerb(id),
+    listPhotosByOwner("herb", id),
+  ]);
+  const cover = photos[0];
 
   return (
     <section>
@@ -33,6 +38,18 @@ export default async function HerbPage({ params }: { params: Promise<{ herbId: s
             subtitle={herb.nameEnglish}
             editHref={`/staff/herbs/${herb.id}/edit`}
           />
+          <div className="mt-4 grid aspect-[16/7] place-items-center overflow-hidden rounded-2xl border border-line bg-brand-tint text-brand">
+            {cover ? (
+              // eslint-disable-next-line @next/next/no-img-element -- served by our own /api proxy, no next/image optimization needed
+              <img
+                src={photoUrl(cover.id)}
+                alt={cover.caption || herb.nameThai}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Leaf className="h-14 w-14 opacity-80" aria-hidden />
+            )}
+          </div>
           {herb.properties ? (
             <ContentBlock titleThai="สรรพคุณ" titleEnglish="Properties">
               {herb.properties}

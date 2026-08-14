@@ -7,12 +7,14 @@ export function RecordCard({
   title,
   subtitle,
   tag,
+  imageUrl,
   children,
 }: {
   href: string;
   title: string;
   subtitle?: string;
   tag?: string;
+  imageUrl?: string;
   children?: ReactNode;
 }) {
   return (
@@ -21,7 +23,12 @@ export function RecordCard({
       className="block overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-0.5 hover:border-brand hover:shadow-lg"
     >
       <div className="grid aspect-[16/10] place-items-center bg-brand-tint text-brand">
-        <Leaf className="h-8 w-8 opacity-80" aria-hidden />
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- served by our own /api proxy, no next/image optimization needed
+          <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+        ) : (
+          <Leaf className="h-8 w-8 opacity-80" aria-hidden />
+        )}
       </div>
       <div className="p-4">
         <h3 className="font-serif text-lg font-semibold text-ink">{title}</h3>

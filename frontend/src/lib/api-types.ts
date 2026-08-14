@@ -55,3 +55,25 @@ export interface Photo {
   ownerId: number;
   caption: string;
 }
+
+export interface RemedySearchResult {
+  id: number;
+  name: string;
+  symptoms: string;
+  ingredients: string;
+  healerId: number;
+  healerFullName: string;
+}
+
+export interface HealerSearchResult {
+  id: number;
+  fullName: string;
+  specialty: string;
+  subDistrict: string;
+  districtId: number;
+}
+
+export interface SearchResponse {
+  remedies: RemedySearchResult[];
+  healers: HealerSearchResult[];
+}

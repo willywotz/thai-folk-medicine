@@ -6,24 +6,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 )
 
 func TestSearchRemedyMatchesThaiSubstring(t *testing.T) {
-	ctx, queries := newTestPool(t)
+	ctx, pool := newTestPoolConn(t)
+	queries := db.New(pool)
 	districtID := firstDistrictID(t, ctx, NewLocation(queries))
 	healerID := makeHealer(t, ctx, NewHealer(queries), districtID)
-	remedyRepo := NewRemedy(queries)
-	_, err := remedyRepo.Create(ctx, remedy.CreateParams{
-		HealerID: healerID, Name: "ยาแก้ไข้", Symptoms: "ไข้สูง", Ingredients: "ฟ้าทะลายโจร",
-	})
+	remedyRepo := NewRemedy(pool)
+	_, err := remedyRepo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ไข้", Symptoms: "ไข้สูง"})
 	require.NoError(t, err)
-	_, err = remedyRepo.Create(ctx, remedy.CreateParams{
-		HealerID: healerID, Name: "ยาแก้ปวด", Symptoms: "ปวดหัว", Ingredients: "ขิง",
-	})
+	_, err = remedyRepo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ปวด", Symptoms: "ปวดหัว"})
 	require.NoError(t, err)
 
-	got, err := remedyRepo.Search(ctx, "ฟ้าทะลายโจร")
+	got, err := remedyRepo.Search(ctx, "ยาแก้ไข้")
 
 	require.NoError(t, err)
 	require.Len(t, got, 1)
@@ -45,8 +43,8 @@ func TestSearchHealerMatchesSpecialty(t *testing.T) {
 }
 
 func TestSearchRemedyNoMatchReturnsEmpty(t *testing.T) {
-	ctx, queries := newTestPool(t)
-	got, err := NewRemedy(queries).Search(ctx, "ไม่มีอยู่จริง")
+	ctx, pool := newTestPoolConn(t)
+	got, err := NewRemedy(pool).Search(ctx, "ไม่มีอยู่จริง")
 	require.NoError(t, err)
 	assert.Empty(t, got)
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -30,10 +31,26 @@ export default async function RemedyPage({
         ]}
       />
       <h1 className="mb-4 text-2xl font-bold">{remedy.name}</h1>
+
+      <h2 className="mb-2 text-lg font-semibold">ตัวยา (Herbs)</h2>
+      {remedy.herbs.length === 0 ? (
+        <p className="text-stone-500">—</p>
+      ) : (
+        <ul className="mb-6 grid gap-2">
+          {remedy.herbs.map((h) => (
+            <li key={h.herbId}>
+              <Link href={`/herbs/${h.herbId}`} className="text-stone-800 underline">
+                {h.nameThai}
+              </Link>
+              {h.amount ? <span className="text-stone-500"> · {h.amount}</span> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+
       <DefinitionList
         items={[
           { term: "สรรพคุณ", value: remedy.symptoms },
-          { term: "ตัวยา", value: remedy.ingredients },
           { term: "วิธีปรุง", value: remedy.preparationMethod },
           { term: "วิธีใช้", value: remedy.usage },
           { term: "หมายเหตุ", value: remedy.note },

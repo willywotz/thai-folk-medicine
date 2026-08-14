@@ -27,6 +27,7 @@ func NewTreatmentCaseHandler(service *usecase.TreatmentCaseService) *TreatmentCa
 // RegisterRoutes mounts the treatment-case routes: reads public, writes JWT-guarded.
 func (h *TreatmentCaseHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/remedies/:remedyId/treatment-cases", h.ListByRemedy)
+	public.GET("/treatment-cases", h.ListRecent)
 	public.GET("/treatment-cases/:treatmentCaseId", h.Get)
 	protected.POST("/treatment-cases", h.Create)
 	protected.PUT("/treatment-cases/:treatmentCaseId", h.Update)
@@ -82,6 +83,21 @@ func (h *TreatmentCaseHandler) ListByRemedy(c *gin.Context) {
 		return
 	}
 	list, err := h.service.ListByRemedy(c.Request.Context(), remedyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list treatment cases"})
+		return
+	}
+	out := make([]treatmentCaseDTO, 0, len(list))
+	for _, item := range list {
+		out = append(out, toTreatmentCaseDTO(item))
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// ListRecent handles GET /api/v1/treatment-cases?limit=N (default 12).
+func (h *TreatmentCaseHandler) ListRecent(c *gin.Context) {
+	limit := parseLimit(c.Query("limit"), 12)
+	list, err := h.service.ListRecent(c.Request.Context(), limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list treatment cases"})
 		return

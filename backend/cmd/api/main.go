@@ -63,6 +63,9 @@ func main() {
 	bus.Subscribe("treatmentcase.deleted", auditHandler(logger))
 	bus.Subscribe("photo.created", auditHandler(logger))
 	bus.Subscribe("photo.deleted", auditHandler(logger))
+	bus.Subscribe("herb.created", auditHandler(logger))
+	bus.Subscribe("herb.updated", auditHandler(logger))
+	bus.Subscribe("herb.deleted", auditHandler(logger))
 
 	photoStore, err := photostore.NewLocal(cfg.PhotoStorageDir)
 	if err != nil {
@@ -76,8 +79,9 @@ func main() {
 	healerHandler := httpapi.NewHealerHandler(
 		usecase.NewHealerService(repository.NewHealer(queries), bus),
 	)
+	remedyRepo := repository.NewRemedy(pool)
 	remedyHandler := httpapi.NewRemedyHandler(
-		usecase.NewRemedyService(repository.NewRemedy(queries), bus),
+		usecase.NewRemedyService(remedyRepo, bus),
 	)
 	treatmentCaseHandler := httpapi.NewTreatmentCaseHandler(
 		usecase.NewTreatmentCaseService(repository.NewTreatmentCase(queries), bus),
@@ -86,14 +90,18 @@ func main() {
 		usecase.NewPhotoService(repository.NewPhoto(queries), photoStore, bus),
 	)
 	searchHandler := httpapi.NewSearchHandler(
-		search.NewService(repository.NewRemedy(queries), repository.NewHealer(queries)),
+		search.NewService(remedyRepo, repository.NewHealer(queries), repository.NewHerb(queries)),
+	)
+	herbHandler := httpapi.NewHerbHandler(
+		usecase.NewHerbService(repository.NewHerb(queries), bus),
+		remedyRepo,
 	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

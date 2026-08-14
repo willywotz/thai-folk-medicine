@@ -29,6 +29,12 @@ func (f *fakeRemedyRepo) GetByID(context.Context, int64) (remedy.Remedy, error) 
 func (f *fakeRemedyRepo) ListByHealer(context.Context, int64) ([]remedy.Remedy, error) {
 	return []remedy.Remedy{{ID: 1}}, nil
 }
+func (f *fakeRemedyRepo) ListByHerb(context.Context, int64) ([]remedy.Remedy, error) {
+	return []remedy.Remedy{{ID: 1}}, nil
+}
+func (f *fakeRemedyRepo) ListRecent(context.Context, int32) ([]remedy.Remedy, error) {
+	return []remedy.Remedy{{ID: 1}}, nil
+}
 func (f *fakeRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
 	return remedy.Remedy{ID: p.ID, Name: p.Name}, nil
 }
@@ -74,6 +80,12 @@ func TestCreateRemedyNoEventOnRepoError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Empty(t, pub.events)
+}
+
+func TestListRecentRemedy(t *testing.T) {
+	list, err := NewRemedyService(&fakeRemedyRepo{}, &remedyRecorder{}).ListRecent(context.Background(), 5)
+	require.NoError(t, err)
+	assert.Len(t, list, 1)
 }
 
 func TestDeleteRemedyPublishesEvent(t *testing.T) {

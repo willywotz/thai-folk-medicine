@@ -93,6 +93,45 @@ func (q *Queries) GetTreatmentCase(ctx context.Context, id int64) (TreatmentCase
 	return i, err
 }
 
+const listRecentTreatmentCase = `-- name: ListRecentTreatmentCase :many
+SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
+FROM treatment_case
+ORDER BY treated_on DESC, id DESC
+LIMIT $1
+`
+
+func (q *Queries) ListRecentTreatmentCase(ctx context.Context, limit int32) ([]TreatmentCase, error) {
+	rows, err := q.db.Query(ctx, listRecentTreatmentCase, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TreatmentCase{}
+	for rows.Next() {
+		var i TreatmentCase
+		if err := rows.Scan(
+			&i.ID,
+			&i.RemedyID,
+			&i.HealerID,
+			&i.PatientAge,
+			&i.PatientSex,
+			&i.Symptoms,
+			&i.Result,
+			&i.Note,
+			&i.TreatedOn,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTreatmentCaseByRemedy = `-- name: ListTreatmentCaseByRemedy :many
 SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
 FROM treatment_case

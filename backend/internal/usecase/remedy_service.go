@@ -45,6 +45,11 @@ func (s *RemedyService) ListByHealer(ctx context.Context, healerID int64) ([]rem
 	return s.repo.ListByHealer(ctx, healerID)
 }
 
+// ListRecent returns the most recent remedies.
+func (s *RemedyService) ListRecent(ctx context.Context, limit int) ([]remedy.Remedy, error) {
+	return s.repo.ListRecent(ctx, int32(limit))
+}
+
 // Update validates and changes a remedy, then publishes UpdatedEvent.
 func (s *RemedyService) Update(ctx context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
 	if strings.TrimSpace(p.Name) == "" {

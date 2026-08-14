@@ -18,7 +18,9 @@ Gin, pgx, and sqlc code stay only in the outer layers.
 ## Domain model
 
 `Province (1) → District (1) → Healer (1) → Remedy (1) → Case`.
-Photos attach to healer, remedy, or case. Staff log in to write; the public reads.
+`Herb ↔ Remedy` is many-to-many through `remedy_herb` (with a per-link amount); a
+remedy's ingredients ARE its linked herbs (the free-text `ingredients` field is gone).
+Photos attach to healer, remedy, case, or herb. Staff log in to write; the public reads.
 Patient data in a case holds only age and sex (PDPA-safe).
 
 ## Backend layout
@@ -31,7 +33,8 @@ backend/
 │   ├── domain/
 │   │   ├── location/                   # Province, District, Repository interface
 │   │   ├── healer/                     # Healer entity, events, ErrReferenced
-│   │   ├── remedy/                     # Remedy entity, events, ErrReferenced
+│   │   ├── remedy/                     # Remedy entity + HerbRef/HerbLink, events, ErrReferenced
+│   │   ├── herb/                        # Herb entity (rich: names, scientific, properties), events
 │   │   ├── treatmentcase/              # TreatmentCase entity, events (age+sex only)
 │   │   ├── staff/                      # Staff (login) entity, Repository
 │   │   ├── photo/                      # Photo entity, Store port, events
@@ -192,9 +195,35 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
 - Frontend: a `/search` server-rendered page with two result groups (remedies →
   `/remedies/{id}`, healers → `/healers/{id}`) and a `SearchBox` in the site header.
 
-**The planned scope is complete:** backend API, public browse site, and full staff admin
-(healers, remedies, treatment cases, and photos) all work end to end. Public search across
-remedies and healers is live.
+**Plan 10 — herb + remedy focus:**
+- **Herb is now a first-class entity** (rich: Thai/English/scientific name, properties,
+  description; photos via owner type `herb`). Migration `000009_create_herb`. Full aggregate
+  (domain/usecase/repo/HTTP + `herb.created/updated/deleted` events), mirroring healer.
+  - `GET /api/v1/herbs`, `GET /api/v1/herbs/{herbId}`, `GET /api/v1/herbs/{herbId}/remedies`
+    (public); `POST`/`PUT`/`DELETE /api/v1/herbs...` (staff).
+- **Remedies link to herbs** many-to-many via `remedy_herb(remedy_id, herb_id, amount,
+  position)` (migration `000010`). The free-text `remedy.ingredients` column is **dropped**;
+  ingredients ARE the linked herbs. The remedy repository writes a remedy + its links in one
+  **transaction** (uses `NewRemedy(pool)`); a herb still linked to a remedy cannot be deleted
+  (→ `herb.ErrReferenced`), deleting a remedy cascades its links.
+- **Recent-list endpoints** for the home page: `GET /api/v1/remedies?limit=`,
+  `GET /api/v1/treatment-cases?limit=` (public).
+- **Search** gained a **herb** result group and now matches linked herb names (join). NOTE:
+  remedy search ranking was simplified from trigram `similarity()` to substring `ILIKE …
+  ORDER BY name` (the pg_trgm GIN indexes still accelerate the `ILIKE`); relevance ranking is
+  a deferred follow-up.
+- **Public site is remedy/herb-first:** home = search box → Herbs grid → recent Remedies →
+  recent Cases (each "see all →"), plus a secondary "browse by district" link. New pages
+  `/herbs`, `/herbs/{id}` (profile + remedies using it), `/remedies`, `/treatment-cases`,
+  `/districts`. Remedy detail shows the linked herb list (name → `/herbs/{id}`, with amount)
+  and keeps "recorded by healer · district" context.
+- **Staff:** `/staff/herbs` CRUD (+ `bff/herbs*`); the remedy form uses a **herb picker**
+  (herb + amount rows) instead of an ingredients textarea.
+- **Seed:** `cmd/seed` seeds 12 curated herbs and links each remedy to 2–4 herbs.
+
+**The planned scope is complete:** backend API, public browse site (remedy/herb-first), and
+full staff admin (healers, remedies, herbs, treatment cases, and photos) all work end to end.
+Public search covers remedies, healers, and herbs.
 
 ## How to run
 
@@ -253,6 +282,8 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 - Plan 7: `docs/superpowers/plans/2026-08-14-staff-admin-remedy-case.md`
 - Plan 8: `docs/superpowers/plans/2026-08-14-photo-management.md`
 - Plan 9: `docs/superpowers/plans/2026-08-14-search-symptom-herb.md`
+- Plan 10: `docs/superpowers/plans/2026-08-14-herb-remedy-focus.md`
+  (spec: `docs/superpowers/specs/2026-08-14-herb-remedy-focus-design.md`)
 
 ## Possible future work
 

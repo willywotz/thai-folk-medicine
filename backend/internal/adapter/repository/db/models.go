@@ -26,6 +26,17 @@ type Healer struct {
 	UpdatedAt   pgtype.Timestamptz
 }
 
+type Herb struct {
+	ID             int64
+	NameThai       string
+	NameEnglish    string
+	ScientificName string
+	Properties     string
+	Description    string
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
 type Photo struct {
 	ID        int64
 	OwnerType string
@@ -46,12 +57,18 @@ type Remedy struct {
 	HealerID          int64
 	Name              string
 	Symptoms          string
-	Ingredients       string
 	PreparationMethod string
 	Usage             string
 	Note              string
 	CreatedAt         pgtype.Timestamptz
 	UpdatedAt         pgtype.Timestamptz
+}
+
+type RemedyHerb struct {
+	RemedyID int64
+	HerbID   int64
+	Amount   string
+	Position int32
 }
 
 type StaffUser struct {

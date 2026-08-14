@@ -3,8 +3,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { HerbPicker } from "@/components/HerbPicker";
 import type { Remedy } from "@/lib/api-types";
 import { remedySchema, type RemedyInput } from "@/lib/remedy-schema";
 import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
@@ -12,6 +14,9 @@ import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
 export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Remedy }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [herbs, setHerbs] = useState(
+    remedy?.herbs?.map((h) => ({ herbId: h.herbId, amount: h.amount })) ?? [],
+  );
   const {
     register,
     handleSubmit,
@@ -21,16 +26,18 @@ export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Re
     defaultValues: {
       name: remedy?.name ?? "",
       symptoms: remedy?.symptoms ?? "",
-      ingredients: remedy?.ingredients ?? "",
       preparationMethod: remedy?.preparationMethod ?? "",
       usage: remedy?.usage ?? "",
       note: remedy?.note ?? "",
+      herbs: [],
     },
   });
 
   const save = useMutation({
-    mutationFn: (values: RemedyInput) =>
-      remedy ? updateRemedy(remedy.id, values) : createRemedy({ ...values, healerId }),
+    mutationFn: (values: RemedyInput) => {
+      const payload = { ...values, herbs };
+      return remedy ? updateRemedy(remedy.id, payload) : createRemedy({ ...payload, healerId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) });
       router.push(`/staff/healers/${healerId}/remedies`);
@@ -55,12 +62,7 @@ export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Re
         </label>
         <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
       </div>
-      <div className="space-y-1">
-        <label htmlFor="ingredients" className="text-sm font-medium">
-          Ingredients (ตัวยา)
-        </label>
-        <textarea id="ingredients" rows={2} className={field} {...register("ingredients")} />
-      </div>
+      <HerbPicker value={herbs} onChange={setHerbs} />
       <div className="space-y-1">
         <label htmlFor="preparationMethod" className="text-sm font-medium">
           Preparation (วิธีปรุง)

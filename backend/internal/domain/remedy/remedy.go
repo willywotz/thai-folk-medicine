@@ -14,16 +14,30 @@ var ErrNotFound = errors.New("remedy not found")
 // ErrReferenced means the remedy still has treatment cases and cannot be deleted.
 var ErrReferenced = errors.New("remedy is referenced by other records")
 
+// HerbRef links a remedy to a herb with an amount (write side).
+type HerbRef struct {
+	HerbID int64
+	Amount string
+}
+
+// HerbLink is a herb linked to a remedy, with display names (read side).
+type HerbLink struct {
+	HerbID      int64
+	NameThai    string
+	NameEnglish string
+	Amount      string
+}
+
 // Remedy is one folk-medicine remedy (ตำรับยา) of a healer.
 type Remedy struct {
 	ID                int64
 	HealerID          int64
 	Name              string
 	Symptoms          string
-	Ingredients       string
 	PreparationMethod string
 	Usage             string
 	Note              string
+	Herbs             []HerbLink
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
@@ -33,7 +47,6 @@ type SearchResult struct {
 	ID             int64
 	Name           string
 	Symptoms       string
-	Ingredients    string
 	HealerID       int64
 	HealerFullName string
 }
@@ -43,10 +56,10 @@ type CreateParams struct {
 	HealerID          int64
 	Name              string
 	Symptoms          string
-	Ingredients       string
 	PreparationMethod string
 	Usage             string
 	Note              string
+	Herbs             []HerbRef
 }
 
 // UpdateParams holds the fields to update a remedy.
@@ -54,10 +67,10 @@ type UpdateParams struct {
 	ID                int64
 	Name              string
 	Symptoms          string
-	Ingredients       string
 	PreparationMethod string
 	Usage             string
 	Note              string
+	Herbs             []HerbRef
 }
 
 // Repository stores and reads remedies.
@@ -65,6 +78,8 @@ type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Remedy, error)
 	GetByID(ctx context.Context, id int64) (Remedy, error)
 	ListByHealer(ctx context.Context, healerID int64) ([]Remedy, error)
+	ListByHerb(ctx context.Context, herbID int64) ([]Remedy, error)
+	ListRecent(ctx context.Context, limit int32) ([]Remedy, error)
 	Update(ctx context.Context, p UpdateParams) (Remedy, error)
 	Delete(ctx context.Context, id int64) error
 }

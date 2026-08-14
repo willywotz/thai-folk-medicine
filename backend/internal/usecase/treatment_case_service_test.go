@@ -27,6 +27,9 @@ func (f *fakeCaseRepo) GetByID(context.Context, int64) (treatmentcase.TreatmentC
 func (f *fakeCaseRepo) ListByRemedy(context.Context, int64) ([]treatmentcase.TreatmentCase, error) {
 	return []treatmentcase.TreatmentCase{{ID: 1}}, nil
 }
+func (f *fakeCaseRepo) ListRecent(context.Context, int32) ([]treatmentcase.TreatmentCase, error) {
+	return []treatmentcase.TreatmentCase{{ID: 1}}, nil
+}
 func (f *fakeCaseRepo) Update(_ context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	return treatmentcase.TreatmentCase{ID: p.ID}, nil
 }
@@ -77,6 +80,12 @@ func TestCreateCaseNoEventOnRepoError(t *testing.T) {
 	_, err := NewTreatmentCaseService(&fakeCaseRepo{createErr: errors.New("db")}, pub).Create(context.Background(), validCreate())
 	require.Error(t, err)
 	assert.Empty(t, pub.events)
+}
+
+func TestListRecentCase(t *testing.T) {
+	list, err := NewTreatmentCaseService(&fakeCaseRepo{}, &caseRecorder{}).ListRecent(context.Background(), 5)
+	require.NoError(t, err)
+	assert.Len(t, list, 1)
 }
 
 func TestDeleteCasePublishesEvent(t *testing.T) {

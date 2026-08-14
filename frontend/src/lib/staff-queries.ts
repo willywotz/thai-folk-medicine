@@ -1,5 +1,6 @@
-import type { Healer, Photo, Remedy, TreatmentCase } from "@/lib/api-types";
+import type { Healer, Herb, Photo, Remedy, TreatmentCase } from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
+import type { HerbInput } from "@/lib/herb-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
 import type { TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
@@ -147,4 +148,39 @@ export async function uploadPhoto(input: {
 export async function deletePhoto(id: number): Promise<void> {
   const res = await fetch(`/bff/photos/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("cannot delete photo");
+}
+
+export const herbListKey = ["herbs"] as const;
+
+/** fetchHerbs reads the herb list through the same-origin /api proxy. */
+export async function fetchHerbs(): Promise<Herb[]> {
+  const res = await fetch(`/api/v1/herbs`, { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load herbs");
+  return (await res.json()) as Herb[];
+}
+
+/** createHerb posts a new herb through the BFF. */
+export async function createHerb(input: HerbInput): Promise<void> {
+  const res = await fetch("/bff/herbs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot create herb");
+}
+
+/** updateHerb PUTs changes to a herb through the BFF. */
+export async function updateHerb(id: number, input: HerbInput): Promise<void> {
+  const res = await fetch(`/bff/herbs/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot update herb");
+}
+
+/** deleteHerb removes a herb through the BFF. */
+export async function deleteHerb(id: number): Promise<void> {
+  const res = await fetch(`/bff/herbs/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete herb");
 }

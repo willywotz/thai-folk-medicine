@@ -85,6 +85,19 @@ func (r *TreatmentCase) ListByRemedy(ctx context.Context, remedyID int64) ([]tre
 	return result, nil
 }
 
+// ListRecent returns the most recently treated cases.
+func (r *TreatmentCase) ListRecent(ctx context.Context, limit int32) ([]treatmentcase.TreatmentCase, error) {
+	rows, err := r.q.ListRecentTreatmentCase(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]treatmentcase.TreatmentCase, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, toTreatmentCase(row))
+	}
+	return result, nil
+}
+
 // Update changes a case or returns treatmentcase.ErrNotFound.
 func (r *TreatmentCase) Update(ctx context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	row, err := r.q.UpdateTreatmentCase(ctx, db.UpdateTreatmentCaseParams{

@@ -139,6 +139,8 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   (remedies) → remedy (treatment cases). Thai typography, breadcrumbs, empty/not-found
   states. Photos render via `GET /api/v1/photos/{id}` through the `/api` proxy.
 - Public browse is read-only; no login. Run: `cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev` (with the API up).
+- The public header carries a "สำหรับเจ้าหน้าที่" (staff) link to `/staff`; the `proxy.ts`
+  guard sends visitors without a session cookie on to `/login`.
 - `withinlazy`: no photo-gallery-by-owner (needs a backend `GET /{owner}/{id}/photos`
   endpoint); breadcrumb shows a static "District" label (needs `GET /districts/{id}`).
 

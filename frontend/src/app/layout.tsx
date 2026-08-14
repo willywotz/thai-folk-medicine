@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 
+import { SearchBox } from "@/components/SearchBox";
+
 import { Providers } from "./providers";
 
 const notoThai = Noto_Sans_Thai({ subsets: ["thai", "latin"], display: "swap" });
@@ -27,6 +29,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <p className="text-sm text-stone-500">
                 Folk-medicine knowledge of Yasothon, by district
               </p>
+              <div className="mt-3">
+                <SearchBox />
+              </div>
             </div>
           </header>
           <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>

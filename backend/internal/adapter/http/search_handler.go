@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/search"
 )
@@ -42,9 +43,17 @@ type healerMatchDTO struct {
 	DistrictID  int64  `json:"districtId"`
 }
 
+type herbMatchDTO struct {
+	ID             int64  `json:"id"`
+	NameThai       string `json:"nameThai"`
+	NameEnglish    string `json:"nameEnglish"`
+	ScientificName string `json:"scientificName"`
+}
+
 type searchResponseDTO struct {
 	Remedies []remedyMatchDTO `json:"remedies"`
 	Healers  []healerMatchDTO `json:"healers"`
+	Herbs    []herbMatchDTO   `json:"herbs"`
 }
 
 func toRemedyMatchDTO(r remedy.SearchResult) remedyMatchDTO {
@@ -54,6 +63,15 @@ func toRemedyMatchDTO(r remedy.SearchResult) remedyMatchDTO {
 		Symptoms:       r.Symptoms,
 		HealerID:       r.HealerID,
 		HealerFullName: r.HealerFullName,
+	}
+}
+
+func toHerbMatchDTO(h herb.Herb) herbMatchDTO {
+	return herbMatchDTO{
+		ID:             h.ID,
+		NameThai:       h.NameThai,
+		NameEnglish:    h.NameEnglish,
+		ScientificName: h.ScientificName,
 	}
 }
 
@@ -81,12 +99,16 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	out := searchResponseDTO{
 		Remedies: make([]remedyMatchDTO, 0, len(result.Remedies)),
 		Healers:  make([]healerMatchDTO, 0, len(result.Healers)),
+		Herbs:    make([]herbMatchDTO, 0, len(result.Herbs)),
 	}
 	for _, r := range result.Remedies {
 		out.Remedies = append(out.Remedies, toRemedyMatchDTO(r))
 	}
 	for _, hh := range result.Healers {
 		out.Healers = append(out.Healers, toHealerMatchDTO(hh))
+	}
+	for _, hb := range result.Herbs {
+		out.Herbs = append(out.Herbs, toHerbMatchDTO(hb))
 	}
 	c.JSON(http.StatusOK, out)
 }

@@ -207,15 +207,14 @@ gotcha below.
 10. **Search uses `pg_trgm`, not `to_tsvector`** (Thai has no word spaces). Migrations
     `000008`–`000010` maintain the GIN trigram indexes. Search covers remedies (name,
     symptoms, and **linked herb names** via join), healers, and herbs. Minimum term is **2
-    runes** (`utf8.RuneCountInString`). NOTE: remedy-search **relevance ranking was
-    simplified** from trigram `similarity()` to `ILIKE … ORDER BY name` when the herb join
-    was added — restoring ranking is a deferred follow-up.
+    runes** (`utf8.RuneCountInString`). Remedy search **ranks by trigram `similarity()`**:
+    it `GROUP BY`s the remedy (the herb join is one-to-many) and orders by
+    `GREATEST(similarity(name), similarity(symptoms), max(similarity(herb names))) DESC`.
 
 ---
 
 ## Future work (nothing blocking; all optional)
 
-- **Restore remedy-search ranking** (`similarity()`-based) alongside the herb-name join.
 - **Herb categories/tags** and structured **herb ↔ symptom** links.
 - **Amount as a structured quantity + unit** (kept as free text today).
 - **Search follow-ups** — filter by district/field, pagination, match highlighting.

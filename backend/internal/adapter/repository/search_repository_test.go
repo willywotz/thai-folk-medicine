@@ -29,6 +29,29 @@ func TestSearchRemedyMatchesThaiSubstring(t *testing.T) {
 	assert.Equal(t, "หมอทดสอบ", got[0].HealerFullName)
 }
 
+func TestSearchRemedyRanksBySimilarity(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	queries := db.New(pool)
+	districtID := firstDistrictID(t, ctx, NewLocation(queries))
+	healerID := makeHealer(t, ctx, NewHealer(queries), districtID)
+	remedyRepo := NewRemedy(pool)
+	// Alphabetically first, but only a weak (diluted) symptoms match.
+	_, err := remedyRepo.Create(ctx, remedy.CreateParams{
+		HealerID: healerID, Name: "กระเทียมสด",
+		Symptoms: "มีไข้ตัวร้อนใช้ยาแก้ไข้ที่ดีมากสำหรับทุกคนในหมู่บ้าน",
+	})
+	require.NoError(t, err)
+	// Alphabetically last, but an exact name match (highest similarity).
+	_, err = remedyRepo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ไข้"})
+	require.NoError(t, err)
+
+	got, err := remedyRepo.Search(ctx, "ยาแก้ไข้")
+
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	assert.Equal(t, "ยาแก้ไข้", got[0].Name, "exact name match must rank first")
+}
+
 func TestSearchHealerMatchesSpecialty(t *testing.T) {
 	ctx, queries := newTestPool(t)
 	districtID := firstDistrictID(t, ctx, NewLocation(queries))

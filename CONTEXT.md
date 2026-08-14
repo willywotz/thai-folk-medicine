@@ -288,8 +288,20 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
   `docs/superpowers/specs/2026-08-15-public-zone-redesign-design.md`
   Direction "Modern Utility", province-neutral. Preview:
   https://claude.ai/code/artifact/fda8c118-958f-4b5b-82e8-300903933240
-- Public zone redesign plan (9 tasks, TDD, not yet executed):
+- Public zone redesign plan (9 tasks, TDD):
   `docs/superpowers/plans/2026-08-15-public-zone-redesign.md`
+  **Done** on branch `feat/public-zone-redesign` (built with agents, 10 commits).
+  Direction "Modern Utility", province-neutral. New design tokens in `globals.css`
+  (`--brand`, `--ink*`, `--surface*`, `--line`, `--caution`; light + dark) and a
+  heading serif (Noto Serif Thai). New shared components: `SiteHeader`, `Chip`,
+  `LinkRow`, `SectionHead`, `DetailHeader`, `ContentBlock`, `Callout`, `FactPanel`.
+  Restyled every public page (home, search, herb, remedy, healer, district) plus the
+  shared `Breadcrumb`/`EmptyState`/`not-found`. Province shows only as a facet
+  (brand names no province; browse starts province → district). Verified in the
+  browser with seeded data: light + dark themes and the province breadcrumb.
+  Deferred (needs backend/API): a `getDistrict(id)` endpoint (the district page
+  currently resolves via `listProvinces`+`listDistricts`), a province page route,
+  herb photo/richer facts, healer stat counts. The staff zone was not restyled.
 
 ## Possible future work
 

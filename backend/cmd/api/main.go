@@ -20,6 +20,7 @@ import (
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/photostore"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/token"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/search"
 )
 
 func main() {
@@ -84,12 +85,15 @@ func main() {
 	photoHandler := httpapi.NewPhotoHandler(
 		usecase.NewPhotoService(repository.NewPhoto(queries), photoStore, bus),
 	)
+	searchHandler := httpapi.NewSearchHandler(
+		search.NewService(repository.NewRemedy(queries), repository.NewHealer(queries)),
+	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

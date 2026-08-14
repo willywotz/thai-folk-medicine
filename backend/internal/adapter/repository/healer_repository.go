@@ -106,3 +106,16 @@ func (r *Healer) Delete(ctx context.Context, id int64) error {
 	}
 	return nil
 }
+
+// Search returns healers whose name, specialty, biography, or sub-district match the term.
+func (r *Healer) Search(ctx context.Context, term string) ([]healer.Healer, error) {
+	rows, err := r.q.SearchHealer(ctx, term)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]healer.Healer, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, toHealer(row))
+	}
+	return result, nil
+}

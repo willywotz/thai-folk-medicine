@@ -115,6 +115,50 @@ func (q *Queries) ListHealerByDistrict(ctx context.Context, districtID int64) ([
 	return items, nil
 }
 
+const searchHealer = `-- name: SearchHealer :many
+SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
+FROM healer
+WHERE full_name ILIKE '%' || $1::text || '%'
+   OR specialty ILIKE '%' || $1::text || '%'
+   OR biography ILIKE '%' || $1::text || '%'
+   OR sub_district ILIKE '%' || $1::text || '%'
+ORDER BY GREATEST(
+    similarity(full_name, $1::text),
+    similarity(specialty, $1::text),
+    similarity(biography, $1::text),
+    similarity(sub_district, $1::text)
+) DESC, full_name
+`
+
+func (q *Queries) SearchHealer(ctx context.Context, searchTerm string) ([]Healer, error) {
+	rows, err := q.db.Query(ctx, searchHealer, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Healer{}
+	for rows.Next() {
+		var i Healer
+		if err := rows.Scan(
+			&i.ID,
+			&i.DistrictID,
+			&i.FullName,
+			&i.SubDistrict,
+			&i.Specialty,
+			&i.Biography,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateHealer = `-- name: UpdateHealer :one
 UPDATE healer
 SET district_id = $2, full_name = $3, sub_district = $4, specialty = $5, biography = $6, updated_at = now()

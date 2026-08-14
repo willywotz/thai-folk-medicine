@@ -18,6 +18,7 @@ and plans under `docs/superpowers/`.
 - Public browse site (Next.js, server-rendered) — done.
 - Staff admin (Next.js) — login + full CRUD for healers, remedies, treatment cases, and
   photos — done.
+- Public search (remedies + healers, Thai-friendly `pg_trgm`) — done.
 - Root `docker-compose.yml` runs the whole stack and is verified end to end.
 
 **Nothing has been pushed to a remote.** There is no git remote configured. Everything
@@ -82,7 +83,9 @@ domain event through an in-process bus; an audit handler logs each one.
 
 **Frontend (`frontend/`, Next.js App Router + TypeScript, Tailwind)**
 
-- **Public pages** are React Server Components that read the Go API server-side.
+- **Public pages** are React Server Components that read the Go API server-side. This
+  includes `/search` — one box, two result groups (remedies → `/remedies/{id}`, healers →
+  `/healers/{id}`); a `SearchBox` also sits in the site header.
 - **Staff pages** (`/staff/*`, guarded by `src/proxy.ts`) use TanStack Query +
   react-hook-form + zod + shadcn/ui.
 - **Auth is a BFF pattern.** The JWT lives ONLY in an httpOnly `session` cookie. Login and
@@ -166,12 +169,20 @@ the gotcha below.
    multi-instance safe — swap for S3/MinIO before scaling horizontally.
 7. **Delete conflicts return 409:** deleting a healer/remedy that still has children maps
    the Postgres FK violation to a domain `ErrReferenced`; the UI surfaces it.
+8. **Search uses `pg_trgm`, not `to_tsvector`.** Thai has no spaces between words, so
+   Postgres full-text dictionaries segment it wrongly. The search (`GET /api/v1/search`,
+   migration `000008`) matches on character trigrams instead — language-agnostic, ranked by
+   `similarity()`, backed by GIN indexes. The minimum term is **2 runes** (counted with
+   `utf8.RuneCountInString`, not byte length — one Thai character is 3 bytes); a shorter
+   term returns 400. The search reader interfaces live in `usecase/search` (consumer side),
+   not on the aggregate `Repository` interfaces.
 
 ---
 
 ## Future work (nothing blocking; all optional)
 
-- **Search** by symptom or herb (public search box + a backend query endpoint).
+- **Search follow-ups** — filter by district/field, pagination, and match highlighting
+  (all deliberately out of scope for the first search cut).
 - **`GET /districts/{id}`** so staff breadcrumbs can show the district name (currently a
   static "District" label).
 - **S3 / MinIO** photo store to replace local disk before horizontal scaling.
@@ -186,7 +197,7 @@ the gotcha below.
 - Design spec: `docs/superpowers/specs/2026-08-13-thai-folk-medicine-design.md`
 - Plans (one per increment): `docs/superpowers/plans/` (backend foundation, healer + events,
   remedy + case, auth + photos, public frontend, staff healer admin, staff remedy/case
-  admin, photo management).
+  admin, photo management, search by symptom/herb).
 - SDD ledgers / per-task reports: `.superpowers/sdd/` (git-ignored scratch — useful history
   of what each task did and every ruling made).
 - System reference: `CONTEXT.md`.

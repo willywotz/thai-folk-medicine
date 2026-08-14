@@ -33,6 +33,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+        restart: true
     volumes:
       - photo_data:/data/photo
     expose:

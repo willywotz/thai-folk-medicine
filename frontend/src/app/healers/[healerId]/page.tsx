@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { ContentBlock } from "@/components/ContentBlock";
 import { EmptyState } from "@/components/EmptyState";
-import { RecordCard } from "@/components/RecordCard";
+import { LinkRow } from "@/components/LinkRow";
+import { SectionHead } from "@/components/SectionHead";
 import { getHealer, listRemediesByHealer } from "@/lib/api";
 
 export default async function HealerPage({
@@ -23,26 +25,35 @@ export default async function HealerPage({
     <section>
       <Breadcrumb
         items={[
-          { label: "Home", href: "/" },
-          { label: "District", href: `/districts/${healer.districtId}` },
+          { label: "หน้าแรก", href: "/" },
+          { label: "หมอพื้นบ้าน" },
           { label: healer.fullName },
         ]}
       />
-      <h1 className="text-2xl font-bold">{healer.fullName}</h1>
-      {healer.specialty ? (
-        <p className="mt-1 text-stone-600">ความชำนาญ: {healer.specialty}</p>
-      ) : null}
+      <div className="flex flex-wrap items-center gap-4">
+        <span className="grid h-16 w-16 place-items-center rounded-full border border-brand bg-brand-tint font-serif text-2xl text-brand-strong">
+          {healer.fullName.slice(0, 1)}
+        </span>
+        <div>
+          <h1 className="font-serif text-2xl text-ink">{healer.fullName}</h1>
+          <p className="text-ink-soft">
+            {[healer.specialty, healer.subDistrict].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+      </div>
       {healer.biography ? (
-        <p className="mt-4 whitespace-pre-line text-stone-700">{healer.biography}</p>
+        <ContentBlock titleThai="ประวัติ" titleEnglish="Biography">
+          {healer.biography}
+        </ContentBlock>
       ) : null}
 
-      <h2 className="mb-3 mt-8 text-xl font-semibold">Remedies (ตำรับยา)</h2>
+      <SectionHead titleThai="ตำรับยาของหมอ" titleEnglish="Remedies" />
       {remedies.length === 0 ? (
         <EmptyState message="No remedies recorded for this healer yet." />
       ) : (
-        <div className="grid gap-3">
+        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
           {remedies.map((r) => (
-            <RecordCard key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
+            <LinkRow key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
           ))}
         </div>
       )}

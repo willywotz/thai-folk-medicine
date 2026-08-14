@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai } from "next/font/google";
+import { Noto_Sans_Thai, Noto_Serif_Thai } from "next/font/google";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -9,7 +9,16 @@ import { SearchBox } from "@/components/SearchBox";
 
 import { Providers } from "./providers";
 
-const notoThai = Noto_Sans_Thai({ subsets: ["thai", "latin"], display: "swap" });
+const notoThai = Noto_Sans_Thai({
+  subsets: ["thai", "latin"],
+  display: "swap",
+  variable: "--font-noto-sans-thai",
+});
+const notoSerifThai = Noto_Serif_Thai({
+  subsets: ["thai", "latin"],
+  display: "swap",
+  variable: "--font-noto-serif-thai",
+});
 
 export const metadata: Metadata = {
   title: "ตำรายาหมอพื้นบ้านยโสธร",
@@ -19,7 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="th">
-      <body className={`${notoThai.className} bg-stone-100 text-stone-900`}>
+      <body className={`${notoThai.variable} ${notoSerifThai.variable} ${notoThai.className} bg-bg text-ink`}>
         <Providers>
           <header className="border-b border-stone-200 bg-white">
             <div className="mx-auto max-w-3xl px-4 py-4">

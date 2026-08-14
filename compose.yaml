@@ -1,10 +1,3 @@
-# Full stack: Postgres + Go API + Next.js.
-# Run from the repo root:  docker compose up --build
-# Then open http://localhost:3000  (API on http://localhost:8080)
-#
-# Override the secrets in a root .env file or the shell before running:
-#   JWT_SECRET, STAFF_ADMIN_USERNAME, STAFF_ADMIN_PASSWORD
-
 services:
   postgres:
     image: postgres:17
@@ -36,12 +29,6 @@ services:
         restart: true
     volumes:
       - photo_data:/data/photo
-    expose:
-      - "8080"
-    # The frontend reaches the API over the compose network, so no host port is
-    # needed. Uncomment to hit the API directly from the host:
-    # ports:
-    #   - "8080:8080"
 
   # One-shot demo-data loader. Not started by `up`; run it on demand:
   #   docker compose --profile seed run --rm seed          # fill an empty DB

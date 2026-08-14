@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:17
+    restart: unless-stopped
     environment:
       POSTGRES_USER: folk
       POSTGRES_PASSWORD: folk
@@ -15,6 +16,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     environment:
       HTTP_PORT: "8080"
       DATABASE_URL: postgres://folk:folk@postgres:5432/folk_medicine?sslmode=disable
@@ -53,6 +55,7 @@ services:
     build:
       context: ./frontend
       target: production
+    restart: unless-stopped
     environment:
       INTERNAL_API_URL: http://backend:8080
     depends_on:

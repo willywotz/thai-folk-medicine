@@ -63,6 +63,9 @@ func main() {
 	bus.Subscribe("treatmentcase.deleted", auditHandler(logger))
 	bus.Subscribe("photo.created", auditHandler(logger))
 	bus.Subscribe("photo.deleted", auditHandler(logger))
+	bus.Subscribe("herb.created", auditHandler(logger))
+	bus.Subscribe("herb.updated", auditHandler(logger))
+	bus.Subscribe("herb.deleted", auditHandler(logger))
 
 	photoStore, err := photostore.NewLocal(cfg.PhotoStorageDir)
 	if err != nil {
@@ -88,12 +91,15 @@ func main() {
 	searchHandler := httpapi.NewSearchHandler(
 		search.NewService(repository.NewRemedy(queries), repository.NewHealer(queries)),
 	)
+	herbHandler := httpapi.NewHerbHandler(
+		usecase.NewHerbService(repository.NewHerb(queries), bus),
+	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

@@ -9,11 +9,12 @@ import (
 	"time"
 )
 
-// Owner-type values. A photo belongs to a healer, a remedy, or a case.
+// Owner-type values. A photo belongs to a healer, a remedy, a case, or a herb.
 const (
 	OwnerHealer = "healer"
 	OwnerRemedy = "remedy"
 	OwnerCase   = "case"
+	OwnerHerb   = "herb"
 )
 
 // ErrNotFound means no photo has the given id.
@@ -21,7 +22,7 @@ var ErrNotFound = errors.New("photo not found")
 
 // ValidOwnerType reports whether t is a known owner type.
 func ValidOwnerType(t string) bool {
-	return t == OwnerHealer || t == OwnerRemedy || t == OwnerCase
+	return t == OwnerHealer || t == OwnerRemedy || t == OwnerCase || t == OwnerHerb
 }
 
 // Photo is one stored image linked to a healer, remedy, or case.

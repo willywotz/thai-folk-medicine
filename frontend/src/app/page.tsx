@@ -1,89 +1,82 @@
-import Link from "next/link";
-
+import { Chip } from "@/components/Chip";
 import { EmptyState } from "@/components/EmptyState";
+import { LinkRow } from "@/components/LinkRow";
 import { RecordCard } from "@/components/RecordCard";
 import { SearchBox } from "@/components/SearchBox";
+import { SectionHead } from "@/components/SectionHead";
 import { formatThaiDate } from "@/lib/format";
-import { listHerbs, listRecentCases, listRecentRemedies } from "@/lib/api";
+import { listHerbs, listProvinces, listRecentCases, listRecentRemedies } from "@/lib/api";
 
 export default async function HomePage() {
-  const [herbs, remedies, cases] = await Promise.all([
+  const [herbs, remedies, cases, provinces] = await Promise.all([
     listHerbs(),
     listRecentRemedies(6),
     listRecentCases(6),
+    listProvinces(),
   ]);
 
   return (
-    <section className="space-y-10">
-      <div>
-        <h1 className="mb-1 text-2xl font-bold">ตำรายาหมอพื้นบ้าน ยโสธร</h1>
-        <p className="mb-4 text-stone-500">ค้นหาสมุนไพรและตำรับยา (search herbs and remedies)</p>
-        <SearchBox />
+    <section>
+      <div className="py-8 text-center">
+        <h1 className="mb-1.5 font-serif text-3xl text-ink">ค้นหาสมุนไพรและตำรับยาพื้นบ้าน</h1>
+        <p className="mb-5 text-ink-soft">Folk herbs, remedies, and healers — recorded from local wisdom</p>
+        <div className="mx-auto max-w-xl">
+          <SearchBox />
+        </div>
       </div>
 
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">สมุนไพร (Herbs)</h2>
-          <Link href="/herbs" className="text-sm text-stone-600 underline">
-            see all →
-          </Link>
+      <SectionHead titleThai="สมุนไพร" titleEnglish="Herbs" href="/herbs" />
+      {herbs.length === 0 ? (
+        <EmptyState message="No herbs yet." />
+      ) : (
+        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+          {herbs.slice(0, 4).map((h) => (
+            <RecordCard key={h.id} href={`/herbs/${h.id}`} title={h.nameThai} subtitle={h.nameEnglish} />
+          ))}
         </div>
-        {herbs.length === 0 ? (
-          <EmptyState message="No herbs yet." />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {herbs.slice(0, 6).map((h) => (
-              <RecordCard key={h.id} href={`/herbs/${h.id}`} title={h.nameThai} subtitle={h.nameEnglish} />
+      )}
+
+      <SectionHead titleThai="ตำรับยา" titleEnglish="Remedies" href="/remedies" />
+      {remedies.length === 0 ? (
+        <EmptyState message="No remedies yet." />
+      ) : (
+        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          {remedies.map((r) => (
+            <LinkRow key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
+          ))}
+        </div>
+      )}
+
+      <SectionHead titleThai="เคสการรักษาล่าสุด" titleEnglish="Recent cases" />
+      {cases.length === 0 ? (
+        <EmptyState message="No cases yet." />
+      ) : (
+        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          {cases.map((c) => (
+            <LinkRow
+              key={c.id}
+              href={`/remedies/${c.remedyId}`}
+              icon="✚"
+              title={c.symptoms || "—"}
+              subtitle={`รักษาด้วยตำรับ #${c.remedyId}`}
+              meta={formatThaiDate(c.treatedOn)}
+            />
+          ))}
+        </div>
+      )}
+
+      {provinces.length > 0 ? (
+        <>
+          <SectionHead titleThai="เลือกตามพื้นที่" titleEnglish="By area" href="/districts" />
+          <div className="flex flex-wrap gap-2">
+            {provinces.map((p) => (
+              <Chip key={p.id} href="/districts">
+                {p.nameThai}
+              </Chip>
             ))}
           </div>
-        )}
-      </div>
-
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">ตำรับยา (Remedies)</h2>
-          <Link href="/remedies" className="text-sm text-stone-600 underline">
-            see all →
-          </Link>
-        </div>
-        {remedies.length === 0 ? (
-          <EmptyState message="No remedies yet." />
-        ) : (
-          <div className="grid gap-3">
-            {remedies.map((r) => (
-              <RecordCard key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">เคสการรักษา (Cases)</h2>
-          <Link href="/treatment-cases" className="text-sm text-stone-600 underline">
-            see all →
-          </Link>
-        </div>
-        {cases.length === 0 ? (
-          <EmptyState message="No cases yet." />
-        ) : (
-          <ul className="grid gap-3">
-            {cases.map((c) => (
-              <li key={c.id} className="rounded-lg border border-stone-200 bg-white p-4">
-                <Link href={`/remedies/${c.remedyId}`} className="text-sm text-stone-700 hover:underline">
-                  {formatThaiDate(c.treatedOn)} · {c.symptoms || "—"}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <p className="text-sm text-stone-500">
-        <Link href="/districts" className="underline">
-          เลือกตามอำเภอ (browse by district) →
-        </Link>
-      </p>
+        </>
+      ) : null}
     </section>
   );
 }

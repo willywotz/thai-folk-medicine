@@ -140,7 +140,10 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   states. Photos render via `GET /api/v1/photos/{id}` through the `/api` proxy.
 - Public browse is read-only; no login. Run: `cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev` (with the API up).
 - The public header carries a "สำหรับเจ้าหน้าที่" (staff) link to `/staff`; the `proxy.ts`
-  guard sends visitors without a session cookie on to `/login`.
+  guard sends visitors without a session cookie on to `/login`, and sends logged-in
+  visitors who hit `/login` on to `/staff`. The staff link uses `prefetch={false}` so each
+  click revalidates against the guard with the current cookie (a prefetched auth-gated link
+  otherwise caches the redirect from whichever auth state existed at prefetch time).
 - `withinlazy`: no photo-gallery-by-owner (needs a backend `GET /{owner}/{id}/photos`
   endpoint); breadcrumb shows a static "District" label (needs `GET /districts/{id}`).
 

@@ -29,6 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </Link>
                 <Link
                   href="/staff"
+                  prefetch={false}
                   className="shrink-0 rounded-md border border-stone-300 px-3 py-1 text-sm text-stone-600 hover:bg-stone-100"
                 >
                   สำหรับเจ้าหน้าที่

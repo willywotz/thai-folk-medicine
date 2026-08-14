@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/** Redirects /staff/* requests without a session cookie to /login. */
+/**
+ * Auth routing for the staff area:
+ * - /staff/* without a session cookie redirects to /login.
+ * - /login with a session cookie redirects to /staff (already logged in).
+ */
 export function proxy(request: NextRequest) {
-  if (request.cookies.has("session")) {
+  const hasSession = request.cookies.has("session");
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/login") {
+    if (!hasSession) {
+      return NextResponse.next();
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/staff";
+    return NextResponse.redirect(url);
+  }
+
+  if (hasSession) {
     return NextResponse.next();
   }
   const url = request.nextUrl.clone();
@@ -12,5 +28,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/staff/:path*"],
+  matcher: ["/staff/:path*", "/login"],
 };

@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build: { target: development }
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+        - action: rebuild
+          path: ./frontend/bun.lock
+        - action: rebuild
+          path: ./frontend/package.json

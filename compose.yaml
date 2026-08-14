@@ -25,11 +25,11 @@ services:
     environment:
       HTTP_PORT: "8080"
       DATABASE_URL: postgres://folk:folk@postgres:5432/folk_medicine?sslmode=disable
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_SECRET: ${JWT_SECRET:-c24bc986db26a21c5de579f158ef78d4e370a7527648516b1f3ac473d9e600a2}
       PHOTO_STORAGE_DIR: /data/photo
       STAFF_ADMIN_USERNAME: ${STAFF_ADMIN_USERNAME:-admin}
-      STAFF_ADMIN_PASSWORD: ${STAFF_ADMIN_PASSWORD:-change-me}
-      STAFF_ADMIN_EMAIL: ${STAFF_ADMIN_EMAIL:-admin@example.local}
+      STAFF_ADMIN_PASSWORD: ${STAFF_ADMIN_PASSWORD:-admin}
+      STAFF_ADMIN_EMAIL: ${STAFF_ADMIN_EMAIL:-admin@example.com}
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,7 +51,7 @@ services:
     entrypoint: ["/usr/local/bin/seed"]
     environment:
       DATABASE_URL: postgres://folk:folk@postgres:5432/folk_medicine?sslmode=disable
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_SECRET: ${JWT_SECRET:-c24bc986db26a21c5de579f158ef78d4e370a7527648516b1f3ac473d9e600a2}
       PHOTO_STORAGE_DIR: /data/photo
     depends_on:
       postgres:
@@ -64,9 +64,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        # Baked into the /api rewrite AND used at runtime by the server components.
-        INTERNAL_API_URL: http://backend:8080
+      target: production
     environment:
       INTERNAL_API_URL: http://backend:8080
     depends_on:

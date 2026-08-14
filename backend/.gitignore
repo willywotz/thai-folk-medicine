@@ -1,0 +1,6 @@
+# compiled command binaries
+/seed
+/api
+
+# runtime photo storage (local-disk photo.Store)
+/storage/

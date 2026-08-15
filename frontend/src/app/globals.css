@@ -169,4 +169,10 @@
   html {
     @apply font-sans;
   }
+  a,
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="link"] {
+    cursor: pointer;
+  }
 }

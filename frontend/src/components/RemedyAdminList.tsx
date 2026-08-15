@@ -6,21 +6,27 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
-import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { deleteRemedy, fetchRemedies, remedyListKey } from "@/lib/staff-queries";
 
-export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "fullName">[] }) {
+export function RemedyAdminList({
+  healers,
+  healerId,
+}: {
+  healers: Pick<Healer, "id" | "fullName">[];
+  healerId?: number;
+}) {
   const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: remedies, isLoading, isError } = useQuery({
-    queryKey: remedyListKey(),
-    queryFn: () => fetchRemedies(),
+    queryKey: remedyListKey(healerId),
+    queryFn: () => fetchRemedies(healerId),
   });
 
   const remove = useMutation({
     mutationFn: deleteRemedy,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) }),
   });
 
   const healerName = (id: number) => healers.find((h) => h.id === id)?.fullName ?? "—";
@@ -39,7 +45,10 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
         <span className="text-sm text-ink-faint">
           {shown.length} {shown.length === 1 ? "remedy" : "remedies"}
         </span>
-        <Link href="/staff/remedies/new" className={btnPrimary}>
+        <Link
+          href={healerId !== undefined ? `/staff/remedies/new?healerId=${healerId}` : "/staff/remedies/new"}
+          className={btnPrimary}
+        >
           <span aria-hidden>+</span> New remedy
         </Link>
       </div>
@@ -59,8 +68,13 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{r.name}</p>
-                <p className="truncate text-sm text-ink-soft">{healerName(r.healerId)}</p>
+                {healerId === undefined ? (
+                  <p className="truncate text-sm text-ink-soft">{healerName(r.healerId)}</p>
+                ) : null}
               </div>
+              <Link href={`/staff/remedies/${r.id}/treatment-cases`} className={linkAction}>
+                Cases
+              </Link>
               <Link
                 href={`/staff/remedies/${r.id}/edit`}
                 aria-label={`Edit ${r.name}`}

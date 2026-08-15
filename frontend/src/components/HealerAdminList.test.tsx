@@ -29,6 +29,10 @@ describe("HealerAdminList", () => {
     renderWithClient(<HealerAdminList districts={districts} />);
     const row = (await screen.findByText("หมอ ก")).closest("li")!;
     expect(within(row).getByText(/Mueang/)).toBeInTheDocument();
+    expect(within(row).getByRole("link", { name: /remedies/i })).toHaveAttribute(
+      "href",
+      "/staff/healers/1/remedies",
+    );
     expect(screen.getByRole("link", { name: /edit/i })).toHaveAttribute(
       "href",
       "/staff/healers/1/edit",

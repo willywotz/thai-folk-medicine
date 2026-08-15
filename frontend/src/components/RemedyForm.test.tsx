@@ -92,6 +92,12 @@ describe("RemedyForm (create)", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/remedies"));
   });
 
+  it("defaults the healer combobox to defaultHealerId when creating from a healer's drill-in page", () => {
+    vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
+    renderWithClient(<RemedyForm healerOptions={healerOptions} defaultHealerId={3} />);
+    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมหญิง · แม่ริม · เชียงใหม่");
+  });
+
   it("defaults the healer combobox to the remedy's current healer when editing", () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
     const remedy = {

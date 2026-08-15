@@ -2,7 +2,13 @@ import { RemedyForm } from "@/components/RemedyForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getFirstProvince, listDistricts, listHealers } from "@/lib/api";
 
-export default async function NewRemedyPage() {
+export default async function NewRemedyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ healerId?: string }>;
+}) {
+  const { healerId } = await searchParams;
+  const defaultHealerId = healerId && Number.isInteger(Number(healerId)) ? Number(healerId) : undefined;
   // withinlazy: pageSize 48 caps the healer picker; add real staff pagination
   // if a province ever has more than 48 healers.
   const { items: healers } = await listHealers({ pageSize: 48 });
@@ -21,7 +27,7 @@ export default async function NewRemedyPage() {
         eyebrow="new record"
         title="Add a remedy"
       />
-      <RemedyForm healerOptions={healerOptions} />
+      <RemedyForm healerOptions={healerOptions} defaultHealerId={defaultHealerId} />
     </section>
   );
 }

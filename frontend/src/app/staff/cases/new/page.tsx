@@ -2,7 +2,13 @@ import { CaseForm } from "@/components/CaseForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getFirstProvince, listDistricts, listHealers, listRemedies } from "@/lib/api";
 
-export default async function NewCasePage() {
+export default async function NewCasePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ remedyId?: string }>;
+}) {
+  const { remedyId } = await searchParams;
+  const defaultRemedyId = remedyId && Number.isInteger(Number(remedyId)) ? Number(remedyId) : undefined;
   // withinlazy: pageSize 48 caps the remedy picker; add real staff pagination
   // if the catalog ever has more than 48 remedies.
   const { items: remedies } = await listRemedies({ pageSize: 48 });
@@ -29,7 +35,7 @@ export default async function NewCasePage() {
         eyebrow="new record"
         title="Add a treatment case"
       />
-      <CaseForm remedyOptions={remedyOptions} />
+      <CaseForm remedyOptions={remedyOptions} defaultRemedyId={defaultRemedyId} />
     </section>
   );
 }

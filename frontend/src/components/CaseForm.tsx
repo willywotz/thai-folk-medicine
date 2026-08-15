@@ -22,13 +22,17 @@ type CaseFormValues = z.input<typeof treatmentCaseSchema>;
 export function CaseForm({
   treatmentCase,
   remedyOptions,
+  defaultRemedyId,
 }: {
   treatmentCase?: TreatmentCase;
   remedyOptions: { value: number; label: string; healerId: number }[];
+  defaultRemedyId?: number;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [remedyId, setRemedyId] = useState(treatmentCase?.remedyId ?? remedyOptions[0]?.value ?? 0);
+  const [remedyId, setRemedyId] = useState(
+    treatmentCase?.remedyId ?? defaultRemedyId ?? remedyOptions[0]?.value ?? 0,
+  );
   const {
     register,
     handleSubmit,

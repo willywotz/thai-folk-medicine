@@ -9,17 +9,24 @@ import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel }
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
 import { caseListKey, deleteCase, fetchCases } from "@/lib/staff-queries";
 
-export function CaseAdminList({ remedies }: { remedies: { id: number; name: string; healerId: number }[] }) {
-  const [remedyId, setRemedyId] = useState<number | undefined>(undefined);
+export function CaseAdminList({
+  remedies,
+  remedyId,
+}: {
+  remedies: { id: number; name: string; healerId: number }[];
+  remedyId?: number;
+}) {
+  const [filterRemedyId, setFilterRemedyId] = useState<number | undefined>(undefined);
+  const scopedRemedyId = remedyId ?? filterRemedyId;
   const queryClient = useQueryClient();
   const { data: cases, isLoading, isError } = useQuery({
-    queryKey: caseListKey(remedyId),
-    queryFn: () => fetchCases(remedyId),
+    queryKey: caseListKey(scopedRemedyId),
+    queryFn: () => fetchCases(scopedRemedyId),
   });
 
   const remove = useMutation({
     mutationFn: deleteCase,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: caseListKey(remedyId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: caseListKey(scopedRemedyId) }),
   });
 
   const remedyName = (id: number) => remedies.find((r) => r.id === id)?.name ?? "—";
@@ -30,28 +37,33 @@ export function CaseAdminList({ remedies }: { remedies: { id: number; name: stri
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <label htmlFor="remedyFilter" className={staffLabel}>
-            Remedy
-          </label>
-          <select
-            id="remedyFilter"
-            className={staffField}
-            value={remedyId ?? ""}
-            onChange={(e) => setRemedyId(e.target.value ? Number(e.target.value) : undefined)}
-          >
-            <option value="">All remedies</option>
-            {remedies.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {remedyId === undefined ? (
+          <div className="flex items-center gap-2">
+            <label htmlFor="remedyFilter" className={staffLabel}>
+              Remedy
+            </label>
+            <select
+              id="remedyFilter"
+              className={staffField}
+              value={filterRemedyId ?? ""}
+              onChange={(e) => setFilterRemedyId(e.target.value ? Number(e.target.value) : undefined)}
+            >
+              <option value="">All remedies</option>
+              {remedies.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <span className="text-sm text-ink-faint">
           {cases?.length ?? 0} {cases?.length === 1 ? "case" : "cases"}
         </span>
-        <Link href="/staff/cases/new" className={btnPrimary}>
+        <Link
+          href={remedyId !== undefined ? `/staff/cases/new?remedyId=${remedyId}` : "/staff/cases/new"}
+          className={btnPrimary}
+        >
           <span aria-hidden>+</span> New treatment case
         </Link>
       </div>
@@ -69,7 +81,9 @@ export function CaseAdminList({ remedies }: { remedies: { id: number; name: stri
                 <p className="truncate font-medium text-ink">
                   {formatThaiDate(c.treatedOn)} · {patientSexLabel(c.patientSex)}, age {c.patientAge}
                 </p>
-                <p className="truncate text-sm text-ink-soft">{remedyName(c.remedyId)}</p>
+                {remedyId === undefined ? (
+                  <p className="truncate text-sm text-ink-soft">{remedyName(c.remedyId)}</p>
+                ) : null}
                 {c.result ? <p className="truncate text-sm text-ink-soft">{c.result}</p> : null}
               </div>
               <Link

@@ -89,4 +89,31 @@ describe("CaseAdminList", () => {
     renderWithClient(<CaseAdminList remedies={remedies} />);
     expect(await screen.findByText(/no treatment cases/i)).toBeInTheDocument();
   });
+
+  it("scoped to a remedy: fetches that remedy's cases, hides the remedy column, and links + New to the remedy", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push(url);
+        return {
+          ok: true,
+          json: async () => ({
+            items: [
+              { id: 8, remedyId: 5, healerId: 2, patientAge: 40, patientSex: "female", treatedOn: "2026-03-01", symptoms: "", result: "", note: "" },
+            ],
+            page: 1, pageSize: 48, total: 1, totalPages: 1,
+          }),
+        };
+      }) as unknown as typeof fetch,
+    );
+    renderWithClient(<CaseAdminList remedies={remedies} remedyId={5} />);
+    const row = (await screen.findByText(/1 March 2026/i)).closest("li")!;
+    expect(within(row).queryByText("ยาต้ม")).not.toBeInTheDocument();
+    expect(calls).toContain("/api/v1/remedies/5/treatment-cases?pageSize=48");
+    expect(screen.getByRole("link", { name: /new treatment case/i })).toHaveAttribute(
+      "href",
+      "/staff/cases/new?remedyId=5",
+    );
+  });
 });

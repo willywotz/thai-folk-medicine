@@ -63,6 +63,11 @@ describe("CaseForm (create)", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/cases"));
   });
 
+  it("defaults the remedy combobox to defaultRemedyId when creating from a remedy's drill-in page", () => {
+    renderWithClient(<CaseForm remedyOptions={remedyOptions} defaultRemedyId={6} />);
+    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาพอก · หมอสมหญิง · แม่ริม · เชียงใหม่");
+  });
+
   it("defaults the remedy combobox to the case's current remedy when editing", () => {
     vi.stubGlobal(
       "fetch",

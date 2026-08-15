@@ -326,6 +326,12 @@ District 1:n Healer stays.)
   renders inside each edit form (a sibling card — it has its own `<form>`, so not nested). Herb
   rows link to `/staff/herbs/{id}` listing remedies that use the herb. Province edit page also
   manages its districts.
+- **Drill-in (hybrid nav):** healer rows link to `/staff/healers/{id}/remedies` and remedy rows
+  to `/staff/remedies/{id}/treatment-cases` — scoped CRUD pages that reuse `RemedyAdminList`/
+  `CaseAdminList` with an optional `healerId`/`remedyId` prop (scopes the fetch, hides the
+  parent column, and its `+ New` link pre-selects the parent via `?healerId=`/`?remedyId=`,
+  which the new-forms read as `defaultHealerId`/`defaultRemedyId`). The flat top-level sections
+  remain.
 
 ## How to run
 

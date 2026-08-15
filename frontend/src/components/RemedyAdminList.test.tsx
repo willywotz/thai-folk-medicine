@@ -29,6 +29,10 @@ describe("RemedyAdminList", () => {
     renderWithClient(<RemedyAdminList healers={healers} />);
     const row = (await screen.findByText("ยาต้ม")).closest("li")!;
     expect(within(row).getByText("หมอสมชาย")).toBeInTheDocument();
+    expect(within(row).getByRole("link", { name: /cases/i })).toHaveAttribute(
+      "href",
+      "/staff/remedies/5/treatment-cases",
+    );
     expect(screen.getByRole("link", { name: /edit/i })).toHaveAttribute(
       "href",
       "/staff/remedies/5/edit",
@@ -71,5 +75,24 @@ describe("RemedyAdminList", () => {
     );
     renderWithClient(<RemedyAdminList healers={healers} />);
     expect(await screen.findByText(/no remedies/i)).toBeInTheDocument();
+  });
+
+  it("scoped to a healer: fetches that healer's remedies, hides the healer column, and links + New to the healer", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push(url);
+        return { ok: true, json: async () => ({ items: [{ id: 5, healerId: 2, name: "ยาต้ม" }], page: 1, pageSize: 48, total: 1, totalPages: 1 }) };
+      }) as unknown as typeof fetch,
+    );
+    renderWithClient(<RemedyAdminList healers={healers} healerId={2} />);
+    const row = (await screen.findByText("ยาต้ม")).closest("li")!;
+    expect(within(row).queryByText("หมอสมชาย")).not.toBeInTheDocument();
+    expect(calls).toContain("/api/v1/healers/2/remedies?pageSize=48");
+    expect(screen.getByRole("link", { name: /new remedy/i })).toHaveAttribute(
+      "href",
+      "/staff/remedies/new?healerId=2",
+    );
   });
 });

@@ -17,13 +17,17 @@ import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
 export function RemedyForm({
   remedy,
   healerOptions,
+  defaultHealerId,
 }: {
   remedy?: Remedy;
   healerOptions: { value: number; label: string }[];
+  defaultHealerId?: number;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [healerId, setHealerId] = useState(remedy?.healerId ?? healerOptions[0]?.value ?? 0);
+  const [healerId, setHealerId] = useState(
+    remedy?.healerId ?? defaultHealerId ?? healerOptions[0]?.value ?? 0,
+  );
   const [herbs, setHerbs] = useState(
     remedy?.herbs?.map((h) => ({ herbId: h.herbId, amount: h.amount })) ?? [],
   );

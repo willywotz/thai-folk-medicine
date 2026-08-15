@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
-import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
 
@@ -67,6 +67,9 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
                   {h.specialty ? ` · ${h.specialty}` : ""}
                 </p>
               </div>
+              <Link href={`/staff/healers/${h.id}/remedies`} className={linkAction}>
+                Remedies
+              </Link>
               <Link
                 href={`/staff/healers/${h.id}/edit`}
                 aria-label={`Edit ${h.fullName}`}

@@ -238,25 +238,6 @@ func (r *Remedy) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Search returns remedies whose name, symptoms, or linked herb names match.
-func (r *Remedy) Search(ctx context.Context, term string) ([]remedy.SearchResult, error) {
-	rows, err := r.q.SearchRemedy(ctx, term)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]remedy.SearchResult, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, remedy.SearchResult{
-			ID:             row.ID,
-			Name:           row.Name,
-			Symptoms:       row.Symptoms,
-			HealerID:       row.HealerID,
-			HealerFullName: row.HealerFullName,
-		})
-	}
-	return result, nil
-}
-
 func insertHerbLinks(ctx context.Context, qtx *db.Queries, remedyID int64, refs []remedy.HerbRef) error {
 	for i, ref := range refs {
 		if err := qtx.InsertRemedyHerb(ctx, db.InsertRemedyHerbParams{

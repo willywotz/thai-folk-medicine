@@ -44,15 +44,6 @@ type Remedy struct {
 	UpdatedAt         time.Time
 }
 
-// SearchResult is a remedy match with its healer's name, for search listings.
-type SearchResult struct {
-	ID             int64
-	Name           string
-	Symptoms       string
-	HealerID       int64
-	HealerFullName string
-}
-
 // CreateParams holds the fields to create a remedy.
 type CreateParams struct {
 	HealerID          int64

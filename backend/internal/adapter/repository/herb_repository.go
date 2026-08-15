@@ -120,16 +120,3 @@ func (r *Herb) Delete(ctx context.Context, id int64) error {
 	}
 	return nil
 }
-
-// Search returns herbs whose names or properties match the term.
-func (r *Herb) Search(ctx context.Context, term string) ([]herb.Herb, error) {
-	rows, err := r.q.SearchHerb(ctx, term)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]herb.Herb, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, toHerb(row))
-	}
-	return result, nil
-}

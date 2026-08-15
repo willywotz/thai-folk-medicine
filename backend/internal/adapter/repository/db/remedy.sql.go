@@ -221,59 +221,6 @@ func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) 
 	return items, nil
 }
 
-const searchRemedy = `-- name: SearchRemedy :many
-SELECT r.id, r.name, r.symptoms, r.healer_id, h.full_name AS healer_full_name
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-LEFT JOIN remedy_herb rh ON rh.remedy_id = r.id
-LEFT JOIN herb hb ON hb.id = rh.herb_id
-WHERE r.name ILIKE '%' || $1::text || '%'
-   OR r.symptoms ILIKE '%' || $1::text || '%'
-   OR hb.name_thai ILIKE '%' || $1::text || '%'
-   OR hb.name_english ILIKE '%' || $1::text || '%'
-GROUP BY r.id, r.name, r.symptoms, r.healer_id, h.full_name
-ORDER BY GREATEST(
-    similarity(r.name, $1::text),
-    similarity(r.symptoms, $1::text),
-    max(similarity(hb.name_thai, $1::text)),
-    max(similarity(hb.name_english, $1::text))
-) DESC, r.name
-`
-
-type SearchRemedyRow struct {
-	ID             int64
-	Name           string
-	Symptoms       string
-	HealerID       int64
-	HealerFullName string
-}
-
-func (q *Queries) SearchRemedy(ctx context.Context, searchTerm string) ([]SearchRemedyRow, error) {
-	rows, err := q.db.Query(ctx, searchRemedy, searchTerm)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []SearchRemedyRow{}
-	for rows.Next() {
-		var i SearchRemedyRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Symptoms,
-			&i.HealerID,
-			&i.HealerFullName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateRemedy = `-- name: UpdateRemedy :one
 UPDATE remedy
 SET name = $2, symptoms = $3, preparation_method = $4, usage = $5, note = $6, updated_at = now()

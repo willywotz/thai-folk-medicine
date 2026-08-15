@@ -142,48 +142,6 @@ func (q *Queries) ListHerbPage(ctx context.Context, arg ListHerbPageParams) ([]H
 	return items, nil
 }
 
-const searchHerb = `-- name: SearchHerb :many
-SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
-FROM herb
-WHERE name_thai ILIKE '%' || $1::text || '%'
-   OR name_english ILIKE '%' || $1::text || '%'
-   OR scientific_name ILIKE '%' || $1::text || '%'
-   OR properties ILIKE '%' || $1::text || '%'
-ORDER BY GREATEST(
-    similarity(name_thai, $1::text),
-    similarity(name_english, $1::text)
-) DESC, name_thai
-`
-
-func (q *Queries) SearchHerb(ctx context.Context, searchTerm string) ([]Herb, error) {
-	rows, err := q.db.Query(ctx, searchHerb, searchTerm)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Herb{}
-	for rows.Next() {
-		var i Herb
-		if err := rows.Scan(
-			&i.ID,
-			&i.NameThai,
-			&i.NameEnglish,
-			&i.ScientificName,
-			&i.Properties,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const updateHerb = `-- name: UpdateHerb :one
 UPDATE herb
 SET name_thai = $2, name_english = $3, scientific_name = $4, properties = $5, description = $6, updated_at = now()

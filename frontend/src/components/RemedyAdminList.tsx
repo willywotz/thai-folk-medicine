@@ -54,6 +54,9 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
         <ul className={staffCard}>
           {shown.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
+              <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
+                {r.name.trim().charAt(0)}
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{r.name}</p>
                 <p className="truncate text-sm text-ink-soft">{healerName(r.healerId)}</p>

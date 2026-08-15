@@ -1,10 +1,10 @@
-import type { Healer, Herb, Page, Photo, Remedy, TreatmentCase } from "@/lib/api-types";
+import type { Activity, Healer, Herb, Page, Photo, Remedy, Stats, TreatmentCase } from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
 import type { HerbInput } from "@/lib/herb-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
 import type { TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
-export function healerListKey(districtId: number) {
+export function healerListKey(districtId?: number) {
   return ["healers", districtId] as const;
 }
 
@@ -19,9 +19,10 @@ async function fetchList<T>(path: string, error: string): Promise<T[]> {
   return ((await res.json()) as Page<T>).items;
 }
 
-/** fetchHealers reads the public healer list through the same-origin /api proxy. */
-export async function fetchHealers(districtId: number): Promise<Healer[]> {
-  return fetchList<Healer>(`/districts/${districtId}/healers`, "cannot load healers");
+/** fetchHealers reads the flat healer list, optionally filtered by district. */
+export async function fetchHealers(districtId?: number): Promise<Healer[]> {
+  const query = districtId !== undefined ? `?districtId=${districtId}` : "";
+  return fetchList<Healer>(`/healers${query}`, "cannot load healers");
 }
 
 /** deleteHealer removes a healer through the authenticated BFF. */
@@ -189,4 +190,98 @@ export async function updateHerb(id: number, input: HerbInput): Promise<void> {
 export async function deleteHerb(id: number): Promise<void> {
   const res = await fetch(`/bff/herbs/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("cannot delete herb");
+}
+
+export const activityKey = ["activity"] as const;
+
+// Reads /activity and /stats: those routes are JWT-guarded on the Go API, so
+// they go through the BFF (cookie -> Bearer) instead of the public /api proxy
+// fetchList uses.
+async function fetchBffList<T>(path: string, error: string): Promise<T[]> {
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`/bff${path}${sep}pageSize=48`, { cache: "no-store" });
+  if (!res.ok) throw new Error(error);
+  return ((await res.json()) as Page<T>).items;
+}
+
+/** fetchActivity reads the persisted event feed through the authenticated BFF. */
+export async function fetchActivity(): Promise<Activity[]> {
+  return fetchBffList<Activity>("/activity", "cannot load activity");
+}
+
+export const statsKey = ["stats"] as const;
+
+/** fetchStats reads the dashboard aggregate counts through the authenticated BFF. */
+export async function fetchStats(): Promise<Stats> {
+  const res = await fetch("/bff/stats", { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load stats");
+  return (await res.json()) as Stats;
+}
+
+export const provinceListKey = ["provinces"] as const;
+
+interface ProvinceInput {
+  nameThai: string;
+  nameEnglish: string;
+}
+
+/** createProvince posts a new province through the BFF. */
+export async function createProvince(input: ProvinceInput): Promise<void> {
+  const res = await fetch("/bff/provinces", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot create province");
+}
+
+/** updateProvince PUTs changes to a province through the BFF. */
+export async function updateProvince(id: number, input: ProvinceInput): Promise<void> {
+  const res = await fetch(`/bff/provinces/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot update province");
+}
+
+/** deleteProvince removes a province through the BFF (409 if it still has districts). */
+export async function deleteProvince(id: number): Promise<void> {
+  const res = await fetch(`/bff/provinces/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete province");
+}
+
+export function districtListKey(provinceId: number) {
+  return ["districts", provinceId] as const;
+}
+
+interface DistrictInput {
+  nameThai: string;
+  nameEnglish: string;
+}
+
+/** createDistrict posts a new district (with its provinceId) through the BFF. */
+export async function createDistrict(input: DistrictInput & { provinceId: number }): Promise<void> {
+  const res = await fetch("/bff/districts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot create district");
+}
+
+/** updateDistrict PUTs changes to a district through the BFF (no province change). */
+export async function updateDistrict(id: number, input: DistrictInput): Promise<void> {
+  const res = await fetch(`/bff/districts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("cannot update district");
+}
+
+/** deleteDistrict removes a district through the BFF (409 if it still has healers). */
+export async function deleteDistrict(id: number): Promise<void> {
+  const res = await fetch(`/bff/districts/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("cannot delete district");
 }

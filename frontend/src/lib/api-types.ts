@@ -89,3 +89,19 @@ export interface SearchHit {
   subtitle: string;
   score: number;
 }
+
+export interface Activity {
+  id: number;
+  eventName: string;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+}
+
+export interface Stats {
+  provinces: number;
+  districts: number;
+  healers: number;
+  remedies: number;
+  cases: number;
+  herbs: number;
+}

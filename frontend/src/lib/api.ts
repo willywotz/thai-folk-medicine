@@ -1,4 +1,5 @@
 import type {
+  Activity,
   District,
   Healer,
   Herb,
@@ -7,6 +8,7 @@ import type {
   Province,
   Remedy,
   SearchHit,
+  Stats,
   TreatmentCase,
 } from "./api-types";
 
@@ -69,6 +71,10 @@ export async function getDistrict(id: number): Promise<District | null> {
   return getOrNull<District>(`/districts/${id}`);
 }
 
+export async function getProvince(id: number): Promise<Province | null> {
+  return getOrNull<Province>(`/provinces/${id}`);
+}
+
 interface PageOptions {
   page?: number;
   pageSize?: number;
@@ -79,6 +85,12 @@ export async function listHealersByDistrict(
   opts: PageOptions = {},
 ): Promise<Page<Healer>> {
   return getJson<Page<Healer>>(`/districts/${districtId}/healers${buildQuery(opts)}`);
+}
+
+export async function listHealers(
+  opts: { districtId?: number } & PageOptions = {},
+): Promise<Page<Healer>> {
+  return getJson<Page<Healer>>(`/healers${buildQuery(opts)}`);
 }
 
 export async function getHealer(id: number): Promise<Healer | null> {
@@ -128,6 +140,14 @@ export async function listRemedies(opts: PageOptions = {}): Promise<Page<Remedy>
 
 export async function listTreatmentCases(opts: PageOptions = {}): Promise<Page<TreatmentCase>> {
   return getJson<Page<TreatmentCase>>(`/treatment-cases${buildQuery(opts)}`);
+}
+
+export async function listActivity(opts: PageOptions = {}): Promise<Page<Activity>> {
+  return getJson<Page<Activity>>(`/activity${buildQuery(opts)}`);
+}
+
+export async function getStats(): Promise<Stats> {
+  return getJson<Stats>("/stats");
 }
 
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */

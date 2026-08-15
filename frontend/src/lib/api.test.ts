@@ -3,10 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getDistrict,
   getHealer,
+  getProvince,
   getRemedy,
+  getStats,
   getTreatmentCase,
+  listActivity,
   listCasesByRemedy,
   listDistricts,
+  listHealers,
   listHealersByDistrict,
   listRemedies,
   photoUrl,
@@ -108,6 +112,65 @@ describe("listHealersByDistrict / listCasesByRemedy", () => {
 
     mockFetchOnce(200, { items: [{ id: 1, remedyId: 3, patientAge: 40 }], page: 1, pageSize: 20, total: 1, totalPages: 1 });
     expect((await listCasesByRemedy(3)).items).toHaveLength(1);
+  });
+});
+
+describe("getProvince", () => {
+  it("returns the province", async () => {
+    mockFetchOnce(200, { id: 1, nameThai: "ยโสธร", nameEnglish: "Yasothon" });
+    const got = await getProvince(1);
+    expect(got?.nameEnglish).toBe("Yasothon");
+  });
+
+  it("returns null on 404", async () => {
+    mockFetchOnce(404, { error: "province not found" });
+    expect(await getProvince(999)).toBeNull();
+  });
+});
+
+describe("listHealers", () => {
+  it("omits districtId from the query when unset", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ items: [], page: 1, pageSize: 48, total: 0, totalPages: 1 }), {
+        status: 200,
+      }),
+    );
+    await listHealers();
+    const url = spy.mock.calls[0][0] as string;
+    expect(url).not.toContain("districtId");
+  });
+
+  it("includes districtId in the query when set", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ items: [], page: 1, pageSize: 48, total: 0, totalPages: 1 }), {
+        status: 200,
+      }),
+    );
+    await listHealers({ districtId: 4 });
+    const url = spy.mock.calls[0][0] as string;
+    expect(url).toContain("districtId=4");
+  });
+});
+
+describe("listActivity", () => {
+  it("returns a Page<Activity>", async () => {
+    mockFetchOnce(200, {
+      items: [{ id: 1, eventName: "healer.created", occurredAt: "2026-08-15T00:00:00Z", payload: {} }],
+      page: 1,
+      pageSize: 12,
+      total: 1,
+      totalPages: 1,
+    });
+    const got = await listActivity();
+    expect(got.items[0].eventName).toBe("healer.created");
+  });
+});
+
+describe("getStats", () => {
+  it("returns the aggregate counts", async () => {
+    mockFetchOnce(200, { provinces: 1, districts: 2, healers: 3, remedies: 4, cases: 5, herbs: 6 });
+    const got = await getStats();
+    expect(got).toEqual({ provinces: 1, districts: 2, healers: 3, remedies: 4, cases: 5, herbs: 6 });
   });
 });
 

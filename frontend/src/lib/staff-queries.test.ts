@@ -1,15 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  activityKey,
+  createDistrict,
+  createProvince,
+  deleteDistrict,
   deleteHealer,
   deletePhoto,
+  deleteProvince,
+  districtListKey,
+  fetchActivity,
   fetchCases,
   fetchHealers,
   fetchHerbs,
   fetchPhotos,
   fetchRemedies,
+  fetchStats,
   healerListKey,
   photoListKey,
+  provinceListKey,
+  statsKey,
+  updateDistrict,
+  updateProvince,
   uploadPhoto,
 } from "./staff-queries";
 
@@ -36,13 +48,19 @@ describe("healerListKey", () => {
 });
 
 describe("fetchHealers", () => {
-  it("unwraps the pagination envelope from the proxied list endpoint", async () => {
+  it("reads the flat healer list and unwraps the pagination envelope", async () => {
     const fetchMock = mockOk(page([{ id: 1 }]));
-    const got = await fetchHealers(3);
+    const got = await fetchHealers();
     expect(got).toHaveLength(1);
     expect(got[0].id).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/healers?pageSize=48", expect.anything());
+  });
+
+  it("filters by district when given", async () => {
+    const fetchMock = mockOk(page([{ id: 1 }]));
+    await fetchHealers(3);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/districts/3/healers?pageSize=48",
+      "/api/v1/healers?districtId=3&pageSize=48",
       expect.anything(),
     );
   });
@@ -125,5 +143,109 @@ describe("deletePhoto", () => {
   it("throws when the bff delete fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404 })) as unknown as typeof fetch);
     await expect(deletePhoto(1)).rejects.toThrow();
+  });
+});
+
+describe("activityKey / statsKey", () => {
+  it("are stable query keys", () => {
+    expect(activityKey).toEqual(["activity"]);
+    expect(statsKey).toEqual(["stats"]);
+  });
+});
+
+describe("fetchActivity", () => {
+  it("unwraps the pagination envelope from the authenticated bff feed", async () => {
+    const fetchMock = mockOk(page([{ id: 1, eventName: "healer.created" }]));
+    const got = await fetchActivity();
+    expect(got).toHaveLength(1);
+    expect(got[0].eventName).toBe("healer.created");
+    expect(fetchMock).toHaveBeenCalledWith("/bff/activity?pageSize=48", expect.anything());
+  });
+});
+
+describe("fetchStats", () => {
+  it("returns the aggregate counts from the authenticated bff endpoint", async () => {
+    const fetchMock = mockOk({ provinces: 1, districts: 2, healers: 3, remedies: 4, cases: 5, herbs: 6 });
+    const got = await fetchStats();
+    expect(got).toEqual({ provinces: 1, districts: 2, healers: 3, remedies: 4, cases: 5, herbs: 6 });
+    expect(fetchMock).toHaveBeenCalledWith("/bff/stats", expect.anything());
+  });
+});
+
+describe("provinceListKey / districtListKey", () => {
+  it("are stable query keys", () => {
+    expect(provinceListKey).toEqual(["provinces"]);
+    expect(districtListKey(5)).toEqual(["districts", 5]);
+  });
+});
+
+describe("createProvince / updateProvince / deleteProvince", () => {
+  it("POSTs a new province through the bff", async () => {
+    const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({}),
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    await createProvince({ nameThai: "ยโสธร", nameEnglish: "Yasothon" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/bff/provinces");
+    expect((init as { method: string }).method).toBe("POST");
+  });
+
+  it("PUTs changes through the bff", async () => {
+    const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    await updateProvince(5, { nameThai: "ยโสธร", nameEnglish: "Yasothon" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/bff/provinces/5");
+    expect((init as { method: string }).method).toBe("PUT");
+  });
+
+  it("throws when the bff delete fails (referenced province)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 409 })) as unknown as typeof fetch);
+    await expect(deleteProvince(5)).rejects.toThrow();
+  });
+});
+
+describe("createDistrict / updateDistrict / deleteDistrict", () => {
+  it("POSTs a new district (with provinceId) through the bff", async () => {
+    const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({}),
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    await createDistrict({ provinceId: 1, nameThai: "กุดชุม", nameEnglish: "Kut Chum" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/bff/districts");
+    expect((init as { method: string }).method).toBe("POST");
+    expect(JSON.parse((init as { body: string }).body)).toEqual({
+      provinceId: 1,
+      nameThai: "กุดชุม",
+      nameEnglish: "Kut Chum",
+    });
+  });
+
+  it("PUTs changes through the bff", async () => {
+    const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    await updateDistrict(3, { nameThai: "กุดชุม", nameEnglish: "Kut Chum" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/bff/districts/3");
+    expect((init as { method: string }).method).toBe("PUT");
+  });
+
+  it("throws when the bff delete fails (referenced district)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 409 })) as unknown as typeof fetch);
+    await expect(deleteDistrict(3)).rejects.toThrow();
   });
 });

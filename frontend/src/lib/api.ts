@@ -1,5 +1,4 @@
 import type {
-  Activity,
   District,
   Healer,
   Herb,
@@ -8,7 +7,6 @@ import type {
   Province,
   Remedy,
   SearchHit,
-  Stats,
   TreatmentCase,
 } from "./api-types";
 
@@ -140,14 +138,6 @@ export async function listRemedies(opts: PageOptions = {}): Promise<Page<Remedy>
 
 export async function listTreatmentCases(opts: PageOptions = {}): Promise<Page<TreatmentCase>> {
   return getJson<Page<TreatmentCase>>(`/treatment-cases${buildQuery(opts)}`);
-}
-
-export async function listActivity(opts: PageOptions = {}): Promise<Page<Activity>> {
-  return getJson<Page<Activity>>(`/activity${buildQuery(opts)}`);
-}
-
-export async function getStats(): Promise<Stats> {
-  return getJson<Stats>("/stats");
 }
 
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */

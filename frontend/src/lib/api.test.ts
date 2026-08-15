@@ -5,9 +5,7 @@ import {
   getHealer,
   getProvince,
   getRemedy,
-  getStats,
   getTreatmentCase,
-  listActivity,
   listCasesByRemedy,
   listDistricts,
   listHealers,
@@ -149,28 +147,6 @@ describe("listHealers", () => {
     await listHealers({ districtId: 4 });
     const url = spy.mock.calls[0][0] as string;
     expect(url).toContain("districtId=4");
-  });
-});
-
-describe("listActivity", () => {
-  it("returns a Page<Activity>", async () => {
-    mockFetchOnce(200, {
-      items: [{ id: 1, eventName: "healer.created", occurredAt: "2026-08-15T00:00:00Z", payload: {} }],
-      page: 1,
-      pageSize: 12,
-      total: 1,
-      totalPages: 1,
-    });
-    const got = await listActivity();
-    expect(got.items[0].eventName).toBe("healer.created");
-  });
-});
-
-describe("getStats", () => {
-  it("returns the aggregate counts", async () => {
-    mockFetchOnce(200, { provinces: 1, districts: 2, healers: 3, remedies: 4, cases: 5, herbs: 6 });
-    const got = await getStats();
-    expect(got).toEqual({ provinces: 1, districts: 2, healers: 3, remedies: 4, cases: 5, herbs: 6 });
   });
 });
 

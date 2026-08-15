@@ -1,6 +1,7 @@
 "use client";
 
 import { btnGhost } from "@/components/staff-ui";
+import { useT } from "@/lib/i18n/useT";
 
 /** StaffPagination is a Prev/Next control for a server-paginated staff list. */
 export function StaffPagination({
@@ -12,6 +13,7 @@ export function StaffPagination({
   totalPages: number;
   onPage: (page: number) => void;
 }) {
+  const t = useT();
   if (totalPages <= 1) return null;
 
   return (
@@ -22,18 +24,16 @@ export function StaffPagination({
         disabled={page <= 1}
         className={`${btnGhost} px-3 py-1.5 disabled:opacity-50`}
       >
-        Prev
+        {t.common.previous}
       </button>
-      <span className="text-sm text-ink-faint">
-        Page {page} of {totalPages}
-      </span>
+      <span className="text-sm text-ink-faint">{t.common.pageXofY(page, totalPages)}</span>
       <button
         type="button"
         onClick={() => onPage(page + 1)}
         disabled={page >= totalPages}
         className={`${btnGhost} px-3 py-1.5 disabled:opacity-50`}
       >
-        Next
+        {t.common.next}
       </button>
     </nav>
   );

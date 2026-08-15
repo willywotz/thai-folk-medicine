@@ -17,8 +17,9 @@ and plans under `docs/superpowers/`.
 
 - Backend API (Go) — done.
 - Public browse site (Next.js, server-rendered), remedy/herb-first — done.
-- Staff admin (Next.js) — login + full CRUD for healers, remedies, herbs, treatment cases,
-  and photos — done.
+- Staff admin (Next.js) — login + full CRUD for **provinces, districts,** healers, remedies,
+  herbs, treatment cases, and photos — done. **Redesigned** into six flat entity sections
+  (see the staff-zone overhaul below).
 - **Pagination** on every public list endpoint (uniform `{items,page,pageSize,total,totalPages}`
   envelope) — done (**Plan 11**).
 - **Public search** — one merged, relevance-ranked, **paginated** list across remedies +
@@ -31,19 +32,48 @@ and plans under `docs/superpowers/`.
 - **Searchable herb picker** — the staff remedy form filters herbs by Thai name with a
   Base UI `Combobox` (no new dependency) — done.
 
-Two follow-ups since the previous handoff (both merged to `main`):
+### Latest — staff-zone overhaul (Plan 13, merge `2ddee03`)
 
-1. **`GET /districts/{id}` + a staff pagination-envelope fix** (merge `1c3142f`). Adding the
-   endpoint surfaced a **pre-existing Plan 11 regression**: the staff admin `fetch*` helpers
-   in `frontend/src/lib/staff-queries.ts` still cast list responses to bare arrays, but every
-   public list endpoint returns the `{items,…}` envelope now — so `HealerAdminList` and its
-   Remedy/Case/Herb siblings crashed with `healers.map is not a function`. All four fetches
-   now go through a shared `fetchList` that unwraps `.items` and asks for `pageSize=48`
-   (`withinlazy:` add real staff pagination if any list can exceed 48 rows). `fetchPhotos` is
-   exempt (its endpoint returns a bare array).
-2. **Searchable herb picker** (merge `7a27187`). `HerbPicker` swaps the per-row native
-   `<select>` for a Base UI `Combobox`; items use the auto-supported `{value,label}` shape
-   (`value` = `herbId`). A new row still defaults to the first herb.
+The biggest increment since the previous handoff. Spec/plan:
+`docs/superpowers/specs/2026-08-15-staff-workspace-sections-design.md` and
+`docs/superpowers/plans/2026-08-15-staff-workspace-sections.md`. The **domain model is
+unchanged** (Province 1→n District 1→n Healer 1→n Remedy 1→n Case; Herb n↔m Remedy). What
+changed:
+
+- **Brand-token redesign.** The staff zone now uses the public site's green brand tokens
+  (`--brand`/`--ink`/`--line`/`--surface` in `globals.css`) via a shared `staff-ui.ts`, a
+  sidebar shell (`StaffNavLink`), and `StaffPageHeader`. No more raw `stone-*` greys.
+- **Six flat sections** replace the old District→Healer→Remedy→Case drill-down: Dashboard,
+  Province, Healer, Remedy, Case, Herb (`/staff/{provinces,healers,remedies,cases,herbs}`).
+  Each create/edit form picks its parent; the old nested routes were removed. **Hybrid nav:**
+  a healer row also links to `/staff/healers/{id}/remedies` and a remedy row to
+  `/staff/remedies/{id}/treatment-cases` (scoped CRUD; `+New` pre-selects the parent).
+- **Province/District CRUD** with events + delete guards (province-with-districts → 409,
+  district-with-healers → 409). `LocationService` gained a `Publisher`.
+- **Activity feed (event-driven read model).** Bus gained `SubscribeAll`; a
+  `usecase/audit.Recorder` persists every domain event to a new `event_log` table (migration
+  `000011`). `GET /api/v1/activity` (protected) + the dashboard `ActivityFeed`. `GET
+  /api/v1/stats` (protected) feeds the six dashboard count tiles.
+- **Flat `GET /healers`** added (the only entity that lacked one). **Server-side pagination +
+  name search** on the staff Healer/Remedy/Herb/Case lists: list endpoints gained an optional
+  `?searchTerm=` (ILIKE over name fields; absent term leaves the public zone unchanged); the
+  staff fetchers now return the `Page<T>` envelope at `STAFF_PAGE_SIZE=20` with a client
+  `StaffPagination` control. Parent pickers are searchable ancestry comboboxes
+  (`EntityCombobox`).
+- **Photos on create + province/district photos.** `photo.ValidOwnerType` now also accepts
+  `province`/`district` (generic owner store, no schema change). A new `PhotoInput` collects
+  photos on create forms and uploads them after the record is saved (the `create*` mutations
+  now return the created entity). List rows show the record's first photo via `RowAvatar`
+  (`withinlazy:` one photo request per row — a cover-photo id on the list response would
+  remove the N+1).
+- **Reassignment fix:** `PUT /remedies/:id` now persists `healer_id` and `PUT
+  /treatment-cases/:id` persists `remedy_id`+`healer_id`, so the edit forms' parent pickers
+  actually save.
+
+Earlier follow-ups (now on `main`, some superseded by the redesign): `GET /districts/{id}`
+(merge `1c3142f`) and a staff pagination-envelope fix (`fetch*` helpers unwrap `.items`); the
+searchable herb picker (merge `7a27187`). The staff `fetch*` helpers described there were
+replaced by the paginated `fetchPage`/`Page<T>` fetchers in this increment.
 
 **Nothing has been pushed to a remote.** There is no git remote configured. Everything
 lives in local `main`. Add a remote and push when you are ready (that is an outward action

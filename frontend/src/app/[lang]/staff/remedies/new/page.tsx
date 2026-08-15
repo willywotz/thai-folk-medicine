@@ -25,7 +25,7 @@ export default async function NewRemedyPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: t.staff.newRemedyCrumb }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: t.staff.newRemedyCrumb }]}
         eyebrow={t.staff.newRecord}
         title={t.staff.addRemedyTitle}
       />

@@ -22,6 +22,7 @@ export default async function EditDistrictPage({
     <section>
       <StaffPageHeader
         crumbs={[
+          { label: t.staff.nav.dashboard, href: "/staff" },
           { label: t.staff.headers.provinces, href: "/staff/provinces" },
           { label: province.nameThai, href: `/staff/provinces/${id}` },
           { label: district.nameThai },

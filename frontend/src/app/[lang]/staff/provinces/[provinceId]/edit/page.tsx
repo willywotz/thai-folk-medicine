@@ -19,7 +19,7 @@ export default async function EditProvincePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: province.nameThai }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: province.nameThai }]}
         eyebrow={t.staff.headers.provinceEdit}
         title={t.staff.editName(province.nameThai)}
       />

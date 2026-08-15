@@ -7,7 +7,7 @@ export default async function NewProvincePage() {
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: t.staff.newProvinceCrumb }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: t.staff.newProvinceCrumb }]}
         eyebrow={t.staff.headers.provinceNew}
         title={t.staff.addProvinceTitle}
       />

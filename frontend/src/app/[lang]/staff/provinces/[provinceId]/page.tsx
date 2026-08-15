@@ -19,7 +19,7 @@ export default async function StaffProvincePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: province.nameThai }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: province.nameThai }]}
         eyebrow={`${province.nameEnglish} · ${province.nameThai}`}
         title={province.nameThai}
       />

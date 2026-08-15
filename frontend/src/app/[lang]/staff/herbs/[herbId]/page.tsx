@@ -43,7 +43,7 @@ export default async function StaffHerbUsagePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.crumbHerbs, href: "/staff/herbs" }, { label: herb.nameThai }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.crumbHerbs, href: "/staff/herbs" }, { label: herb.nameThai }]}
         eyebrow={t.staff.headers.herbUsedIn}
         title={t.staff.usedInName(herb.nameThai)}
       />

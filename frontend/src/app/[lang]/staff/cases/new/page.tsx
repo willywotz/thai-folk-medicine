@@ -33,7 +33,7 @@ export default async function NewCasePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.crumbCases, href: "/staff/cases" }, { label: t.staff.newCaseCrumb }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.crumbCases, href: "/staff/cases" }, { label: t.staff.newCaseCrumb }]}
         eyebrow={t.staff.newRecord}
         title={t.staff.addCaseTitle}
       />

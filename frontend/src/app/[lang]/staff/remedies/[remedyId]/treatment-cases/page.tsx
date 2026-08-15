@@ -24,7 +24,7 @@ export default async function RemedyTreatmentCasesPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: remedy.name }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: remedy.name }]}
         title={t.staff.headers.remedyCases}
       />
       <CaseAdminList remedies={remedies} remedyId={id} />

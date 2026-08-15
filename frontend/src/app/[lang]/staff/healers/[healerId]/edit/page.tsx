@@ -27,7 +27,7 @@ export default async function EditHealerPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.healers, href: "/staff/healers" }, { label: healer.fullName }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.healers, href: "/staff/healers" }, { label: healer.fullName }]}
         eyebrow={t.staff.editRecord}
         title={t.staff.editName(healer.fullName)}
       />

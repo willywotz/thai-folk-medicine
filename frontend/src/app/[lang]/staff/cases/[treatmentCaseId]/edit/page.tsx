@@ -39,7 +39,7 @@ export default async function EditCasePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.crumbCases, href: "/staff/cases" }, { label: t.staff.editCaseCrumb }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.crumbCases, href: "/staff/cases" }, { label: t.staff.editCaseCrumb }]}
         eyebrow={t.staff.editRecord}
         title={t.staff.editCaseTitle}
       />

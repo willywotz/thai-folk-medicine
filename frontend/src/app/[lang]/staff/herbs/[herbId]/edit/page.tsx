@@ -15,7 +15,7 @@ export default async function EditHerbPage({ params }: { params: Promise<{ herbI
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.crumbHerbs, href: "/staff/herbs" }, { label: herb.nameThai }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.crumbHerbs, href: "/staff/herbs" }, { label: herb.nameThai }]}
         eyebrow={t.staff.headers.herbEdit}
         title={t.staff.editName(herb.nameThai)}
       />

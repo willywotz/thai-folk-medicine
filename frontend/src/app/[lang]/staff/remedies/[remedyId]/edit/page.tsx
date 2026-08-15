@@ -31,7 +31,7 @@ export default async function EditRemedyPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: remedy.name }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: remedy.name }]}
         eyebrow={t.staff.editRecord}
         title={t.staff.editName(remedy.name)}
       />

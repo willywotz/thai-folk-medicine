@@ -15,7 +15,7 @@ export default async function NewHealerPage() {
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: t.staff.headers.healers, href: "/staff/healers" }, { label: t.staff.newHealerCrumb }]}
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.healers, href: "/staff/healers" }, { label: t.staff.newHealerCrumb }]}
         eyebrow={t.staff.newRecord}
         title={t.staff.addHealerTitle}
       />

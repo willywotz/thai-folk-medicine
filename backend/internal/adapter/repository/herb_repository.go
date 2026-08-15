@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
@@ -61,15 +62,17 @@ func (r *Herb) GetByID(ctx context.Context, id int64) (herb.Herb, error) {
 	return toHerb(row), nil
 }
 
-// ListPage returns one page of herbs, ordered by Thai name.
-func (r *Herb) ListPage(ctx context.Context, p listing.Params) (listing.Page[herb.Herb], error) {
+// ListPage returns one page of herbs, ordered by Thai name, optionally
+// filtered by a search term matching Thai name, English name, or scientific name.
+func (r *Herb) ListPage(ctx context.Context, p listing.Params, searchTerm *string) (listing.Page[herb.Herb], error) {
+	search := searchFilter(searchTerm)
 	rows, err := r.q.ListHerbPage(ctx, db.ListHerbPageParams{
-		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+		SearchTerm: search, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
 	})
 	if err != nil {
 		return listing.Page[herb.Herb]{}, err
 	}
-	total, err := r.q.CountHerbPage(ctx)
+	total, err := r.q.CountHerbPage(ctx, search)
 	if err != nil {
 		return listing.Page[herb.Herb]{}, err
 	}
@@ -82,7 +85,7 @@ func (r *Herb) ListPage(ctx context.Context, p listing.Params) (listing.Page[her
 
 // Count counts every herb.
 func (r *Herb) Count(ctx context.Context) (int, error) {
-	count, err := r.q.CountHerbPage(ctx)
+	count, err := r.q.CountHerbPage(ctx, pgtype.Text{})
 	return int(count), err
 }
 

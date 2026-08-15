@@ -19,9 +19,10 @@ import (
 )
 
 type stubHerbRepo struct {
-	getErr    error
-	page      listing.Page[herb.Herb]
-	gotParams listing.Params
+	getErr        error
+	page          listing.Page[herb.Herb]
+	gotParams     listing.Params
+	gotSearchTerm *string
 }
 
 func (s *stubHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb, error) {
@@ -33,8 +34,9 @@ func (s *stubHerbRepo) GetByID(_ context.Context, id int64) (herb.Herb, error) {
 	}
 	return herb.Herb{ID: id, NameThai: "ไพล"}, nil
 }
-func (s *stubHerbRepo) ListPage(_ context.Context, p listing.Params) (listing.Page[herb.Herb], error) {
+func (s *stubHerbRepo) ListPage(_ context.Context, p listing.Params, searchTerm *string) (listing.Page[herb.Herb], error) {
 	s.gotParams = p
+	s.gotSearchTerm = searchTerm
 	return s.page, nil
 }
 func (s *stubHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb, error) {
@@ -113,6 +115,22 @@ func TestHerbHandler_ListEndpoint_Envelope(t *testing.T) {
 	assert.Equal(t, 1, body.Total)
 	assert.Equal(t, 1, body.TotalPages)
 	assert.Equal(t, 12, repo.gotParams.Limit)
+	assert.Nil(t, repo.gotSearchTerm)
+}
+
+func TestHerbHandler_List_SearchTermFilter(t *testing.T) {
+	repo := &stubHerbRepo{page: listing.Page[herb.Herb]{
+		Items: []herb.Herb{{ID: 1, NameThai: "ขิง"}}, Total: 1,
+	}}
+	router := newHerbRouter(repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/herbs?searchTerm=ขิง", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.NotNil(t, repo.gotSearchTerm)
+	assert.Equal(t, "ขิง", *repo.gotSearchTerm)
 }
 
 func TestHerbHandler_ListRemediesEndpoint(t *testing.T) {

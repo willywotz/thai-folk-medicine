@@ -81,16 +81,17 @@ func (r *Healer) ListByDistrictPage(ctx context.Context, districtID int64, p lis
 	return listing.Page[healer.Healer]{Items: items, Total: int(total)}, nil
 }
 
-// ListPage returns one page of healers, optionally filtered by district.
-func (r *Healer) ListPage(ctx context.Context, p listing.Params, districtID *int64) (listing.Page[healer.Healer], error) {
-	arg := districtFilter(districtID)
+// ListPage returns one page of healers, optionally filtered by district and
+// by a search term matching full name or specialty.
+func (r *Healer) ListPage(ctx context.Context, p listing.Params, districtID *int64, searchTerm *string) (listing.Page[healer.Healer], error) {
+	district, search := districtFilter(districtID), searchFilter(searchTerm)
 	rows, err := r.q.ListHealer(ctx, db.ListHealerParams{
-		DistrictID: arg, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+		DistrictID: district, SearchTerm: search, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
 	})
 	if err != nil {
 		return listing.Page[healer.Healer]{}, err
 	}
-	total, err := r.q.CountHealer(ctx, arg)
+	total, err := r.q.CountHealer(ctx, db.CountHealerParams{DistrictID: district, SearchTerm: search})
 	if err != nil {
 		return listing.Page[healer.Healer]{}, err
 	}
@@ -103,7 +104,7 @@ func (r *Healer) ListPage(ctx context.Context, p listing.Params, districtID *int
 
 // Count counts every healer.
 func (r *Healer) Count(ctx context.Context) (int, error) {
-	count, err := r.q.CountHealer(ctx, districtFilter(nil))
+	count, err := r.q.CountHealer(ctx, db.CountHealerParams{})
 	return int(count), err
 }
 

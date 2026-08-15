@@ -84,7 +84,7 @@ func (h *HealerHandler) ListByDistrict(c *gin.Context) {
 	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
-// ListPage handles GET /api/v1/healers?districtId&page&pageSize.
+// ListPage handles GET /api/v1/healers?districtId&searchTerm&page&pageSize.
 func (h *HealerHandler) ListPage(c *gin.Context) {
 	var districtID *int64
 	if raw := c.Query("districtId"); raw != "" {
@@ -96,7 +96,7 @@ func (h *HealerHandler) ListPage(c *gin.Context) {
 		districtID = &id
 	}
 	params, page, pageSize := parsePageParams(c, 12)
-	result, err := h.service.List(c.Request.Context(), params, districtID)
+	result, err := h.service.List(c.Request.Context(), params, districtID, parseSearchTerm(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list healers"})
 		return

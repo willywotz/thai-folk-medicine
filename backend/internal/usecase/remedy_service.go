@@ -41,14 +41,16 @@ func (s *RemedyService) Get(ctx context.Context, id int64) (remedy.Remedy, error
 	return s.repo.GetByID(ctx, id)
 }
 
-// ListByHealerPage returns one page of the remedies of one healer.
-func (s *RemedyService) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
-	return s.repo.ListByHealerPage(ctx, healerID, p)
+// ListByHealerPage returns one page of the remedies of one healer, optionally
+// filtered by a search term on name.
+func (s *RemedyService) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	return s.repo.ListByHealerPage(ctx, healerID, p, searchTerm)
 }
 
-// ListPage returns one paginated page of remedies, most recent first.
-func (s *RemedyService) ListPage(ctx context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
-	return s.repo.ListPage(ctx, p)
+// ListPage returns one paginated page of remedies, most recent first,
+// optionally filtered by a search term on name.
+func (s *RemedyService) ListPage(ctx context.Context, p listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	return s.repo.ListPage(ctx, p, searchTerm)
 }
 
 // Update validates and changes a remedy, then publishes UpdatedEvent.

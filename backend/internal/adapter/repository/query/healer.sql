@@ -22,12 +22,14 @@ SELECT COUNT(*) FROM healer WHERE district_id = sqlc.arg('district_id');
 SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
 FROM healer
 WHERE (sqlc.narg('district_id')::bigint IS NULL OR district_id = sqlc.narg('district_id'))
+  AND (sqlc.narg('search_term')::text IS NULL OR full_name ILIKE '%'||sqlc.narg('search_term')||'%' OR specialty ILIKE '%'||sqlc.narg('search_term')||'%')
 ORDER BY id
 LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
 -- name: CountHealer :one
 SELECT COUNT(*) FROM healer
-WHERE (sqlc.narg('district_id')::bigint IS NULL OR district_id = sqlc.narg('district_id'));
+WHERE (sqlc.narg('district_id')::bigint IS NULL OR district_id = sqlc.narg('district_id'))
+  AND (sqlc.narg('search_term')::text IS NULL OR full_name ILIKE '%'||sqlc.narg('search_term')||'%' OR specialty ILIKE '%'||sqlc.narg('search_term')||'%');
 
 -- name: UpdateHealer :one
 UPDATE healer

@@ -25,6 +25,7 @@ type stubHealerRepo struct {
 	gotPage listing.Params
 
 	gotDistrictID *int64
+	gotSearchTerm *string
 }
 
 func (s *stubHealerRepo) Create(_ context.Context, p healer.CreateParams) (healer.Healer, error) {
@@ -40,9 +41,10 @@ func (s *stubHealerRepo) ListByDistrictPage(_ context.Context, _ int64, p listin
 	s.gotPage = p
 	return s.page, nil
 }
-func (s *stubHealerRepo) ListPage(_ context.Context, p listing.Params, districtID *int64) (listing.Page[healer.Healer], error) {
+func (s *stubHealerRepo) ListPage(_ context.Context, p listing.Params, districtID *int64, searchTerm *string) (listing.Page[healer.Healer], error) {
 	s.gotPage = p
 	s.gotDistrictID = districtID
+	s.gotSearchTerm = searchTerm
 	return s.page, nil
 }
 func (s *stubHealerRepo) Update(_ context.Context, p healer.UpdateParams) (healer.Healer, error) {
@@ -156,4 +158,20 @@ func TestHealerHandler_ListPage_NoDistrictFilter(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Nil(t, repo.gotDistrictID)
+	assert.Nil(t, repo.gotSearchTerm)
+}
+
+func TestHealerHandler_ListPage_SearchTermFilter(t *testing.T) {
+	repo := &stubHealerRepo{page: listing.Page[healer.Healer]{
+		Items: []healer.Healer{{ID: 1, FullName: "หมอสมชาย"}}, Total: 1,
+	}}
+	router := newHealerRouter(repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/healers?searchTerm=สมชาย", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.NotNil(t, repo.gotSearchTerm)
+	assert.Equal(t, "สมชาย", *repo.gotSearchTerm)
 }

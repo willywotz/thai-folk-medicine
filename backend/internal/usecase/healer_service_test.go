@@ -21,6 +21,7 @@ type fakeHealerRepo struct {
 	lastCreate healer.CreateParams
 
 	lastListDistrictID *int64
+	lastListSearchTerm *string
 }
 
 func (f *fakeHealerRepo) Create(_ context.Context, p healer.CreateParams) (healer.Healer, error) {
@@ -37,8 +38,9 @@ func (f *fakeHealerRepo) GetByID(context.Context, int64) (healer.Healer, error) 
 func (f *fakeHealerRepo) ListByDistrictPage(context.Context, int64, listing.Params) (listing.Page[healer.Healer], error) {
 	return listing.Page[healer.Healer]{Items: []healer.Healer{f.created}, Total: 1}, nil
 }
-func (f *fakeHealerRepo) ListPage(_ context.Context, _ listing.Params, districtID *int64) (listing.Page[healer.Healer], error) {
+func (f *fakeHealerRepo) ListPage(_ context.Context, _ listing.Params, districtID *int64, searchTerm *string) (listing.Page[healer.Healer], error) {
 	f.lastListDistrictID = districtID
+	f.lastListSearchTerm = searchTerm
 	return listing.Page[healer.Healer]{Items: []healer.Healer{f.created}, Total: 1}, nil
 }
 func (f *fakeHealerRepo) Update(_ context.Context, p healer.UpdateParams) (healer.Healer, error) {
@@ -113,12 +115,24 @@ func TestListHealerPageForwardsDistrictFilter(t *testing.T) {
 	service := NewHealerService(repo, &recordingPublisher{})
 	districtID := int64(9)
 
-	page, err := service.List(context.Background(), listing.Params{Limit: 12}, &districtID)
+	page, err := service.List(context.Background(), listing.Params{Limit: 12}, &districtID, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, page.Total)
 	require.NotNil(t, repo.lastListDistrictID)
 	assert.Equal(t, districtID, *repo.lastListDistrictID)
+}
+
+func TestListHealerPageForwardsSearchTerm(t *testing.T) {
+	repo := &fakeHealerRepo{created: healer.Healer{ID: 1, FullName: "หมอ ก"}}
+	service := NewHealerService(repo, &recordingPublisher{})
+	term := "สมชาย"
+
+	_, err := service.List(context.Background(), listing.Params{Limit: 12}, nil, &term)
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.lastListSearchTerm)
+	assert.Equal(t, term, *repo.lastListSearchTerm)
 }
 
 func TestUpdateHealerPublishesUpdatedEvent(t *testing.T) {

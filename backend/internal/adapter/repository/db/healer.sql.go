@@ -14,10 +14,16 @@ import (
 const countHealer = `-- name: CountHealer :one
 SELECT COUNT(*) FROM healer
 WHERE ($1::bigint IS NULL OR district_id = $1)
+  AND ($2::text IS NULL OR full_name ILIKE '%'||$2||'%' OR specialty ILIKE '%'||$2||'%')
 `
 
-func (q *Queries) CountHealer(ctx context.Context, districtID pgtype.Int8) (int64, error) {
-	row := q.db.QueryRow(ctx, countHealer, districtID)
+type CountHealerParams struct {
+	DistrictID pgtype.Int8
+	SearchTerm pgtype.Text
+}
+
+func (q *Queries) CountHealer(ctx context.Context, arg CountHealerParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countHealer, arg.DistrictID, arg.SearchTerm)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -108,18 +114,25 @@ const listHealer = `-- name: ListHealer :many
 SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
 FROM healer
 WHERE ($1::bigint IS NULL OR district_id = $1)
+  AND ($2::text IS NULL OR full_name ILIKE '%'||$2||'%' OR specialty ILIKE '%'||$2||'%')
 ORDER BY id
-LIMIT $3 OFFSET $2
+LIMIT $4 OFFSET $3
 `
 
 type ListHealerParams struct {
 	DistrictID pgtype.Int8
+	SearchTerm pgtype.Text
 	PageOffset int32
 	PageLimit  int32
 }
 
 func (q *Queries) ListHealer(ctx context.Context, arg ListHealerParams) ([]Healer, error) {
-	rows, err := q.db.Query(ctx, listHealer, arg.DistrictID, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listHealer,
+		arg.DistrictID,
+		arg.SearchTerm,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

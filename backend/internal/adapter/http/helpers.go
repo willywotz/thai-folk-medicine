@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -18,6 +19,16 @@ func parsePageParams(c *gin.Context, defaultSize int) (listing.Params, int, int)
 	size, _ := strconv.Atoi(c.Query("pageSize"))
 	params := listing.FromPageSize(page, size, defaultSize)
 	return params, page, params.Limit
+}
+
+// parseSearchTerm reads the optional searchTerm query param, trimmed. An
+// empty or absent value means no filter.
+func parseSearchTerm(c *gin.Context) *string {
+	term := strings.TrimSpace(c.Query("searchTerm"))
+	if term == "" {
+		return nil
+	}
+	return &term
 }
 
 // pageDTO is the JSON envelope for a paginated list response.

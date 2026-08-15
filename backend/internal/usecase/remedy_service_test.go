@@ -14,8 +14,9 @@ import (
 )
 
 type fakeRemedyRepo struct {
-	createErr error
-	deleteErr error
+	createErr      error
+	deleteErr      error
+	lastSearchTerm *string
 }
 
 func (f *fakeRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remedy.Remedy, error) {
@@ -27,13 +28,15 @@ func (f *fakeRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remed
 func (f *fakeRemedyRepo) GetByID(context.Context, int64) (remedy.Remedy, error) {
 	return remedy.Remedy{ID: 1}, nil
 }
-func (f *fakeRemedyRepo) ListByHealerPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
+func (f *fakeRemedyRepo) ListByHealerPage(_ context.Context, _ int64, _ listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	f.lastSearchTerm = searchTerm
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeRemedyRepo) ListByHerbPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
-func (f *fakeRemedyRepo) ListPage(context.Context, listing.Params) (listing.Page[remedy.Remedy], error) {
+func (f *fakeRemedyRepo) ListPage(_ context.Context, _ listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	f.lastSearchTerm = searchTerm
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
@@ -91,10 +94,34 @@ func TestCreateRemedyNoEventOnRepoError(t *testing.T) {
 
 func TestListPageRemedy(t *testing.T) {
 	page, err := NewRemedyService(&fakeRemedyRepo{}, &remedyRecorder{}).
-		ListPage(context.Background(), listing.Params{Limit: 5})
+		ListPage(context.Background(), listing.Params{Limit: 5}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 1, page.Total)
 	assert.Len(t, page.Items, 1)
+}
+
+func TestListPageRemedyForwardsSearchTerm(t *testing.T) {
+	repo := &fakeRemedyRepo{}
+	term := "ยาแก้ไข้"
+
+	_, err := NewRemedyService(repo, &remedyRecorder{}).
+		ListPage(context.Background(), listing.Params{Limit: 5}, &term)
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.lastSearchTerm)
+	assert.Equal(t, term, *repo.lastSearchTerm)
+}
+
+func TestListByHealerPageRemedyForwardsSearchTerm(t *testing.T) {
+	repo := &fakeRemedyRepo{}
+	term := "ยาแก้ไข้"
+
+	_, err := NewRemedyService(repo, &remedyRecorder{}).
+		ListByHealerPage(context.Background(), 3, listing.Params{Limit: 5}, &term)
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.lastSearchTerm)
+	assert.Equal(t, term, *repo.lastSearchTerm)
 }
 
 func TestDeleteRemedyPublishesEvent(t *testing.T) {

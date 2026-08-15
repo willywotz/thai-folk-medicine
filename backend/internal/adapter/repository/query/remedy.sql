@@ -12,20 +12,25 @@ WHERE id = $1;
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 WHERE healer_id = sqlc.arg('healer_id')
+  AND (sqlc.narg('search_term')::text IS NULL OR name ILIKE '%'||sqlc.narg('search_term')||'%')
 ORDER BY name
 LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
 -- name: CountRemedyByHealer :one
-SELECT COUNT(*) FROM remedy WHERE healer_id = sqlc.arg('healer_id');
+SELECT COUNT(*) FROM remedy
+WHERE healer_id = sqlc.arg('healer_id')
+  AND (sqlc.narg('search_term')::text IS NULL OR name ILIKE '%'||sqlc.narg('search_term')||'%');
 
 -- name: ListRemedyPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
+WHERE (sqlc.narg('search_term')::text IS NULL OR name ILIKE '%'||sqlc.narg('search_term')||'%')
 ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
 -- name: CountRemedyPage :one
-SELECT COUNT(*) FROM remedy;
+SELECT COUNT(*) FROM remedy
+WHERE (sqlc.narg('search_term')::text IS NULL OR name ILIKE '%'||sqlc.narg('search_term')||'%');
 
 -- name: UpdateRemedy :one
 UPDATE remedy

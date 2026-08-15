@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 
+import { useT } from "@/lib/i18n/useT";
+
 export function LogoutButton() {
+  const t = useT();
   const router = useRouter();
   async function logout() {
     await fetch("/bff/session", { method: "DELETE" });
@@ -18,7 +21,7 @@ export function LogoutButton() {
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
         <path d="M15 12H4m0 0 4-4m-4 4 4 4M15 4h5v16h-5" />
       </svg>
-      Log out
+      {t.staff.logout}
     </button>
   );
 }

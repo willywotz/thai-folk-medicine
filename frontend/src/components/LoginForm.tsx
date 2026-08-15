@@ -6,8 +6,10 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
 import { loginSchema, type LoginInput } from "@/lib/auth-schema";
+import { useT } from "@/lib/i18n/useT";
 
 export function LoginForm() {
+  const t = useT();
   const router = useRouter();
   const [serverError, setServerError] = useState("");
   const {
@@ -24,7 +26,7 @@ export function LoginForm() {
       body: JSON.stringify(values),
     });
     if (!res.ok) {
-      setServerError("Invalid credentials.");
+      setServerError(t.login.invalidCredentials);
       return;
     }
     router.push("/staff");
@@ -34,7 +36,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-sm space-y-4" noValidate>
       <div className="space-y-1">
         <label htmlFor="username" className="text-sm font-medium">
-          Username
+          {t.login.username}
         </label>
         <input
           id="username"
@@ -45,7 +47,7 @@ export function LoginForm() {
       </div>
       <div className="space-y-1">
         <label htmlFor="password" className="text-sm font-medium">
-          Password
+          {t.login.password}
         </label>
         <input
           id="password"
@@ -61,7 +63,7 @@ export function LoginForm() {
         disabled={isSubmitting}
         className="w-full rounded bg-stone-800 p-2 text-white disabled:opacity-50"
       >
-        Log in
+        {t.login.submit}
       </button>
     </form>
   );

@@ -15,7 +15,9 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      target: production
     restart: unless-stopped
     environment:
       HTTP_PORT: "8080"
@@ -37,7 +39,9 @@ services:
   #   docker compose --profile seed run --rm seed -reset   # wipe + reseed
   # It shares the photo volume so seeded images are served by the running stack.
   seed:
-    build: ./backend
+    build:
+      context: ./backend
+      target: production
     entrypoint: ["/usr/local/bin/seed"]
     environment:
       DATABASE_URL: postgres://folk:folk@postgres:5432/folk_medicine?sslmode=disable

@@ -90,7 +90,7 @@ func main() {
 		usecase.NewPhotoService(repository.NewPhoto(queries), photoStore, bus),
 	)
 	searchHandler := httpapi.NewSearchHandler(
-		search.NewService(remedyRepo, repository.NewHealer(queries), repository.NewHerb(queries)),
+		search.NewService(repository.NewSearch(queries)),
 	)
 	herbHandler := httpapi.NewHerbHandler(
 		usecase.NewHerbService(repository.NewHerb(queries), bus),

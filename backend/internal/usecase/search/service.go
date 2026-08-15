@@ -1,4 +1,5 @@
-// Package search composes remedy and healer text search into one result.
+// Package search runs one merged, relevance-ranked search across remedies,
+// healers, and herbs.
 package search
 
 import (
@@ -7,65 +8,41 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
-	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
-	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrTermTooShort means the search term has fewer than two characters.
 var ErrTermTooShort = errors.New("search term too short")
 
-// RemedyReader searches remedies by free text.
-type RemedyReader interface {
-	Search(ctx context.Context, term string) ([]remedy.SearchResult, error)
+// Hit is one search match, drawn from a remedy, healer, or herb.
+type Hit struct {
+	Type     string
+	ID       int64
+	Title    string
+	Subtitle string
+	Score    float64
 }
 
-// HealerReader searches healers by free text.
-type HealerReader interface {
-	Search(ctx context.Context, term string) ([]healer.Healer, error)
+// Reader returns one merged, score-ordered page of search hits.
+type Reader interface {
+	SearchAll(ctx context.Context, term string, p listing.Params) (listing.Page[Hit], error)
 }
 
-// HerbReader searches herbs by free text.
-type HerbReader interface {
-	Search(ctx context.Context, term string) ([]herb.Herb, error)
-}
-
-// Result holds the remedy, healer, and herb matches for one search.
-type Result struct {
-	Remedies []remedy.SearchResult
-	Healers  []healer.Healer
-	Herbs    []herb.Herb
-}
-
-// Service runs a search across remedies, healers, and herbs.
+// Service runs a merged search across remedies, healers, and herbs.
 type Service struct {
-	remedyReader RemedyReader
-	healerReader HealerReader
-	herbReader   HerbReader
+	reader Reader
 }
 
 // NewService builds the search service.
-func NewService(remedyReader RemedyReader, healerReader HealerReader, herbReader HerbReader) *Service {
-	return &Service{remedyReader: remedyReader, healerReader: healerReader, herbReader: herbReader}
+func NewService(reader Reader) *Service {
+	return &Service{reader: reader}
 }
 
-// Search returns remedy, healer, and herb matches for a term of at least two runes.
-func (s *Service) Search(ctx context.Context, term string) (Result, error) {
+// Search returns one page of merged hits for a term of at least two runes.
+func (s *Service) Search(ctx context.Context, term string, p listing.Params) (listing.Page[Hit], error) {
 	term = strings.TrimSpace(term)
 	if utf8.RuneCountInString(term) < 2 {
-		return Result{}, ErrTermTooShort
+		return listing.Page[Hit]{}, ErrTermTooShort
 	}
-	remedies, err := s.remedyReader.Search(ctx, term)
-	if err != nil {
-		return Result{}, err
-	}
-	healers, err := s.healerReader.Search(ctx, term)
-	if err != nil {
-		return Result{}, err
-	}
-	herbs, err := s.herbReader.Search(ctx, term)
-	if err != nil {
-		return Result{}, err
-	}
-	return Result{Remedies: remedies, Healers: healers, Herbs: herbs}, nil
+	return s.reader.SearchAll(ctx, term, p)
 }

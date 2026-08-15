@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { DistrictForm } from "@/components/DistrictForm";
 import { EmptyState } from "@/components/EmptyState";
+import { RowAvatar } from "@/components/RowAvatar";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
 import { deleteDistrict, districtListKey, fetchDistricts } from "@/lib/staff-queries";
@@ -58,9 +59,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
         <ul className={staffCard}>
           {districts.map((d) => (
             <li key={d.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
-              <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
-                {d.nameThai.trim().charAt(0)}
-              </span>
+              <RowAvatar ownerType="district" ownerId={d.id} fallback={d.nameThai.trim().charAt(0)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{d.nameThai}</p>
                 {d.nameEnglish ? <p className="truncate text-sm text-ink-soft">{d.nameEnglish}</p> : null}

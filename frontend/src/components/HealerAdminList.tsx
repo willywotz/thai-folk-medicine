@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
+import { RowAvatar } from "@/components/RowAvatar";
 import { StaffPagination } from "@/components/StaffPagination";
 import { StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
@@ -70,9 +71,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
         <ul className={staffCard}>
           {healers.map((h) => (
             <li key={h.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
-              <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
-                {h.fullName.trim().charAt(0)}
-              </span>
+              <RowAvatar ownerType="healer" ownerId={h.id} fallback={h.fullName.trim().charAt(0)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{h.fullName}</p>
                 <p className="truncate text-sm text-ink-soft">

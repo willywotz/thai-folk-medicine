@@ -36,4 +36,34 @@ describe("StaffNavLink", () => {
     );
     expect(screen.getByRole("link", { name: "Districts" })).not.toHaveAttribute("aria-current");
   });
+
+  it("marks a section link as current on a nested detail route", () => {
+    pathname.mockReturnValue("/staff/remedies/new");
+    render(
+      <StaffNavLink href="/staff/remedies" match={["/staff/remedies"]}>
+        Remedy
+      </StaffNavLink>,
+    );
+    expect(screen.getByRole("link", { name: "Remedy" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("keeps the exact-only Dashboard link inactive on other sections", () => {
+    pathname.mockReturnValue("/staff/healers");
+    render(
+      <StaffNavLink href="/staff" match={[]}>
+        Dashboard
+      </StaffNavLink>,
+    );
+    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("marks the exact-only Dashboard link current on its own path", () => {
+    pathname.mockReturnValue("/staff");
+    render(
+      <StaffNavLink href="/staff" match={[]}>
+        Dashboard
+      </StaffNavLink>,
+    );
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+  });
 });

@@ -20,6 +20,7 @@ import (
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/photostore"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/token"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/audit"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/search"
 )
 
@@ -67,6 +68,10 @@ func main() {
 	bus.Subscribe("herb.updated", auditHandler(logger))
 	bus.Subscribe("herb.deleted", auditHandler(logger))
 
+	eventLogRepo := repository.NewEventLog(queries)
+	auditRecorder := audit.NewRecorder(eventLogRepo)
+	bus.SubscribeAll(auditRecorder.Handle)
+
 	photoStore, err := photostore.NewLocal(cfg.PhotoStorageDir)
 	if err != nil {
 		logger.Error("open photo store", "error", err)
@@ -96,12 +101,13 @@ func main() {
 		usecase.NewHerbService(repository.NewHerb(queries), bus),
 		remedyRepo,
 	)
+	activityHandler := httpapi.NewActivityHandler(audit.NewReader(eventLogRepo))
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler, activityHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

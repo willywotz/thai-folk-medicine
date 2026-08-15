@@ -15,6 +15,13 @@ type District struct {
 	NameEnglish string
 }
 
+type EventLog struct {
+	ID         int64
+	EventName  string
+	Payload    []byte
+	OccurredAt pgtype.Timestamptz
+}
+
 type Healer struct {
 	ID          int64
 	DistrictID  int64

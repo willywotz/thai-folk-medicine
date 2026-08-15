@@ -1,3 +1,4 @@
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
 import { LinkRow } from "@/components/LinkRow";
 import { Pagination } from "@/components/Pagination";
@@ -47,6 +48,7 @@ export default async function SearchPage({
 
   return (
     <section>
+      <Breadcrumb items={[{ label: t.common.home, href: "/" }, { label: t.common.search }]} />
       <h1 className="mb-4 font-serif text-2xl text-ink">{t.search.title}</h1>
       <SearchBox defaultValue={term} />
 

@@ -5,6 +5,10 @@ import { getFirstProvince, listDistricts } from "@/lib/api";
 export default async function NewHealerPage() {
   const province = await getFirstProvince();
   const districts = province ? await listDistricts(province.id) : [];
+  const districtOptions = districts.map((d) => ({
+    value: d.id,
+    label: `${d.nameThai} (${d.nameEnglish}) · ${province?.nameThai}`,
+  }));
 
   return (
     <section>
@@ -13,7 +17,7 @@ export default async function NewHealerPage() {
         eyebrow="new record"
         title="Add a folk healer"
       />
-      <HealerForm districts={districts} />
+      <HealerForm districtOptions={districtOptions} />
     </section>
   );
 }

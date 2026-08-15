@@ -9,9 +9,9 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { CaseForm } from "./CaseForm";
 
-const remedies = [
-  { id: 5, name: "ยาต้ม", healerId: 2 },
-  { id: 6, name: "ยาพอก", healerId: 3 },
+const remedyOptions = [
+  { value: 5, label: "ยาต้ม · หมอสมชาย · เมือง · เชียงใหม่", healerId: 2 },
+  { value: 6, label: "ยาพอก · หมอสมหญิง · แม่ริม · เชียงใหม่", healerId: 3 },
 ];
 
 function renderWithClient(ui: React.ReactNode) {
@@ -26,12 +26,12 @@ afterEach(() => {
 
 describe("CaseForm (create)", () => {
   it("defaults the remedy combobox to the first option", () => {
-    renderWithClient(<CaseForm remedies={remedies} />);
-    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาต้ม");
+    renderWithClient(<CaseForm remedyOptions={remedyOptions} />);
+    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาต้ม · หมอสมชาย · เมือง · เชียงใหม่");
   });
 
   it("requires patient sex and a date", async () => {
-    renderWithClient(<CaseForm remedies={remedies} />);
+    renderWithClient(<CaseForm remedyOptions={remedyOptions} />);
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(await screen.findByText(/patient sex is required/i)).toBeInTheDocument();
   });
@@ -43,12 +43,12 @@ describe("CaseForm (create)", () => {
       return { ok: true, status: 201, json: async () => ({ id: 9 }) };
     });
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    renderWithClient(<CaseForm remedies={remedies} />);
+    renderWithClient(<CaseForm remedyOptions={remedyOptions} />);
     const remedyInput = screen.getByLabelText(/^remedy/i);
     await userEvent.click(remedyInput);
     await userEvent.clear(remedyInput);
     await userEvent.type(remedyInput, "ยาพอก");
-    await userEvent.click(await screen.findByRole("option", { name: "ยาพอก" }));
+    await userEvent.click(await screen.findByRole("option", { name: /ยาพอก/ }));
     await userEvent.type(screen.getByLabelText(/patient sex/i), "female");
     await userEvent.type(screen.getByLabelText(/age/i), "40");
     await userEvent.type(screen.getByLabelText(/date treated/i), "2026-03-01");
@@ -81,7 +81,7 @@ describe("CaseForm (create)", () => {
       createdAt: "",
       updatedAt: "",
     };
-    renderWithClient(<CaseForm treatmentCase={treatmentCase} remedies={remedies} />);
-    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาพอก");
+    renderWithClient(<CaseForm treatmentCase={treatmentCase} remedyOptions={remedyOptions} />);
+    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาพอก · หมอสมหญิง · แม่ริม · เชียงใหม่");
   });
 });

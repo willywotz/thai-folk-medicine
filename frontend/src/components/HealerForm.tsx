@@ -6,16 +6,23 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { EntityCombobox } from "@/components/EntityCombobox";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
-import type { District, Healer } from "@/lib/api-types";
+import type { Healer } from "@/lib/api-types";
 import { healerSchema, type HealerInput } from "@/lib/healer-schema";
 import { createHealer, healerListKey, updateHealer } from "@/lib/staff-queries";
 
-export function HealerForm({ healer, districts }: { healer?: Healer; districts: District[] }) {
+export function HealerForm({
+  healer,
+  districtOptions,
+}: {
+  healer?: Healer;
+  districtOptions: { value: number; label: string }[];
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [districtId, setDistrictId] = useState(healer?.districtId ?? districts[0]?.id ?? 0);
+  const [districtId, setDistrictId] = useState(healer?.districtId ?? districtOptions[0]?.value ?? 0);
   const {
     register,
     handleSubmit,
@@ -51,19 +58,13 @@ export function HealerForm({ healer, districts }: { healer?: Healer; districts: 
           <label htmlFor="districtId" className={staffLabel}>
             District (อำเภอ)
           </label>
-          <select
-            id="districtId"
-            required
-            className={field}
+          <EntityCombobox
+            options={districtOptions}
             value={districtId}
-            onChange={(e) => setDistrictId(Number(e.target.value))}
-          >
-            {districts.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nameEnglish} · {d.nameThai}
-              </option>
-            ))}
-          </select>
+            onChange={setDistrictId}
+            placeholder="ค้นหาอำเภอ (search district)"
+            ariaLabel="district"
+          />
         </div>
         <div className="space-y-1">
           <label htmlFor="fullName" className={staffLabel}>

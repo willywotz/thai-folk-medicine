@@ -10,20 +10,20 @@ import { EntityCombobox } from "@/components/EntityCombobox";
 import { HerbPicker } from "@/components/HerbPicker";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
-import type { Healer, Remedy } from "@/lib/api-types";
+import type { Remedy } from "@/lib/api-types";
 import { remedySchema, type RemedyInput } from "@/lib/remedy-schema";
 import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
 
 export function RemedyForm({
   remedy,
-  healers,
+  healerOptions,
 }: {
   remedy?: Remedy;
-  healers: Pick<Healer, "id" | "fullName">[];
+  healerOptions: { value: number; label: string }[];
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [healerId, setHealerId] = useState(remedy?.healerId ?? healers[0]?.id ?? 0);
+  const [healerId, setHealerId] = useState(remedy?.healerId ?? healerOptions[0]?.value ?? 0);
   const [herbs, setHerbs] = useState(
     remedy?.herbs?.map((h) => ({ herbId: h.herbId, amount: h.amount })) ?? [],
   );
@@ -65,7 +65,7 @@ export function RemedyForm({
             Healer (หมอพื้นบ้าน)
           </label>
           <EntityCombobox
-            options={healers.map((h) => ({ value: h.id, label: h.fullName }))}
+            options={healerOptions}
             value={healerId}
             onChange={setHealerId}
             placeholder="ค้นหาหมอ (search healer)"

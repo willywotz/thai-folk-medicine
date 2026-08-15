@@ -9,9 +9,9 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { RemedyForm } from "./RemedyForm";
 
-const healers = [
-  { id: 2, fullName: "หมอสมชาย" },
-  { id: 3, fullName: "หมอสมหญิง" },
+const healerOptions = [
+  { value: 2, label: "หมอสมชาย · เมือง · เชียงใหม่" },
+  { value: 3, label: "หมอสมหญิง · แม่ริม · เชียงใหม่" },
 ];
 
 function renderWithClient(ui: React.ReactNode) {
@@ -51,27 +51,27 @@ afterEach(() => {
 describe("RemedyForm (create)", () => {
   it("validates the required name", async () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
-    renderWithClient(<RemedyForm healers={healers} />);
+    renderWithClient(<RemedyForm healerOptions={healerOptions} />);
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
   });
 
   it("defaults the healer combobox to the first option", () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
-    renderWithClient(<RemedyForm healers={healers} />);
-    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมชาย");
+    renderWithClient(<RemedyForm healerOptions={healerOptions} />);
+    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมชาย · เมือง · เชียงใหม่");
   });
 
   it("adds a herb via the picker and posts a new remedy with the selected healer", async () => {
     const fetchMock = stubFetch();
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    renderWithClient(<RemedyForm healers={healers} />);
+    renderWithClient(<RemedyForm healerOptions={healerOptions} />);
     await userEvent.type(screen.getByLabelText(/^name/i), "ยาต้ม");
     const healerInput = screen.getByLabelText(/healer/i);
     await userEvent.click(healerInput);
     await userEvent.clear(healerInput);
     await userEvent.type(healerInput, "หมอสมหญิง");
-    await userEvent.click(await screen.findByRole("option", { name: "หมอสมหญิง" }));
+    await userEvent.click(await screen.findByRole("option", { name: /หมอสมหญิง/ }));
     await waitFor(() => expect(screen.getByRole("button", { name: /add herb/i })).not.toBeDisabled());
     await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
     await screen.findByRole("combobox", { name: /herb/i });
@@ -106,7 +106,7 @@ describe("RemedyForm (create)", () => {
       createdAt: "",
       updatedAt: "",
     };
-    renderWithClient(<RemedyForm remedy={remedy} healers={healers} />);
-    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมหญิง");
+    renderWithClient(<RemedyForm remedy={remedy} healerOptions={healerOptions} />);
+    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมหญิง · แม่ริม · เชียงใหม่");
   });
 });

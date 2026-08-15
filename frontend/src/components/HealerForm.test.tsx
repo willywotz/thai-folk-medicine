@@ -9,9 +9,9 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { HealerForm } from "./HealerForm";
 
-const districts = [
-  { id: 3, provinceId: 1, nameThai: "เมือง", nameEnglish: "Mueang" },
-  { id: 4, provinceId: 1, nameThai: "แม่ริม", nameEnglish: "Mae Rim" },
+const districtOptions = [
+  { value: 3, label: "เมือง (Mueang) · เชียงใหม่" },
+  { value: 4, label: "แม่ริม (Mae Rim) · เชียงใหม่" },
 ];
 
 function renderWithClient(ui: React.ReactNode) {
@@ -26,24 +26,26 @@ afterEach(() => {
 
 describe("HealerForm (create)", () => {
   it("validates the required name", async () => {
-    renderWithClient(<HealerForm districts={districts} />);
+    renderWithClient(<HealerForm districtOptions={districtOptions} />);
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(await screen.findByText(/full name is required/i)).toBeInTheDocument();
   });
 
-  it("requires a district and defaults to the first option", () => {
-    renderWithClient(<HealerForm districts={districts} />);
-    const select = screen.getByLabelText(/^district/i);
-    expect(select).toHaveAttribute("required");
-    expect(select).toHaveValue("3");
+  it("defaults the district combobox to the first option", () => {
+    renderWithClient(<HealerForm districtOptions={districtOptions} />);
+    expect(screen.getByLabelText(/^district/i)).toHaveValue("เมือง (Mueang) · เชียงใหม่");
   });
 
   it("posts a new healer with the selected district", async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 9 }) }));
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    renderWithClient(<HealerForm districts={districts} />);
+    renderWithClient(<HealerForm districtOptions={districtOptions} />);
     await userEvent.type(screen.getByLabelText(/full name/i), "หมอสมชาย");
-    await userEvent.selectOptions(screen.getByLabelText(/^district/i), "4");
+    const districtInput = screen.getByLabelText(/^district/i);
+    await userEvent.click(districtInput);
+    await userEvent.clear(districtInput);
+    await userEvent.type(districtInput, "แม่ริม");
+    await userEvent.click(await screen.findByRole("option", { name: /แม่ริม/ }));
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -72,7 +74,7 @@ describe("HealerForm (create)", () => {
       createdAt: "",
       updatedAt: "",
     };
-    renderWithClient(<HealerForm healer={healer} districts={districts} />);
-    expect(screen.getByLabelText(/^district/i)).toHaveValue("4");
+    renderWithClient(<HealerForm healer={healer} districtOptions={districtOptions} />);
+    expect(screen.getByLabelText(/^district/i)).toHaveValue("แม่ริม (Mae Rim) · เชียงใหม่");
   });
 });

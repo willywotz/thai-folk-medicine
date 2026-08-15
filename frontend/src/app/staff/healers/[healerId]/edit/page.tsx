@@ -17,6 +17,10 @@ export default async function EditHealerPage({
   if (!healer) notFound();
   const province = await getFirstProvince();
   const districts = province ? await listDistricts(province.id) : [];
+  const districtOptions = districts.map((d) => ({
+    value: d.id,
+    label: `${d.nameThai} (${d.nameEnglish}) · ${province?.nameThai}`,
+  }));
 
   return (
     <section>
@@ -25,7 +29,7 @@ export default async function EditHealerPage({
         eyebrow="edit record"
         title={`Edit ${healer.fullName}`}
       />
-      <HealerForm healer={healer} districts={districts} />
+      <HealerForm healer={healer} districtOptions={districtOptions} />
     </section>
   );
 }

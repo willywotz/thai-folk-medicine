@@ -21,14 +21,14 @@ type CaseFormValues = z.input<typeof treatmentCaseSchema>;
 
 export function CaseForm({
   treatmentCase,
-  remedies,
+  remedyOptions,
 }: {
   treatmentCase?: TreatmentCase;
-  remedies: { id: number; name: string; healerId: number }[];
+  remedyOptions: { value: number; label: string; healerId: number }[];
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [remedyId, setRemedyId] = useState(treatmentCase?.remedyId ?? remedies[0]?.id ?? 0);
+  const [remedyId, setRemedyId] = useState(treatmentCase?.remedyId ?? remedyOptions[0]?.value ?? 0);
   const {
     register,
     handleSubmit,
@@ -47,7 +47,7 @@ export function CaseForm({
 
   const save = useMutation({
     mutationFn: (values: TreatmentCaseInput) => {
-      const healerId = remedies.find((r) => r.id === remedyId)?.healerId ?? 0;
+      const healerId = remedyOptions.find((r) => r.value === remedyId)?.healerId ?? 0;
       const payload = { ...values, remedyId, healerId };
       return treatmentCase ? updateCase(treatmentCase.id, payload) : createCase(payload);
     },
@@ -68,7 +68,7 @@ export function CaseForm({
             Remedy (ตำรับยา)
           </label>
           <EntityCombobox
-            options={remedies.map((r) => ({ value: r.id, label: r.name }))}
+            options={remedyOptions}
             value={remedyId}
             onChange={setRemedyId}
             placeholder="ค้นหาตำรับยา (search remedy)"

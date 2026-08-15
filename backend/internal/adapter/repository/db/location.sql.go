@@ -9,6 +9,105 @@ import (
 	"context"
 )
 
+const countDistrict = `-- name: CountDistrict :one
+SELECT COUNT(*) FROM district
+`
+
+func (q *Queries) CountDistrict(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countDistrict)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countDistrictByProvince = `-- name: CountDistrictByProvince :one
+SELECT COUNT(*) FROM district WHERE province_id = $1
+`
+
+func (q *Queries) CountDistrictByProvince(ctx context.Context, provinceID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countDistrictByProvince, provinceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countProvince = `-- name: CountProvince :one
+SELECT COUNT(*) FROM province
+`
+
+func (q *Queries) CountProvince(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countProvince)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createDistrict = `-- name: CreateDistrict :one
+INSERT INTO district (province_id, name_thai, name_english)
+VALUES ($1, $2, $3)
+RETURNING id, province_id, name_thai, name_english
+`
+
+type CreateDistrictParams struct {
+	ProvinceID  int64
+	NameThai    string
+	NameEnglish string
+}
+
+func (q *Queries) CreateDistrict(ctx context.Context, arg CreateDistrictParams) (District, error) {
+	row := q.db.QueryRow(ctx, createDistrict, arg.ProvinceID, arg.NameThai, arg.NameEnglish)
+	var i District
+	err := row.Scan(
+		&i.ID,
+		&i.ProvinceID,
+		&i.NameThai,
+		&i.NameEnglish,
+	)
+	return i, err
+}
+
+const createProvince = `-- name: CreateProvince :one
+INSERT INTO province (name_thai, name_english)
+VALUES ($1, $2)
+RETURNING id, name_thai, name_english
+`
+
+type CreateProvinceParams struct {
+	NameThai    string
+	NameEnglish string
+}
+
+func (q *Queries) CreateProvince(ctx context.Context, arg CreateProvinceParams) (Province, error) {
+	row := q.db.QueryRow(ctx, createProvince, arg.NameThai, arg.NameEnglish)
+	var i Province
+	err := row.Scan(&i.ID, &i.NameThai, &i.NameEnglish)
+	return i, err
+}
+
+const deleteDistrict = `-- name: DeleteDistrict :execrows
+DELETE FROM district WHERE id = $1
+`
+
+func (q *Queries) DeleteDistrict(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteDistrict, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteProvince = `-- name: DeleteProvince :execrows
+DELETE FROM province WHERE id = $1
+`
+
+func (q *Queries) DeleteProvince(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteProvince, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getDistrict = `-- name: GetDistrict :one
 SELECT id, province_id, name_thai, name_english
 FROM district
@@ -24,6 +123,19 @@ func (q *Queries) GetDistrict(ctx context.Context, id int64) (District, error) {
 		&i.NameThai,
 		&i.NameEnglish,
 	)
+	return i, err
+}
+
+const getProvince = `-- name: GetProvince :one
+SELECT id, name_thai, name_english
+FROM province
+WHERE id = $1
+`
+
+func (q *Queries) GetProvince(ctx context.Context, id int64) (Province, error) {
+	row := q.db.QueryRow(ctx, getProvince, id)
+	var i Province
+	err := row.Scan(&i.ID, &i.NameThai, &i.NameEnglish)
 	return i, err
 }
 
@@ -83,4 +195,49 @@ func (q *Queries) ListProvince(ctx context.Context) ([]Province, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateDistrict = `-- name: UpdateDistrict :one
+UPDATE district
+SET name_thai = $2, name_english = $3
+WHERE id = $1
+RETURNING id, province_id, name_thai, name_english
+`
+
+type UpdateDistrictParams struct {
+	ID          int64
+	NameThai    string
+	NameEnglish string
+}
+
+func (q *Queries) UpdateDistrict(ctx context.Context, arg UpdateDistrictParams) (District, error) {
+	row := q.db.QueryRow(ctx, updateDistrict, arg.ID, arg.NameThai, arg.NameEnglish)
+	var i District
+	err := row.Scan(
+		&i.ID,
+		&i.ProvinceID,
+		&i.NameThai,
+		&i.NameEnglish,
+	)
+	return i, err
+}
+
+const updateProvince = `-- name: UpdateProvince :one
+UPDATE province
+SET name_thai = $2, name_english = $3
+WHERE id = $1
+RETURNING id, name_thai, name_english
+`
+
+type UpdateProvinceParams struct {
+	ID          int64
+	NameThai    string
+	NameEnglish string
+}
+
+func (q *Queries) UpdateProvince(ctx context.Context, arg UpdateProvinceParams) (Province, error) {
+	row := q.db.QueryRow(ctx, updateProvince, arg.ID, arg.NameThai, arg.NameEnglish)
+	var i Province
+	err := row.Scan(&i.ID, &i.NameThai, &i.NameEnglish)
+	return i, err
 }

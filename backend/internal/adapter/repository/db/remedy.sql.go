@@ -7,14 +7,23 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countRemedyByHealer = `-- name: CountRemedyByHealer :one
-SELECT COUNT(*) FROM remedy WHERE healer_id = $1
+SELECT COUNT(*) FROM remedy
+WHERE healer_id = $1
+  AND ($2::text IS NULL OR name ILIKE '%'||$2||'%')
 `
 
-func (q *Queries) CountRemedyByHealer(ctx context.Context, healerID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, countRemedyByHealer, healerID)
+type CountRemedyByHealerParams struct {
+	HealerID   int64
+	SearchTerm pgtype.Text
+}
+
+func (q *Queries) CountRemedyByHealer(ctx context.Context, arg CountRemedyByHealerParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyByHealer, arg.HealerID, arg.SearchTerm)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -22,10 +31,11 @@ func (q *Queries) CountRemedyByHealer(ctx context.Context, healerID int64) (int6
 
 const countRemedyPage = `-- name: CountRemedyPage :one
 SELECT COUNT(*) FROM remedy
+WHERE ($1::text IS NULL OR name ILIKE '%'||$1||'%')
 `
 
-func (q *Queries) CountRemedyPage(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countRemedyPage)
+func (q *Queries) CountRemedyPage(ctx context.Context, searchTerm pgtype.Text) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyPage, searchTerm)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -109,18 +119,25 @@ const listRemedyByHealerPage = `-- name: ListRemedyByHealerPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 WHERE healer_id = $1
+  AND ($2::text IS NULL OR name ILIKE '%'||$2||'%')
 ORDER BY name
-LIMIT $3 OFFSET $2
+LIMIT $4 OFFSET $3
 `
 
 type ListRemedyByHealerPageParams struct {
 	HealerID   int64
+	SearchTerm pgtype.Text
 	PageOffset int32
 	PageLimit  int32
 }
 
 func (q *Queries) ListRemedyByHealerPage(ctx context.Context, arg ListRemedyByHealerPageParams) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyByHealerPage, arg.HealerID, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listRemedyByHealerPage,
+		arg.HealerID,
+		arg.SearchTerm,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -152,17 +169,19 @@ func (q *Queries) ListRemedyByHealerPage(ctx context.Context, arg ListRemedyByHe
 const listRemedyPage = `-- name: ListRemedyPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
+WHERE ($1::text IS NULL OR name ILIKE '%'||$1||'%')
 ORDER BY created_at DESC, id DESC
-LIMIT $2 OFFSET $1
+LIMIT $3 OFFSET $2
 `
 
 type ListRemedyPageParams struct {
+	SearchTerm pgtype.Text
 	PageOffset int32
 	PageLimit  int32
 }
 
 func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyPage, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listRemedyPage, arg.SearchTerm, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -193,13 +212,14 @@ func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) 
 
 const updateRemedy = `-- name: UpdateRemedy :one
 UPDATE remedy
-SET name = $2, symptoms = $3, preparation_method = $4, usage = $5, note = $6, updated_at = now()
+SET healer_id = $2, name = $3, symptoms = $4, preparation_method = $5, usage = $6, note = $7, updated_at = now()
 WHERE id = $1
 RETURNING id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 `
 
 type UpdateRemedyParams struct {
 	ID                int64
+	HealerID          int64
 	Name              string
 	Symptoms          string
 	PreparationMethod string
@@ -210,6 +230,7 @@ type UpdateRemedyParams struct {
 func (q *Queries) UpdateRemedy(ctx context.Context, arg UpdateRemedyParams) (Remedy, error) {
 	row := q.db.QueryRow(ctx, updateRemedy,
 		arg.ID,
+		arg.HealerID,
 		arg.Name,
 		arg.Symptoms,
 		arg.PreparationMethod,

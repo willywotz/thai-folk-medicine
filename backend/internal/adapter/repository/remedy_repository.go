@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
@@ -107,15 +108,16 @@ func (r *Remedy) GetByID(ctx context.Context, id int64) (remedy.Remedy, error) {
 }
 
 // ListByHealerPage returns one page of a healer's remedies (without herb
-// links, for list views).
-func (r *Remedy) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
+// links, for list views), optionally filtered by a search term on name.
+func (r *Remedy) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	search := searchFilter(searchTerm)
 	rows, err := r.q.ListRemedyByHealerPage(ctx, db.ListRemedyByHealerPageParams{
-		HealerID: healerID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+		HealerID: healerID, SearchTerm: search, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
 	})
 	if err != nil {
 		return listing.Page[remedy.Remedy]{}, err
 	}
-	total, err := r.q.CountRemedyByHealer(ctx, healerID)
+	total, err := r.q.CountRemedyByHealer(ctx, db.CountRemedyByHealerParams{HealerID: healerID, SearchTerm: search})
 	if err != nil {
 		return listing.Page[remedy.Remedy]{}, err
 	}
@@ -145,15 +147,17 @@ func (r *Remedy) ListByHerbPage(ctx context.Context, herbID int64, p listing.Par
 	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
-// ListPage returns one page of remedies, most recent first.
-func (r *Remedy) ListPage(ctx context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
+// ListPage returns one page of remedies, most recent first, optionally
+// filtered by a search term on name.
+func (r *Remedy) ListPage(ctx context.Context, p listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	search := searchFilter(searchTerm)
 	rows, err := r.q.ListRemedyPage(ctx, db.ListRemedyPageParams{
-		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+		SearchTerm: search, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
 	})
 	if err != nil {
 		return listing.Page[remedy.Remedy]{}, err
 	}
-	total, err := r.q.CountRemedyPage(ctx)
+	total, err := r.q.CountRemedyPage(ctx, search)
 	if err != nil {
 		return listing.Page[remedy.Remedy]{}, err
 	}
@@ -162,6 +166,12 @@ func (r *Remedy) ListPage(ctx context.Context, p listing.Params) (listing.Page[r
 		items = append(items, toRemedy(row))
 	}
 	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
+}
+
+// Count counts every remedy.
+func (r *Remedy) Count(ctx context.Context) (int, error) {
+	count, err := r.q.CountRemedyPage(ctx, pgtype.Text{})
+	return int(count), err
 }
 
 // Update changes a remedy and replaces its herb links in one transaction.
@@ -175,6 +185,7 @@ func (r *Remedy) Update(ctx context.Context, p remedy.UpdateParams) (remedy.Reme
 
 	row, err := qtx.UpdateRemedy(ctx, db.UpdateRemedyParams{
 		ID:                p.ID,
+		HealerID:          p.HealerID,
 		Name:              p.Name,
 		Symptoms:          p.Symptoms,
 		PreparationMethod: p.PreparationMethod,

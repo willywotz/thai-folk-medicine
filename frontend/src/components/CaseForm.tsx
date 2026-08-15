@@ -3,11 +3,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
+import { EntityCombobox } from "@/components/EntityCombobox";
+import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
+import { PhotoManager } from "@/components/PhotoManager";
+import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { TreatmentCase } from "@/lib/api-types";
-import { caseListKey, createCase, updateCase } from "@/lib/staff-queries";
+import { caseListKey, createCase, updateCase, uploadPhoto } from "@/lib/staff-queries";
 import { treatmentCaseSchema, type TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
 // z.coerce.number() makes the schema's input type diverge from its output type
@@ -16,16 +21,20 @@ import { treatmentCaseSchema, type TreatmentCaseInput } from "@/lib/treatment-ca
 type CaseFormValues = z.input<typeof treatmentCaseSchema>;
 
 export function CaseForm({
-  remedyId,
-  healerId,
   treatmentCase,
+  remedyOptions,
+  defaultRemedyId,
 }: {
-  remedyId: number;
-  healerId: number;
   treatmentCase?: TreatmentCase;
+  remedyOptions: { value: number; label: string; healerId: number }[];
+  defaultRemedyId?: number;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [remedyId, setRemedyId] = useState(
+    treatmentCase?.remedyId ?? defaultRemedyId ?? remedyOptions[0]?.value ?? 0,
+  );
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
     handleSubmit,
@@ -43,77 +52,97 @@ export function CaseForm({
   });
 
   const save = useMutation({
-    mutationFn: (values: TreatmentCaseInput) =>
-      treatmentCase
-        ? updateCase(treatmentCase.id, values)
-        : createCase({ ...values, remedyId, healerId }),
+    mutationFn: async (values: TreatmentCaseInput) => {
+      const healerId = remedyOptions.find((r) => r.value === remedyId)?.healerId ?? 0;
+      const payload = { ...values, remedyId, healerId };
+      if (treatmentCase) return updateCase(treatmentCase.id, payload);
+      const created = await createCase(payload);
+      await Promise.all(
+        pendingPhotos.map((p) =>
+          uploadPhoto({ ownerType: "case", ownerId: created.id, file: p.file, caption: p.caption }),
+        ),
+      );
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: caseListKey(remedyId) });
-      router.push(`/staff/remedies/${remedyId}/treatment-cases`);
+      queryClient.invalidateQueries({ queryKey: caseListKey() });
+      router.push("/staff/cases");
       router.refresh();
     },
   });
 
-  const field = "w-full rounded border border-stone-300 p-2";
+  const field = staffField;
 
   return (
-    <form onSubmit={handleSubmit((v) => save.mutate(v))} className="max-w-lg space-y-4" noValidate>
-      <div className="space-y-1">
-        <label htmlFor="patientSex" className="text-sm font-medium">
-          Patient sex (เพศ)
-        </label>
-        <input id="patientSex" className={field} {...register("patientSex")} />
-        {errors.patientSex ? <p className="text-sm text-red-600">{errors.patientSex.message}</p> : null}
+    <div className="max-w-xl space-y-6">
+      <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
+        <div className="space-y-1">
+          <label htmlFor="remedyId" className={staffLabel}>
+            Remedy (ตำรับยา)
+          </label>
+          <EntityCombobox
+            options={remedyOptions}
+            value={remedyId}
+            onChange={setRemedyId}
+            placeholder="ค้นหาตำรับยา (search remedy)"
+            ariaLabel="remedy"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="patientSex" className={staffLabel}>
+            Patient sex (เพศ)
+          </label>
+          <input id="patientSex" className={field} {...register("patientSex")} />
+          {errors.patientSex ? <p className={staffFieldError}>{errors.patientSex.message}</p> : null}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="patientAge" className={staffLabel}>
+            Patient age (อายุ)
+          </label>
+          <input id="patientAge" type="number" min={0} className={field} {...register("patientAge")} />
+          {errors.patientAge ? <p className={staffFieldError}>{errors.patientAge.message}</p> : null}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="treatedOn" className={staffLabel}>
+            Date treated (วันที่รักษา)
+          </label>
+          <input id="treatedOn" type="date" className={field} {...register("treatedOn")} />
+          {errors.treatedOn ? <p className={staffFieldError}>{errors.treatedOn.message}</p> : null}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="symptoms" className={staffLabel}>
+            Symptoms (อาการ)
+          </label>
+          <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="result" className={staffLabel}>
+            Result (ผลการรักษา)
+          </label>
+          <textarea id="result" rows={2} className={field} {...register("result")} />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="note" className={staffLabel}>
+            Note (หมายเหตุ)
+          </label>
+          <textarea id="note" rows={2} className={field} {...register("note")} />
+        </div>
+        {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
+        <div className="flex gap-3">
+          <button type="submit" disabled={save.isPending} className={btnPrimary}>
+            Save
+          </button>
+          <button type="button" onClick={() => router.push("/staff/cases")} className={btnGhost}>
+            Cancel
+          </button>
+        </div>
+      </form>
+      <div className={`${staffCard} p-6`}>
+        {treatmentCase ? (
+          <PhotoManager ownerType="case" ownerId={treatmentCase.id} />
+        ) : (
+          <PhotoInput value={pendingPhotos} onChange={setPendingPhotos} />
+        )}
       </div>
-      <div className="space-y-1">
-        <label htmlFor="patientAge" className="text-sm font-medium">
-          Patient age (อายุ)
-        </label>
-        <input id="patientAge" type="number" min={0} className={field} {...register("patientAge")} />
-        {errors.patientAge ? <p className="text-sm text-red-600">{errors.patientAge.message}</p> : null}
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="treatedOn" className="text-sm font-medium">
-          Date treated (วันที่รักษา)
-        </label>
-        <input id="treatedOn" type="date" className={field} {...register("treatedOn")} />
-        {errors.treatedOn ? <p className="text-sm text-red-600">{errors.treatedOn.message}</p> : null}
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="symptoms" className="text-sm font-medium">
-          Symptoms (อาการ)
-        </label>
-        <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="result" className="text-sm font-medium">
-          Result (ผลการรักษา)
-        </label>
-        <textarea id="result" rows={2} className={field} {...register("result")} />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="note" className="text-sm font-medium">
-          Note (หมายเหตุ)
-        </label>
-        <textarea id="note" rows={2} className={field} {...register("note")} />
-      </div>
-      {save.isError ? <p className="text-sm text-red-600">Could not save. Try again.</p> : null}
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={save.isPending}
-          className="rounded bg-stone-800 px-4 py-2 text-white disabled:opacity-50"
-        >
-          Save
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push(`/staff/remedies/${remedyId}/treatment-cases`)}
-          className="rounded border border-stone-300 px-4 py-2"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }

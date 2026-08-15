@@ -42,14 +42,22 @@ func TestRemedyCreateGetListUpdateDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, got.ID)
 
-	page, err := repo.ListByHealerPage(ctx, healerID, listing.Params{Limit: 10})
+	page, err := repo.ListByHealerPage(ctx, healerID, listing.Params{Limit: 10}, nil)
 	require.NoError(t, err)
 	assert.Len(t, page.Items, 1)
 
-	updated, err := repo.Update(ctx, remedy.UpdateParams{ID: created.ID, Name: "ยาต้มใหม่", Usage: "ดื่มวันละ 2 ครั้ง"})
+	updated, err := repo.Update(ctx, remedy.UpdateParams{ID: created.ID, HealerID: healerID, Name: "ยาต้มใหม่", Usage: "ดื่มวันละ 2 ครั้ง"})
 	require.NoError(t, err)
 	assert.Equal(t, "ยาต้มใหม่", updated.Name)
 	assert.Equal(t, "ดื่มวันละ 2 ครั้ง", updated.Usage)
+
+	otherHealerID := makeHealer(t, ctx, NewHealer(queries), districtID)
+	reassigned, err := repo.Update(ctx, remedy.UpdateParams{ID: created.ID, HealerID: otherHealerID, Name: "ยาต้มใหม่"})
+	require.NoError(t, err)
+	assert.Equal(t, otherHealerID, reassigned.HealerID)
+	got, err = repo.GetByID(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, otherHealerID, got.HealerID)
 
 	require.NoError(t, repo.Delete(ctx, created.ID))
 	_, err = repo.GetByID(ctx, created.ID)
@@ -107,7 +115,7 @@ func TestRemedyRepository_HerbLinks(t *testing.T) {
 	assert.Len(t, byHerb.Items, 1)
 
 	_, err = remedyRepo.Update(ctx, remedy.UpdateParams{
-		ID: created.ID, Name: "ยาต้ม*",
+		ID: created.ID, HealerID: healerID, Name: "ยาต้ม*",
 		Herbs: []remedy.HerbRef{{HerbID: hb2.ID, Amount: "1 ช้อน"}},
 	})
 	require.NoError(t, err)
@@ -131,12 +139,67 @@ func seedRemedyFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	}
 }
 
+func TestRemedyRepository_ListPage_SearchTermFilter(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	queries := db.New(pool)
+	districtID := firstDistrictID(t, ctx, NewLocation(queries))
+	healerID := makeHealer(t, ctx, NewHealer(queries), districtID)
+	repo := NewRemedy(pool)
+	_, err := repo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ไข้"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ปวดหัว"})
+	require.NoError(t, err)
+
+	all, err := repo.ListPage(ctx, listing.Params{Limit: 10}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 2, all.Total)
+
+	term := "ไข้"
+	filtered, err := repo.ListPage(ctx, listing.Params{Limit: 10}, &term)
+	require.NoError(t, err)
+	assert.Equal(t, 1, filtered.Total)
+	assert.Equal(t, "ยาแก้ไข้", filtered.Items[0].Name)
+}
+
+func TestRemedyRepository_ListByHealerPage_SearchTermFilter(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	queries := db.New(pool)
+	districtID := firstDistrictID(t, ctx, NewLocation(queries))
+	healerID := makeHealer(t, ctx, NewHealer(queries), districtID)
+	repo := NewRemedy(pool)
+	_, err := repo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ไข้"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยาแก้ปวดหัว"})
+	require.NoError(t, err)
+
+	all, err := repo.ListByHealerPage(ctx, healerID, listing.Params{Limit: 10}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 2, all.Total)
+
+	term := "ไข้"
+	filtered, err := repo.ListByHealerPage(ctx, healerID, listing.Params{Limit: 10}, &term)
+	require.NoError(t, err)
+	assert.Equal(t, 1, filtered.Total)
+	assert.Equal(t, "ยาแก้ไข้", filtered.Items[0].Name)
+}
+
+func TestRemedyCountCountsAllRemedies(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewRemedy(pool)
+	seedRemedyFixtures(t, ctx, pool)
+
+	count, err := repo.Count(ctx)
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, count)
+}
+
 func TestRemedyRepository_ListPage_OffsetWindow(t *testing.T) {
 	ctx, pool := newTestPoolConn(t)
 	repo := NewRemedy(pool)
 	seedRemedyFixtures(t, ctx, pool)
 
-	page2, err := repo.ListPage(ctx, listing.Params{Limit: 2, Offset: 2})
+	page2, err := repo.ListPage(ctx, listing.Params{Limit: 2, Offset: 2}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 3, page2.Total)
 	assert.Len(t, page2.Items, 1)
@@ -153,7 +216,7 @@ func TestRemedyRepository_ListByHealerPage_OffsetWindow(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	page2, err := repo.ListByHealerPage(ctx, healerID, listing.Params{Limit: 2, Offset: 2})
+	page2, err := repo.ListByHealerPage(ctx, healerID, listing.Params{Limit: 2, Offset: 2}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 3, page2.Total)
 	assert.Len(t, page2.Items, 1)

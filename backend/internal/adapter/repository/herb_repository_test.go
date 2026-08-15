@@ -33,7 +33,7 @@ func TestHerbRepository_CRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, got.ID)
 
-	page, err := repo.ListPage(ctx, listing.Params{Limit: 10})
+	page, err := repo.ListPage(ctx, listing.Params{Limit: 10}, nil)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(page.Items), 1)
 
@@ -57,12 +57,45 @@ func seedHerbFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	require.NoError(t, err)
 }
 
+func TestHerbRepository_ListPage_SearchTermFilter(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewHerb(db.New(pool))
+	seedHerbFixtures(t, ctx, pool)
+
+	all, err := repo.ListPage(ctx, listing.Params{Limit: 10}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 3, all.Total)
+
+	byThai := "ขิง"
+	filtered, err := repo.ListPage(ctx, listing.Params{Limit: 10}, &byThai)
+	require.NoError(t, err)
+	assert.Equal(t, 1, filtered.Total)
+	assert.Equal(t, "ขิง", filtered.Items[0].NameThai)
+
+	byEnglish := "Cassumunar"
+	filteredEn, err := repo.ListPage(ctx, listing.Params{Limit: 10}, &byEnglish)
+	require.NoError(t, err)
+	assert.Equal(t, 1, filteredEn.Total)
+	assert.Equal(t, "ไพล", filteredEn.Items[0].NameThai)
+}
+
+func TestHerbCountCountsAllHerbs(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewHerb(db.New(pool))
+	seedHerbFixtures(t, ctx, pool)
+
+	count, err := repo.Count(ctx)
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, count)
+}
+
 func TestHerbRepository_ListPage_OffsetWindow(t *testing.T) {
 	ctx, pool := newTestPoolConn(t)
 	repo := NewHerb(db.New(pool))
 	seedHerbFixtures(t, ctx, pool)
 
-	page2, err := repo.ListPage(ctx, listing.Params{Limit: 2, Offset: 2})
+	page2, err := repo.ListPage(ctx, listing.Params{Limit: 2, Offset: 2}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 3, page2.Total)
 	assert.Len(t, page2.Items, 1)

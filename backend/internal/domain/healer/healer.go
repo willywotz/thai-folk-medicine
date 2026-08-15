@@ -52,6 +52,7 @@ type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Healer, error)
 	GetByID(ctx context.Context, id int64) (Healer, error)
 	ListByDistrictPage(ctx context.Context, districtID int64, p listing.Params) (listing.Page[Healer], error)
+	ListPage(ctx context.Context, p listing.Params, districtID *int64, searchTerm *string) (listing.Page[Healer], error)
 	Update(ctx context.Context, p UpdateParams) (Healer, error)
 	Delete(ctx context.Context, id int64) error
 }

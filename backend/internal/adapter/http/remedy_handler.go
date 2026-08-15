@@ -94,7 +94,7 @@ func toHerbRefs(req []remedyHerbRequest) []remedy.HerbRef {
 	return refs
 }
 
-// ListByHealer handles GET /api/v1/healers/:healerId/remedies?page&pageSize.
+// ListByHealer handles GET /api/v1/healers/:healerId/remedies?searchTerm&page&pageSize.
 func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 	healerID, err := strconv.ParseInt(c.Param("healerId"), 10, 64)
 	if err != nil {
@@ -102,7 +102,7 @@ func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 		return
 	}
 	params, page, pageSize := parsePageParams(c, 12)
-	result, err := h.service.ListByHealerPage(c.Request.Context(), healerID, params)
+	result, err := h.service.ListByHealerPage(c.Request.Context(), healerID, params, parseSearchTerm(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return
@@ -114,10 +114,10 @@ func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
-// ListPage handles GET /api/v1/remedies?page&pageSize.
+// ListPage handles GET /api/v1/remedies?searchTerm&page&pageSize.
 func (h *RemedyHandler) ListPage(c *gin.Context) {
 	params, page, pageSize := parsePageParams(c, 12)
-	result, err := h.service.ListPage(c.Request.Context(), params)
+	result, err := h.service.ListPage(c.Request.Context(), params, parseSearchTerm(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return
@@ -189,6 +189,7 @@ func (h *RemedyHandler) Update(c *gin.Context) {
 	}
 	updated, err := h.service.Update(c.Request.Context(), remedy.UpdateParams{
 		ID:                id,
+		HealerID:          req.HealerID,
 		Name:              req.Name,
 		Symptoms:          req.Symptoms,
 		PreparationMethod: req.PreparationMethod,
@@ -199,7 +200,7 @@ func (h *RemedyHandler) Update(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidRemedy):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "name is required and healer id must be valid"})
 		case errors.Is(err, remedy.ErrNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "remedy not found"})
 		default:

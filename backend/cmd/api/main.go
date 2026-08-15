@@ -20,6 +20,7 @@ import (
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/photostore"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/token"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/audit"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/search"
 )
 
@@ -66,6 +67,13 @@ func main() {
 	bus.Subscribe("herb.created", auditHandler(logger))
 	bus.Subscribe("herb.updated", auditHandler(logger))
 	bus.Subscribe("herb.deleted", auditHandler(logger))
+	bus.Subscribe("province.created", auditHandler(logger))
+	bus.Subscribe("province.updated", auditHandler(logger))
+	bus.Subscribe("province.deleted", auditHandler(logger))
+
+	eventLogRepo := repository.NewEventLog(queries)
+	auditRecorder := audit.NewRecorder(eventLogRepo)
+	bus.SubscribeAll(auditRecorder.Handle)
 
 	photoStore, err := photostore.NewLocal(cfg.PhotoStorageDir)
 	if err != nil {
@@ -74,7 +82,7 @@ func main() {
 	}
 
 	locationHandler := httpapi.NewLocationHandler(
-		usecase.NewLocationService(repository.NewLocation(queries)),
+		usecase.NewLocationService(repository.NewLocation(queries), bus),
 	)
 	healerHandler := httpapi.NewHealerHandler(
 		usecase.NewHealerService(repository.NewHealer(queries), bus),
@@ -96,12 +104,19 @@ func main() {
 		usecase.NewHerbService(repository.NewHerb(queries), bus),
 		remedyRepo,
 	)
+	activityHandler := httpapi.NewActivityHandler(audit.NewReader(eventLogRepo))
+	statsHandler := httpapi.NewStatsHandler(
+		usecase.NewStatsService(
+			repository.NewLocation(queries), repository.NewHealer(queries), remedyRepo,
+			repository.NewTreatmentCase(queries), repository.NewHerb(queries),
+		),
+	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler, activityHandler, statsHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

@@ -15,6 +15,7 @@ import (
 type Bus struct {
 	mu      sync.RWMutex
 	handler map[string][]event.Handler
+	all     []event.Handler
 	logger  *slog.Logger
 }
 
@@ -30,6 +31,14 @@ func (b *Bus) Subscribe(name string, h event.Handler) {
 	b.handler[name] = append(b.handler[name], h)
 }
 
+// SubscribeAll registers a handler that runs for every published event,
+// after the name-keyed handlers.
+func (b *Bus) SubscribeAll(h event.Handler) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.all = append(b.all, h)
+}
+
 // Publish logs the event and runs its handlers. Handler errors are logged, not
 // returned: a write must not fail because a reaction failed.
 func (b *Bus) Publish(ctx context.Context, e event.Event) {
@@ -38,9 +47,15 @@ func (b *Bus) Publish(ctx context.Context, e event.Event) {
 
 	b.mu.RLock()
 	handler := b.handler[name]
+	all := b.all
 	b.mu.RUnlock()
 
 	for _, h := range handler {
+		if err := h(ctx, e); err != nil {
+			b.logger.ErrorContext(ctx, "event handler failed", "event", name, "error", err)
+		}
+	}
+	for _, h := range all {
 		if err := h(ctx, e); err != nil {
 			b.logger.ErrorContext(ctx, "event handler failed", "event", name, "error", err)
 		}

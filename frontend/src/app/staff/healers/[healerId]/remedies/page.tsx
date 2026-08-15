@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { RemedyAdminList } from "@/components/RemedyAdminList";
-import { getHealer } from "@/lib/api";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getHealer, listHealers } from "@/lib/api";
 
-export default async function StaffRemediesPage({
+export default async function HealerRemediesPage({
   params,
 }: {
   params: Promise<{ healerId: string }>;
@@ -14,11 +15,17 @@ export default async function StaffRemediesPage({
 
   const healer = await getHealer(id);
   if (!healer) notFound();
+  // withinlazy: pageSize 48 caps the healer-name lookup; add real staff pagination
+  // if a province ever has more than 48 healers.
+  const { items: healers } = await listHealers({ pageSize: 48 });
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Remedies of {healer.fullName}</h1>
-      <RemedyAdminList healerId={id} />
+      <StaffPageHeader
+        crumbs={[{ label: "Healers", href: "/staff/healers" }, { label: healer.fullName }]}
+        title="ตำรับยา · Remedies"
+      />
+      <RemedyAdminList healers={healers} healerId={id} />
     </section>
   );
 }

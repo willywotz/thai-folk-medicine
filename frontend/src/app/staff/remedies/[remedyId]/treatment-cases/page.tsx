@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { CaseAdminList } from "@/components/CaseAdminList";
-import { getRemedy } from "@/lib/api";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getRemedy, listRemedies } from "@/lib/api";
 
-export default async function StaffCasesPage({
+export default async function RemedyTreatmentCasesPage({
   params,
 }: {
   params: Promise<{ remedyId: string }>;
@@ -14,11 +15,17 @@ export default async function StaffCasesPage({
 
   const remedy = await getRemedy(id);
   if (!remedy) notFound();
+  // withinlazy: pageSize 48 caps the remedy-name lookup; add real staff pagination
+  // if the catalog ever has more than 48 remedies.
+  const { items: remedies } = await listRemedies({ pageSize: 48 });
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Treatment cases for {remedy.name}</h1>
-      <CaseAdminList remedyId={id} />
+      <StaffPageHeader
+        crumbs={[{ label: "Remedies", href: "/staff/remedies" }, { label: remedy.name }]}
+        title="กรณีการรักษา · Cases"
+      />
+      <CaseAdminList remedies={remedies} remedyId={id} />
     </section>
   );
 }

@@ -18,6 +18,19 @@ LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 -- name: CountHealerByDistrict :one
 SELECT COUNT(*) FROM healer WHERE district_id = sqlc.arg('district_id');
 
+-- name: ListHealer :many
+SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
+FROM healer
+WHERE (sqlc.narg('district_id')::bigint IS NULL OR district_id = sqlc.narg('district_id'))
+  AND (sqlc.narg('search_term')::text IS NULL OR full_name ILIKE '%'||sqlc.narg('search_term')||'%' OR specialty ILIKE '%'||sqlc.narg('search_term')||'%')
+ORDER BY id
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountHealer :one
+SELECT COUNT(*) FROM healer
+WHERE (sqlc.narg('district_id')::bigint IS NULL OR district_id = sqlc.narg('district_id'))
+  AND (sqlc.narg('search_term')::text IS NULL OR full_name ILIKE '%'||sqlc.narg('search_term')||'%' OR specialty ILIKE '%'||sqlc.narg('search_term')||'%');
+
 -- name: UpdateHealer :one
 UPDATE healer
 SET district_id = $2, full_name = $3, sub_district = $4, specialty = $5, biography = $6, updated_at = now()

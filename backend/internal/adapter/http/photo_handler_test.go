@@ -78,7 +78,7 @@ func TestUploadPhotoEndpoint(t *testing.T) {
 }
 
 func TestUploadPhotoRejectsBadOwnerType(t *testing.T) {
-	body, ct := multipartUpload(t, map[string]string{"ownerType": "district", "ownerId": "2"}, "file", "p.jpg", "img")
+	body, ct := multipartUpload(t, map[string]string{"ownerType": "unknown", "ownerId": "2"}, "file", "p.jpg", "img")
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/photos", body)
 	req.Header.Set("Content-Type", ct)
@@ -130,7 +130,7 @@ func TestListPhotoByOwnerEndpoint(t *testing.T) {
 func TestListPhotoByOwnerRejectsBadType(t *testing.T) {
 	router := photoRouter()
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/photos?ownerType=district&ownerId=2", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/photos?ownerType=unknown&ownerId=2", nil)
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)

@@ -69,6 +69,10 @@ export async function getDistrict(id: number): Promise<District | null> {
   return getOrNull<District>(`/districts/${id}`);
 }
 
+export async function getProvince(id: number): Promise<Province | null> {
+  return getOrNull<Province>(`/provinces/${id}`);
+}
+
 interface PageOptions {
   page?: number;
   pageSize?: number;
@@ -79,6 +83,12 @@ export async function listHealersByDistrict(
   opts: PageOptions = {},
 ): Promise<Page<Healer>> {
   return getJson<Page<Healer>>(`/districts/${districtId}/healers${buildQuery(opts)}`);
+}
+
+export async function listHealers(
+  opts: { districtId?: number } & PageOptions = {},
+): Promise<Page<Healer>> {
+  return getJson<Page<Healer>>(`/healers${buildQuery(opts)}`);
 }
 
 export async function getHealer(id: number): Promise<Healer | null> {

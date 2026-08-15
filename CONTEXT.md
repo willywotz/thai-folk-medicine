@@ -74,11 +74,11 @@ frontend/
 │   │   ├── page.tsx                    # public home: Yasothon districts
 │   │   ├── districts/ healers/ remedies/   # public browse pages
 │   │   ├── login/                      # staff login
-│   │   ├── staff/                      # guarded: dashboard → district → healer list/new/edit
+│   │   ├── staff/                      # guarded: six flat sections — dashboard, provinces (+districts CRUD), healers, remedies, cases, herbs
 │   │   ├── bff/session/                # POST login / DELETE logout (sets httpOnly cookie)
 │   │   ├── bff/healers/                # POST / [healerId] PUT·DELETE (cookie → Bearer → Go)
 │   │   └── layout.tsx                  # Thai font shell (Noto Sans Thai) + TanStack Query Providers
-│   ├── components/                     # public: RecordCard, Breadcrumb, …; staff: LoginForm, HealerAdminList, HealerForm, LogoutButton
+│   ├── components/                     # public: RecordCard, Breadcrumb, …; staff shell: StaffNavLink, StaffPageHeader, staff-ui (brand class tokens); staff CRUD: HealerAdminList, HealerForm, LogoutButton
 │   │   └── ui/                         # shadcn/ui primitives
 │   └── lib/                            # api.ts, api-types.ts, format.ts, session.ts, bff-forward.ts, staff-queries.ts, *-schema.ts
 └── vitest.config.ts                    # Vitest + RTL (jsdom)
@@ -262,6 +262,89 @@ endpoints and the three-group search above):
 **The planned scope is complete:** backend API, public browse site (remedy/herb-first,
 paginated), and full staff admin (healers, remedies, herbs, treatment cases, and photos) all
 work end to end. Public search is one merged, ranked, paginated result list.
+
+**Plan 12 — staff-zone redesign (frontend only, no API/behavior change):**
+- The staff zone now uses the same brand palette as the public site (the `--brand`/`--ink`/
+  `--line`/`--surface` tokens in `globals.css`) instead of raw `stone-*` greys.
+- **Shell:** `staff/layout.tsx` is a sidebar (brand mark + `Records` nav: Districts, Herbs +
+  logout), not a thin top bar. `StaffNavLink` (client, `usePathname`) marks the active
+  section via `aria-current`; it matches by path prefix (Districts owns `/staff/districts`,
+  `/staff/healers`, `/staff/remedies`).
+- **`StaffPageHeader`** renders the shared page head: breadcrumb (reuses `Breadcrumb`) +
+  eyebrow + serif title. Every staff list/form page passes `crumbs` built from ancestor names
+  (list/new/edit pages fetch the parent via existing `getDistrict`/`getHealer`/`getRemedy` so
+  the crumb links back up the District→Healer→Remedy→Case chain).
+- **`staff-ui.ts`** holds the shared brand class strings (`staffCard`, `staffField`,
+  `staffLabel`, `btnPrimary`, `btnGhost`, `iconBtn`, `iconBtnDanger`, `linkAction`) reused by
+  all four admin lists and forms. Lists became branded rows (initial badge, count line, one
+  primary `+ New`, icon Edit/Delete with `aria-label`, delete tinted red on hover only). Forms
+  became a single branded surface panel with brand focus rings.
+- Accessible names/labels and copy are unchanged, so the existing component/form tests still
+  pass; `StaffNavLink` adds its own test. `withinlazy:` the `ui/` shadcn primitives map to the
+  grayscale `--primary` tokens, so the staff zone styles with `--brand` tokens directly rather
+  than adopting them.
+
+**Plan 13 — staff workspace: entity sections, location CRUD, activity feed:**
+(Spec `docs/superpowers/specs/2026-08-15-staff-workspace-sections-design.md`; plan
+`docs/superpowers/plans/2026-08-15-staff-workspace-sections.md`. Domain model UNCHANGED —
+District 1:n Healer stays.)
+- **Six flat sections** replace the nested District→Healer→Remedy→Case drill-down. Sidebar:
+  Dashboard `/staff`, Province `/staff/provinces`, Healer `/staff/healers`, Remedy
+  `/staff/remedies`, Case `/staff/cases`, Herb `/staff/herbs`. The old
+  `/staff/districts/**`, `/staff/healers/[id]/remedies/**`, `/staff/remedies/[id]/treatment-cases/**`
+  routes are gone. Each list is flat + parent **filter**; each create/edit form has a parent
+  **picker** (healer→district, remedy→healer, case→remedy). Parent name shown via a
+  server-fetched lookup list passed to the client component.
+- **Activity feed (event-driven read model).** The bus gained `SubscribeAll`; a
+  `usecase/audit.Recorder` subscribes to every event and records `{event_name, payload}` to a
+  new `event_log` table (migration `000011`). `GET /api/v1/activity?page&pageSize` (protected)
+  returns the newest-first envelope; the dashboard's `ActivityFeed` maps `eventName`→verb +
+  payload→title via `lib/activity-format.ts`. `withinlazy:` `event_log` is unpruned.
+- **Dashboard** (`/staff`): six count tiles from `GET /api/v1/stats` (protected; new
+  `StatsService` aggregating per-entity counts) + the activity feed. Both are client
+  components hitting the **BFF** (`/bff/activity`, `/bff/stats`) because activity/stats are
+  JWT-guarded.
+- **Province & District CRUD.** `LocationService` gained a `Publisher`; province/district
+  create/update/delete publish `province.*`/`district.*` events and record to `event_log`.
+  Routes: `GET /provinces/:id` (public); `POST/PUT/DELETE /provinces`, `POST/PUT/DELETE
+  /districts` (protected). Delete guards: province with districts → 409
+  (`ErrProvinceReferenced`), district with healers → 409 (`ErrDistrictReferenced`), each with an
+  FK backstop. Managed under the Province section (districts inline on the province detail page).
+- **Flat `GET /api/v1/healers?districtId=&page&pageSize`** (public) added — the only entity
+  that lacked a flat list. Remedy/Case flat lists reuse the existing `/remedies` /
+  `/treatment-cases`; the staff filter branches to `/healers/{id}/remedies` etc. when a parent
+  is selected. `withinlazy:` parent pickers load `pageSize=48` — a >48-parent province truncates.
+- **Reassignment fix.** `PUT /remedies/:id` now persists `healer_id`, and `PUT
+  /treatment-cases/:id` persists `remedy_id`+`healer_id`, so the new edit forms' parent pickers
+  actually save (update validation now matches create).
+- New frontend: `bff/{provinces,districts,activity,stats}` routes; `staff-queries` flat
+  fetchers + province/district mutations; `DashboardStats`, `ActivityFeed`, `Province/District
+  Form`+`AdminList`. Built TDD; full backend suite + `tsc`/`lint`/`vitest`/`build` green.
+- **Polish:** each staff list has a client-side name `StaffSearch` (filters the loaded ≤48
+  rows). Healer/Remedy lists show a parent-name column but no parent filter. Remedy/Case forms
+  pick their parent via a searchable `EntityCombobox` (Base UI). `PhotoManager` (brand-restyled)
+  renders inside each edit form (a sibling card — it has its own `<form>`, so not nested). Herb
+  rows link to `/staff/herbs/{id}` listing remedies that use the herb. Province edit page also
+  manages its districts.
+- **Drill-in (hybrid nav):** healer rows link to `/staff/healers/{id}/remedies` and remedy rows
+  to `/staff/remedies/{id}/treatment-cases` — scoped CRUD pages that reuse `RemedyAdminList`/
+  `CaseAdminList` with an optional `healerId`/`remedyId` prop (scopes the fetch, hides the
+  parent column, and its `+ New` link pre-selects the parent via `?healerId=`/`?remedyId=`,
+  which the new-forms read as `defaultHealerId`/`defaultRemedyId`). The flat top-level sections
+  remain.
+- **Pagination + server search:** the Healer/Remedy/Herb/Case staff lists paginate server-side
+  (`STAFF_PAGE_SIZE=20`, client `StaffPagination` prev/next control; `staff-queries` fetchers
+  return the `Page<T>` envelope). Healer/Remedy/Herb search boxes now hit the server: the list
+  endpoints gained an optional `?searchTerm=` (ILIKE over name fields; healer also matches
+  specialty; herb matches thai/english/scientific) — absent term leaves the public zone
+  unchanged. Search is debounced (`useDebouncedValue`) and resets to page 1. Cases paginate but
+  have no search. Province/District lists stay client-side (tiny reference data). `HerbPicker`
+  uses `fetchAllHerbs` (pages through at 48) so the remedy form can reach every herb.
+- **Photos on create + province/district photos.** `photo.ValidOwnerType` now also accepts
+  `province`/`district` (generic owner store, no schema change). A new `PhotoInput` (pending-file
+  collector) renders on every create form; on save the record is created, then its photos upload
+  to the new id (the `create*` mutations now return the created entity). Edit forms keep
+  `PhotoManager`. Province/District forms gained a photo section (district's is inline).
 
 ## How to run
 

@@ -12,7 +12,8 @@ import (
 )
 
 type fakeHerbRepo struct {
-	created herb.Herb
+	created        herb.Herb
+	lastSearchTerm *string
 }
 
 func (f *fakeHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb, error) {
@@ -20,7 +21,8 @@ func (f *fakeHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb
 	return f.created, nil
 }
 func (f *fakeHerbRepo) GetByID(context.Context, int64) (herb.Herb, error) { return f.created, nil }
-func (f *fakeHerbRepo) ListPage(context.Context, listing.Params) (listing.Page[herb.Herb], error) {
+func (f *fakeHerbRepo) ListPage(_ context.Context, _ listing.Params, searchTerm *string) (listing.Page[herb.Herb], error) {
+	f.lastSearchTerm = searchTerm
 	return listing.Page[herb.Herb]{Items: []herb.Herb{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb, error) {
@@ -44,10 +46,22 @@ func TestHerbService_CreateValidatesAndPublishes(t *testing.T) {
 
 func TestListPageHerb(t *testing.T) {
 	page, err := NewHerbService(&fakeHerbRepo{}, &recordingPublisher{}).
-		ListPage(context.Background(), listing.Params{Limit: 5})
+		ListPage(context.Background(), listing.Params{Limit: 5}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 1, page.Total)
 	assert.Len(t, page.Items, 1)
+}
+
+func TestListPageHerbForwardsSearchTerm(t *testing.T) {
+	repo := &fakeHerbRepo{}
+	term := "ขิง"
+
+	_, err := NewHerbService(repo, &recordingPublisher{}).
+		ListPage(context.Background(), listing.Params{Limit: 5}, &term)
+
+	require.NoError(t, err)
+	require.NotNil(t, repo.lastSearchTerm)
+	assert.Equal(t, term, *repo.lastSearchTerm)
 }
 
 func TestHerbService_UpdateAndDeletePublish(t *testing.T) {

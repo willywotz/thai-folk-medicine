@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
@@ -78,6 +79,40 @@ func (r *Healer) ListByDistrictPage(ctx context.Context, districtID int64, p lis
 		items = append(items, toHealer(row))
 	}
 	return listing.Page[healer.Healer]{Items: items, Total: int(total)}, nil
+}
+
+// ListPage returns one page of healers, optionally filtered by district and
+// by a search term matching full name or specialty.
+func (r *Healer) ListPage(ctx context.Context, p listing.Params, districtID *int64, searchTerm *string) (listing.Page[healer.Healer], error) {
+	district, search := districtFilter(districtID), searchFilter(searchTerm)
+	rows, err := r.q.ListHealer(ctx, db.ListHealerParams{
+		DistrictID: district, SearchTerm: search, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
+	if err != nil {
+		return listing.Page[healer.Healer]{}, err
+	}
+	total, err := r.q.CountHealer(ctx, db.CountHealerParams{DistrictID: district, SearchTerm: search})
+	if err != nil {
+		return listing.Page[healer.Healer]{}, err
+	}
+	items := make([]healer.Healer, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, toHealer(row))
+	}
+	return listing.Page[healer.Healer]{Items: items, Total: int(total)}, nil
+}
+
+// Count counts every healer.
+func (r *Healer) Count(ctx context.Context) (int, error) {
+	count, err := r.q.CountHealer(ctx, db.CountHealerParams{})
+	return int(count), err
+}
+
+func districtFilter(districtID *int64) pgtype.Int8 {
+	if districtID == nil {
+		return pgtype.Int8{}
+	}
+	return pgtype.Int8{Int64: *districtID, Valid: true}
 }
 
 // Update changes a healer or returns healer.ErrNotFound.

@@ -58,6 +58,7 @@ type CreateParams struct {
 // UpdateParams holds the fields to update a remedy.
 type UpdateParams struct {
 	ID                int64
+	HealerID          int64
 	Name              string
 	Symptoms          string
 	PreparationMethod string
@@ -70,9 +71,9 @@ type UpdateParams struct {
 type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Remedy, error)
 	GetByID(ctx context.Context, id int64) (Remedy, error)
-	ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[Remedy], error)
+	ListByHealerPage(ctx context.Context, healerID int64, p listing.Params, searchTerm *string) (listing.Page[Remedy], error)
 	ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[Remedy], error)
-	ListPage(ctx context.Context, p listing.Params) (listing.Page[Remedy], error)
+	ListPage(ctx context.Context, p listing.Params, searchTerm *string) (listing.Page[Remedy], error)
 	Update(ctx context.Context, p UpdateParams) (Remedy, error)
 	Delete(ctx context.Context, id int64) error
 }

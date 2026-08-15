@@ -11,11 +11,13 @@ WHERE id = $1;
 -- name: ListHerbPage :many
 SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
 FROM herb
+WHERE (sqlc.narg('search_term')::text IS NULL OR name_thai ILIKE '%'||sqlc.narg('search_term')||'%' OR name_english ILIKE '%'||sqlc.narg('search_term')||'%' OR scientific_name ILIKE '%'||sqlc.narg('search_term')||'%')
 ORDER BY name_thai
 LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
 -- name: CountHerbPage :one
-SELECT COUNT(*) FROM herb;
+SELECT COUNT(*) FROM herb
+WHERE (sqlc.narg('search_term')::text IS NULL OR name_thai ILIKE '%'||sqlc.narg('search_term')||'%' OR name_english ILIKE '%'||sqlc.narg('search_term')||'%' OR scientific_name ILIKE '%'||sqlc.narg('search_term')||'%');
 
 -- name: UpdateHerb :one
 UPDATE herb

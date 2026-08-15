@@ -19,9 +19,10 @@ import (
 )
 
 type stubRemedyRepo struct {
-	getErr    error
-	page      listing.Page[remedy.Remedy]
-	gotParams listing.Params
+	getErr        error
+	page          listing.Page[remedy.Remedy]
+	gotParams     listing.Params
+	gotSearchTerm *string
 }
 
 func (s *stubRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remedy.Remedy, error) {
@@ -37,18 +38,20 @@ func (s *stubRemedyRepo) GetByID(_ context.Context, id int64) (remedy.Remedy, er
 	}
 	return remedy.Remedy{ID: id, Name: "ยา"}, nil
 }
-func (s *stubRemedyRepo) ListByHealerPage(_ context.Context, healerID int64, _ listing.Params) (listing.Page[remedy.Remedy], error) {
+func (s *stubRemedyRepo) ListByHealerPage(_ context.Context, healerID int64, _ listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
+	s.gotSearchTerm = searchTerm
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1, HealerID: healerID, Name: "ยา"}}, Total: 1}, nil
 }
 func (s *stubRemedyRepo) ListByHerbPage(_ context.Context, _ int64, _ listing.Params) (listing.Page[remedy.Remedy], error) {
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1, Name: "ยา"}}, Total: 1}, nil
 }
-func (s *stubRemedyRepo) ListPage(_ context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
+func (s *stubRemedyRepo) ListPage(_ context.Context, p listing.Params, searchTerm *string) (listing.Page[remedy.Remedy], error) {
 	s.gotParams = p
+	s.gotSearchTerm = searchTerm
 	return s.page, nil
 }
 func (s *stubRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
-	return remedy.Remedy{ID: p.ID, Name: p.Name}, nil
+	return remedy.Remedy{ID: p.ID, HealerID: p.HealerID, Name: p.Name}, nil
 }
 func (s *stubRemedyRepo) Delete(context.Context, int64) error { return nil }
 
@@ -85,6 +88,20 @@ func TestCreateRemedyRejectsEmptyName(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateRemedyReassignsHealerEndpoint(t *testing.T) {
+	router := newRemedyRouter(&stubRemedyRepo{})
+	body, _ := json.Marshal(map[string]any{"healerId": 9, "name": "ยาต้มใหม่"})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/remedies/1", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Equal(t, float64(9), got["healerId"])
 }
 
 func TestGetRemedyNotFound(t *testing.T) {
@@ -136,6 +153,19 @@ func TestRemedyHandler_ListPage_Envelope(t *testing.T) {
 	assert.Equal(t, 1, body.Total)
 	assert.Equal(t, 1, body.TotalPages)
 	assert.Equal(t, 12, repo.gotParams.Limit)
+	assert.Nil(t, repo.gotSearchTerm)
+}
+
+func TestRemedyHandler_ListPage_SearchTermFilter(t *testing.T) {
+	repo := &stubRemedyRepo{page: listing.Page[remedy.Remedy]{
+		Items: []remedy.Remedy{{ID: 1, Name: "ยาแก้ไข้"}}, Total: 1,
+	}}
+	router := newRemedyRouter(repo)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/remedies?searchTerm=ไข้", nil))
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.NotNil(t, repo.gotSearchTerm)
+	assert.Equal(t, "ไข้", *repo.gotSearchTerm)
 }
 
 func TestListRemedyByHealerEndpoint(t *testing.T) {
@@ -152,4 +182,15 @@ func TestListRemedyByHealerEndpoint(t *testing.T) {
 	require.Len(t, body.Items, 1)
 	assert.Equal(t, float64(3), body.Items[0]["healerId"])
 	assert.Equal(t, 1, body.Total)
+}
+
+func TestListRemedyByHealerEndpoint_SearchTermFilter(t *testing.T) {
+	repo := &stubRemedyRepo{}
+	router := newRemedyRouter(repo)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/healers/3/remedies?searchTerm=ไข้", nil)
+	router.ServeHTTP(rec, req)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.NotNil(t, repo.gotSearchTerm)
+	assert.Equal(t, "ไข้", *repo.gotSearchTerm)
 }

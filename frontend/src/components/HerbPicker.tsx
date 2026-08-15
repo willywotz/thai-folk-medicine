@@ -4,18 +4,18 @@ import { Combobox } from "@base-ui/react/combobox";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { fetchHerbs, herbListKey } from "@/lib/staff-queries";
+import { fetchAllHerbs } from "@/lib/staff-queries";
 
 type HerbLink = { herbId: number; amount: string };
 type HerbOption = { value: number; label: string };
 
 export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (v: HerbLink[]) => void }) {
-  const { data: herbs } = useQuery({ queryKey: herbListKey, queryFn: fetchHerbs });
+  const { data } = useQuery({ queryKey: ["herbs", "all"], queryFn: fetchAllHerbs });
 
   // Base UI Combobox filters and labels {value,label} items automatically.
   const options = useMemo<HerbOption[]>(
-    () => (herbs ?? []).map((h) => ({ value: h.id, label: h.nameThai })),
-    [herbs],
+    () => (data ?? []).map((h) => ({ value: h.id, label: h.nameThai })),
+    [data],
   );
 
   const setRow = (i: number, patch: Partial<HerbLink>) =>

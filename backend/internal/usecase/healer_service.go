@@ -46,6 +46,12 @@ func (s *HealerService) ListByDistrictPage(ctx context.Context, districtID int64
 	return s.repo.ListByDistrictPage(ctx, districtID, p)
 }
 
+// List returns one page of healers, optionally filtered by district and by a
+// search term matching full name or specialty.
+func (s *HealerService) List(ctx context.Context, p listing.Params, districtID *int64, searchTerm *string) (listing.Page[healer.Healer], error) {
+	return s.repo.ListPage(ctx, p, districtID, searchTerm)
+}
+
 // Update validates and changes a healer, then publishes UpdatedEvent.
 func (s *HealerService) Update(ctx context.Context, p healer.UpdateParams) (healer.Healer, error) {
 	if strings.TrimSpace(p.FullName) == "" || p.DistrictID <= 0 {

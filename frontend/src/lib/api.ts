@@ -65,6 +65,10 @@ export async function listDistricts(provinceId: number): Promise<District[]> {
   return getJson<District[]>(`/provinces/${provinceId}/districts`);
 }
 
+export async function getDistrict(id: number): Promise<District | null> {
+  return getOrNull<District>(`/districts/${id}`);
+}
+
 interface PageOptions {
   page?: number;
   pageSize?: number;

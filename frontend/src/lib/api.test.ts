@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  getDistrict,
   getHealer,
   getRemedy,
   getTreatmentCase,
@@ -34,6 +35,19 @@ describe("listDistricts", () => {
     const got = await listDistricts(1);
     expect(got).toHaveLength(1);
     expect(got[0].nameEnglish).toBe("Kut Chum");
+  });
+});
+
+describe("getDistrict", () => {
+  it("returns the district", async () => {
+    mockFetchOnce(200, { id: 5, provinceId: 1, nameThai: "กุดชุม", nameEnglish: "Kut Chum" });
+    const got = await getDistrict(5);
+    expect(got?.nameThai).toBe("กุดชุม");
+  });
+
+  it("returns null on 404", async () => {
+    mockFetchOnce(404, { error: "district not found" });
+    expect(await getDistrict(999)).toBeNull();
   });
 });
 

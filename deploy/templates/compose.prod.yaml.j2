@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: folk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: folk_medicine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U folk -d folk_medicine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: {{ registry }}/{{ image_backend }}:{{ app_version }}
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: "8080"
+      DATABASE_URL: postgres://folk:${POSTGRES_PASSWORD}@postgres:5432/folk_medicine?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      PHOTO_STORAGE_DIR: /data/photo
+      STAFF_ADMIN_USERNAME: ${STAFF_ADMIN_USERNAME}
+      STAFF_ADMIN_PASSWORD: ${STAFF_ADMIN_PASSWORD}
+      STAFF_ADMIN_EMAIL: ${STAFF_ADMIN_EMAIL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - photo_data:/data/photo
+
+  frontend:
+    image: {{ registry }}/{{ image_frontend }}:{{ app_version }}
+    restart: unless-stopped
+    environment:
+      INTERNAL_API_URL: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  photo_data:

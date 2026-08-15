@@ -1,0 +1,43 @@
+- name: Deploy thai-folk-medicine
+  hosts: prod
+  gather_facts: false
+  vars:
+    compose_file: "{{ app_dir }}/compose.prod.yaml"
+  tasks:
+    - name: Ensure app directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Render production compose file
+      ansible.builtin.template:
+        src: templates/compose.prod.yaml.j2
+        dest: "{{ compose_file }}"
+        mode: "0644"
+
+    - name: Render environment file
+      ansible.builtin.template:
+        src: templates/env.j2
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+
+    - name: Log in to GHCR
+      ansible.builtin.command:
+        cmd: docker login ghcr.io -u "{{ ghcr_username }}" --password-stdin
+        stdin: "{{ ghcr_token }}"
+      no_log: true
+
+    - name: Pull images
+      ansible.builtin.command:
+        cmd: docker compose -f "{{ compose_file }}" pull
+        chdir: "{{ app_dir }}"
+
+    - name: Start the stack
+      ansible.builtin.command:
+        cmd: docker compose -f "{{ compose_file }}" up -d
+        chdir: "{{ app_dir }}"
+
+    - name: Prune dangling images
+      ansible.builtin.command:
+        cmd: docker image prune -f

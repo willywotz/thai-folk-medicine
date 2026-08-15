@@ -1,0 +1,4 @@
+app_dir: /opt/thai-folk-medicine
+registry: ghcr.io/willywotz
+image_backend: thai-folk-medicine-backend
+image_frontend: thai-folk-medicine-frontend

@@ -1,0 +1,20 @@
+- name: Render deploy templates for validation
+  hosts: localhost
+  gather_facts: false
+  vars:
+    render_dir: "{{ playbook_dir }}/.render"
+  tasks:
+    - name: Ensure render dir exists
+      ansible.builtin.file:
+        path: "{{ render_dir }}"
+        state: directory
+
+    - name: Render compose
+      ansible.builtin.template:
+        src: templates/compose.prod.yaml.j2
+        dest: "{{ render_dir }}/compose.prod.yaml"
+
+    - name: Render env
+      ansible.builtin.template:
+        src: templates/env.j2
+        dest: "{{ render_dir }}/.env"

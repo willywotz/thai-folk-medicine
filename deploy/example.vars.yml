@@ -1,0 +1,12 @@
+app_dir: /opt/thai-folk-medicine
+registry: ghcr.io/willywotz
+image_backend: thai-folk-medicine-backend
+image_frontend: thai-folk-medicine-frontend
+app_version: v0.0.0-ci
+ansible_host: 127.0.0.1
+ansible_user: deploy
+jwt_secret: ci-placeholder-secret
+postgres_password: ci-placeholder-password
+staff_admin_username: admin
+staff_admin_password: ci-placeholder-admin
+staff_admin_email: admin@example.com

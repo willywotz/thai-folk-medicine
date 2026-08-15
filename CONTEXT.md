@@ -288,6 +288,8 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
   `docs/superpowers/specs/2026-08-15-public-zone-redesign-design.md`
   Direction "Modern Utility", province-neutral. Preview:
   https://claude.ai/code/artifact/fda8c118-958f-4b5b-82e8-300903933240
+- Public zone redesign handoff (shipped + gotchas + future work):
+  `docs/superpowers/handoffs/2026-08-15-public-zone-redesign-handoff.md`
 - Public zone redesign plan (9 tasks, TDD):
   `docs/superpowers/plans/2026-08-15-public-zone-redesign.md`
   **Done** on branch `feat/public-zone-redesign` (built with agents, 10 commits).

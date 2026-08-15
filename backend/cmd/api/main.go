@@ -67,6 +67,9 @@ func main() {
 	bus.Subscribe("herb.created", auditHandler(logger))
 	bus.Subscribe("herb.updated", auditHandler(logger))
 	bus.Subscribe("herb.deleted", auditHandler(logger))
+	bus.Subscribe("province.created", auditHandler(logger))
+	bus.Subscribe("province.updated", auditHandler(logger))
+	bus.Subscribe("province.deleted", auditHandler(logger))
 
 	eventLogRepo := repository.NewEventLog(queries)
 	auditRecorder := audit.NewRecorder(eventLogRepo)
@@ -79,7 +82,7 @@ func main() {
 	}
 
 	locationHandler := httpapi.NewLocationHandler(
-		usecase.NewLocationService(repository.NewLocation(queries)),
+		usecase.NewLocationService(repository.NewLocation(queries), bus),
 	)
 	healerHandler := httpapi.NewHealerHandler(
 		usecase.NewHealerService(repository.NewHealer(queries), bus),

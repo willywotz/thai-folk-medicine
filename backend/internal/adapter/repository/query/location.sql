@@ -13,3 +13,25 @@ ORDER BY name_english;
 SELECT id, province_id, name_thai, name_english
 FROM district
 WHERE id = $1;
+
+-- name: GetProvince :one
+SELECT id, name_thai, name_english
+FROM province
+WHERE id = $1;
+
+-- name: CreateProvince :one
+INSERT INTO province (name_thai, name_english)
+VALUES ($1, $2)
+RETURNING id, name_thai, name_english;
+
+-- name: UpdateProvince :one
+UPDATE province
+SET name_thai = $2, name_english = $3
+WHERE id = $1
+RETURNING id, name_thai, name_english;
+
+-- name: DeleteProvince :execrows
+DELETE FROM province WHERE id = $1;
+
+-- name: CountDistrictByProvince :one
+SELECT COUNT(*) FROM district WHERE province_id = sqlc.arg('province_id');

@@ -101,3 +101,54 @@ func TestLocationGetDistrictNotFound(t *testing.T) {
 
 	assert.ErrorIs(t, err, location.ErrNotFound)
 }
+
+func TestLocationCreateGetUpdateDeleteProvince(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	created, err := repo.CreateProvince(ctx, "อุบลราชธานี", "Ubon Ratchathani")
+	require.NoError(t, err)
+	assert.NotZero(t, created.ID)
+	assert.Equal(t, "Ubon Ratchathani", created.NameEnglish)
+
+	got, err := repo.GetProvince(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, created, got)
+
+	count, err := repo.CountDistrictByProvince(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+
+	updated, err := repo.UpdateProvince(ctx, created.ID, "อุบล", "Ubon")
+	require.NoError(t, err)
+	assert.Equal(t, "Ubon", updated.NameEnglish)
+	assert.Equal(t, "อุบล", updated.NameThai)
+
+	require.NoError(t, repo.DeleteProvince(ctx, created.ID))
+
+	_, err = repo.GetProvince(ctx, created.ID)
+	assert.ErrorIs(t, err, location.ErrProvinceNotFound)
+}
+
+func TestLocationGetProvinceNotFound(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	_, err := repo.GetProvince(ctx, 999999)
+
+	assert.ErrorIs(t, err, location.ErrProvinceNotFound)
+}
+
+func TestLocationCountDistrictByProvinceCountsSeededDistricts(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	provinces, err := repo.ListProvince(ctx)
+	require.NoError(t, err)
+	require.Len(t, provinces, 1)
+
+	count, err := repo.CountDistrictByProvince(ctx, provinces[0].ID)
+
+	require.NoError(t, err)
+	assert.Equal(t, 9, count)
+}

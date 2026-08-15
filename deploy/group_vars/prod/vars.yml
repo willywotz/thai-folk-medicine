@@ -3,5 +3,5 @@ registry: ghcr.io/willywotz
 image_backend: thai-folk-medicine-backend
 image_frontend: thai-folk-medicine-frontend
 frontend_port: 14285
-nginx_server_name: _
+nginx_server_name: tfm.willywotz.com
 nginx_conf_name: thai-folk-medicine.conf

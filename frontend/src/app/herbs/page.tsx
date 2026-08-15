@@ -1,6 +1,5 @@
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
-import { Filters } from "@/components/Filters";
 import { Pagination } from "@/components/Pagination";
 import { RecordCard } from "@/components/RecordCard";
 import { firstPhotoUrl, listHerbs } from "@/lib/api";
@@ -8,12 +7,12 @@ import { firstPhotoUrl, listHerbs } from "@/lib/api";
 export default async function HerbsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; query?: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const { page: pageParam, query } = await searchParams;
+  const { page: pageParam } = await searchParams;
   const page = Number(pageParam) || 1;
 
-  const herbPage = await listHerbs({ page, query });
+  const herbPage = await listHerbs({ page });
   const herbs = herbPage.items;
   const covers = await Promise.all(
     herbs.map((h) => firstPhotoUrl("herb", h.id).catch(() => undefined)),
@@ -24,13 +23,6 @@ export default async function HerbsPage({
       <h1 className="mb-4 font-serif text-2xl text-ink">
         สมุนไพร <span className="text-base text-ink-faint">Herbs</span>
       </h1>
-      <div className="mb-4">
-        <Filters
-          action="/herbs"
-          fields={[{ kind: "text", name: "query", label: "ค้นหาสมุนไพร", placeholder: "ชื่อสมุนไพร" }]}
-          values={{ query }}
-        />
-      </div>
       {herbs.length === 0 ? (
         <EmptyState message="No herbs yet." />
       ) : (
@@ -50,7 +42,7 @@ export default async function HerbsPage({
         <Pagination
           page={herbPage.page}
           totalPages={herbPage.totalPages}
-          searchParams={{ query, page: pageParam }}
+          searchParams={{ page: pageParam }}
           basePath="/herbs"
         />
       </div>

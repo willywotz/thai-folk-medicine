@@ -103,11 +103,7 @@ export async function getTreatmentCase(id: number): Promise<TreatmentCase | null
   return getOrNull<TreatmentCase>(`/treatment-cases/${id}`);
 }
 
-interface HerbListOptions extends PageOptions {
-  query?: string;
-}
-
-export async function listHerbs(opts: HerbListOptions = {}): Promise<Page<Herb>> {
+export async function listHerbs(opts: PageOptions = {}): Promise<Page<Herb>> {
   return getJson<Page<Herb>>(`/herbs${buildQuery(opts)}`);
 }
 
@@ -122,13 +118,7 @@ export async function listRemediesByHerb(
   return getJson<Page<Remedy>>(`/herbs/${herbId}/remedies${buildQuery(opts)}`);
 }
 
-interface RemedyListOptions extends PageOptions {
-  herbId?: number;
-  districtId?: number;
-  symptom?: string;
-}
-
-export async function listRemedies(opts: RemedyListOptions = {}): Promise<Page<Remedy>> {
+export async function listRemedies(opts: PageOptions = {}): Promise<Page<Remedy>> {
   return getJson<Page<Remedy>>(`/remedies${buildQuery(opts)}`);
 }
 

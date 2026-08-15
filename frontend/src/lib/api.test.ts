@@ -71,21 +71,18 @@ describe("getTreatmentCase", () => {
 });
 
 describe("listRemedies", () => {
-  it("builds a paginated, filtered query and returns a Page", async () => {
+  it("builds a paginated query and returns a Page", async () => {
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ items: [], page: 2, pageSize: 12, total: 0, totalPages: 1 }), {
         status: 200,
       }),
     );
 
-    const res = await listRemedies({ page: 2, herbId: 3, symptom: "ไข้" });
+    const res = await listRemedies({ page: 2 });
     const url = spy.mock.calls[0][0] as string;
 
     expect(url).toContain("/remedies?");
     expect(url).toContain("page=2");
-    expect(url).toContain("herbId=3");
-    expect(url).toContain("symptom=");
-    expect(url).not.toContain("districtId=");
     expect(res.totalPages).toBe(1);
   });
 });

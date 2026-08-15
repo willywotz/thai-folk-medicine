@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/components/I18nProvider";
+import { th } from "@/lib/i18n/dictionaries/th";
 
 import { HealerAdminList } from "./HealerAdminList";
 
@@ -35,7 +36,7 @@ describe("HealerAdminList", () => {
     renderWithClient(<HealerAdminList districts={districts} />);
     const row = (await screen.findByText("หมอ ก")).closest("li")!;
     expect(within(row).getByText(/Mueang/)).toBeInTheDocument();
-    expect(within(row).getByRole("link", { name: /remedies/i })).toHaveAttribute(
+    expect(within(row).getByRole("link", { name: th.staff.link.remedies })).toHaveAttribute(
       "href",
       "/staff/healers/1/remedies",
     );
@@ -134,7 +135,7 @@ describe("HealerAdminList", () => {
     );
     renderWithClient(<HealerAdminList districts={districts} />);
     await screen.findByText("หมอ ก");
-    await userEvent.click(screen.getByRole("button", { name: /next/i }));
+    await userEvent.click(screen.getByRole("button", { name: th.common.next }));
     await waitFor(() => expect(calls).toContain("/api/v1/healers?page=2&pageSize=20"));
   });
 });

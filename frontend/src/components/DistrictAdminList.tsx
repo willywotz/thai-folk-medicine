@@ -34,9 +34,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-ink-faint">
-          {districts?.length ?? 0} {districts?.length === 1 ? "district" : "districts"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.districts(districts?.length ?? 0)}</span>
         <button
           type="button"
           onClick={() => {

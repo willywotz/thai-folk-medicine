@@ -47,9 +47,7 @@ export function HerbAdminList() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchHerbsList} />
-        <span className="text-sm text-ink-faint">
-          {data?.total ?? 0} {data?.total === 1 ? "herb" : "herbs"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.herbs(data?.total ?? 0)}</span>
         <Link href="/staff/herbs/new" className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newHerbCrumb}
         </Link>
@@ -69,7 +67,7 @@ export function HerbAdminList() {
                 {h.nameEnglish ? <p className="truncate text-sm text-ink-soft">{h.nameEnglish}</p> : null}
               </div>
               <Link href={`/staff/herbs/${h.id}`} className={linkAction}>
-                Used in
+                {t.staff.link.usedIn}
               </Link>
               <Link href={`/staff/herbs/${h.id}/edit`} aria-label={t.staff.editName(h.nameThai)} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

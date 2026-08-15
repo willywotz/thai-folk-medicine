@@ -34,9 +34,7 @@ export function ProvinceAdminList() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <StaffSearch value={query} onChange={setQuery} placeholder={t.staff.searchProvinces} />
-        <span className="text-sm text-ink-faint">
-          {shown.length} {shown.length === 1 ? "province" : "provinces"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.provinces(shown.length)}</span>
         <Link href="/staff/provinces/new" className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newProvinceCrumb}
         </Link>
@@ -56,7 +54,7 @@ export function ProvinceAdminList() {
                 {p.nameEnglish ? <p className="truncate text-sm text-ink-soft">{p.nameEnglish}</p> : null}
               </Link>
               <Link href={`/staff/provinces/${p.id}`} className={linkAction}>
-                Districts
+                {t.staff.link.districts}
               </Link>
               <Link href={`/staff/provinces/${p.id}/edit`} aria-label={t.staff.editName(p.nameThai)} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

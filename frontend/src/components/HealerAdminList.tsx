@@ -55,9 +55,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
         <div className="flex flex-wrap items-center gap-2">
           <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchHealersList} />
         </div>
-        <span className="text-sm text-ink-faint">
-          {data?.total ?? 0} {data?.total === 1 ? "healer" : "healers"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.healers(data?.total ?? 0)}</span>
         <Link href="/staff/healers/new" className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newHealerCrumb}
         </Link>
@@ -80,7 +78,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
                 </p>
               </div>
               <Link href={`/staff/healers/${h.id}/remedies`} className={linkAction}>
-                Remedies
+                {t.staff.link.remedies}
               </Link>
               <Link
                 href={`/staff/healers/${h.id}/edit`}

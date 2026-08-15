@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/components/I18nProvider";
+import { th } from "@/lib/i18n/dictionaries/th";
 
 import { HerbAdminList } from "./HerbAdminList";
 
@@ -39,7 +40,7 @@ describe("HerbAdminList", () => {
     renderWithClient(<HerbAdminList />);
     const row = (await screen.findByText("ขิง")).closest("li")!;
     expect(within(row).getByText("Ginger")).toBeInTheDocument();
-    expect(within(row).getByRole("link", { name: /used in/i })).toHaveAttribute("href", "/staff/herbs/9");
+    expect(within(row).getByRole("link", { name: th.staff.link.usedIn })).toHaveAttribute("href", "/staff/herbs/9");
     expect(screen.getByRole("link", { name: "แก้ไข ขิง" })).toHaveAttribute("href", "/staff/herbs/9/edit");
     expect(screen.getByRole("button", { name: "ลบ ขิง" })).toBeInTheDocument();
   });
@@ -129,7 +130,7 @@ describe("HerbAdminList", () => {
     );
     renderWithClient(<HerbAdminList />);
     await screen.findByText("ขิง");
-    await userEvent.click(screen.getByRole("button", { name: /next/i }));
+    await userEvent.click(screen.getByRole("button", { name: th.common.next }));
     await waitFor(() => expect(calls).toContain("/api/v1/herbs?page=2&pageSize=20"));
   });
 });

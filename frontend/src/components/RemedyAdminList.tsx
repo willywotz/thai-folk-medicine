@@ -58,9 +58,7 @@ export function RemedyAdminList({
         <div className="flex flex-wrap items-center gap-2">
           <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchRemediesList} />
         </div>
-        <span className="text-sm text-ink-faint">
-          {data?.total ?? 0} {data?.total === 1 ? "remedy" : "remedies"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.remedies(data?.total ?? 0)}</span>
         <Link
           href={healerId !== undefined ? `/staff/remedies/new?healerId=${healerId}` : "/staff/remedies/new"}
           className={btnPrimary}
@@ -85,7 +83,7 @@ export function RemedyAdminList({
                 ) : null}
               </div>
               <Link href={`/staff/remedies/${r.id}/treatment-cases`} className={linkAction}>
-                Cases
+                {t.staff.link.cases}
               </Link>
               <Link
                 href={`/staff/remedies/${r.id}/edit`}

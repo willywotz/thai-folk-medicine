@@ -71,9 +71,7 @@ export function CaseAdminList({
             </select>
           </div>
         ) : null}
-        <span className="text-sm text-ink-faint">
-          {data?.total ?? 0} {data?.total === 1 ? "case" : "cases"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.cases(data?.total ?? 0)}</span>
         <Link
           href={remedyId !== undefined ? `/staff/cases/new?remedyId=${remedyId}` : "/staff/cases/new"}
           className={btnPrimary}

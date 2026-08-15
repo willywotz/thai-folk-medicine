@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/components/I18nProvider";
+import { th } from "@/lib/i18n/dictionaries/th";
 
 import { CaseAdminList } from "./CaseAdminList";
 
@@ -142,7 +143,7 @@ describe("CaseAdminList", () => {
     );
     renderWithClient(<CaseAdminList remedies={remedies} />);
     await screen.findByText(/1 March 2026/i);
-    await userEvent.click(screen.getByRole("button", { name: /next/i }));
+    await userEvent.click(screen.getByRole("button", { name: th.common.next }));
     await waitFor(() => expect(calls).toContain("/api/v1/treatment-cases?page=2&pageSize=20"));
   });
 });

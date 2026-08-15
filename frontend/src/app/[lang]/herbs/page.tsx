@@ -2,6 +2,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
 import { RecordCard } from "@/components/RecordCard";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { firstPhotoUrl, listHerbs } from "@/lib/api";
 
 export default async function HerbsPage({
@@ -9,6 +10,7 @@ export default async function HerbsPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const { page: pageParam } = await searchParams;
   const page = Number(pageParam) || 1;
 
@@ -19,12 +21,10 @@ export default async function HerbsPage({
   );
   return (
     <section>
-      <Breadcrumb items={[{ label: "หน้าแรก", href: "/" }, { label: "สมุนไพร" }]} />
-      <h1 className="mb-4 font-serif text-2xl text-ink">
-        สมุนไพร <span className="text-base text-ink-faint">Herbs</span>
-      </h1>
+      <Breadcrumb items={[{ label: t.common.home, href: "/" }, { label: t.herb.title }]} />
+      <h1 className="mb-4 font-serif text-2xl text-ink">{t.herb.title}</h1>
       {herbs.length === 0 ? (
-        <EmptyState message="No herbs yet." />
+        <EmptyState message={t.home.noHerbs} />
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {herbs.map((h, i) => (

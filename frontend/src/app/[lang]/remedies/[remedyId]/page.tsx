@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
 import { Pagination } from "@/components/Pagination";
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { firstPhotoUrl, getRemedy, listCasesByRemedy } from "@/lib/api";
 
 export default async function RemedyPage({
@@ -17,6 +18,7 @@ export default async function RemedyPage({
   params: Promise<{ remedyId: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const { remedyId } = await params;
   const { page: pageParam } = await searchParams;
   const id = Number(remedyId);
@@ -36,8 +38,8 @@ export default async function RemedyPage({
     <section>
       <Breadcrumb
         items={[
-          { label: "หน้าแรก", href: "/" },
-          { label: "ตำรับยา" },
+          { label: t.common.home, href: "/" },
+          { label: t.remedy.title },
           { label: remedy.name },
         ]}
       />
@@ -52,9 +54,9 @@ export default async function RemedyPage({
             </div>
           ) : null}
 
-          <ContentBlock title="อาการ">{remedy.symptoms}</ContentBlock>
+          <ContentBlock title={t.remedy.symptoms}>{remedy.symptoms}</ContentBlock>
 
-          <ContentBlock title="ตัวยา">
+          <ContentBlock title={t.remedy.ingredients}>
             {remedy.herbs.length === 0 ? (
               "—"
             ) : (
@@ -72,18 +74,18 @@ export default async function RemedyPage({
           </ContentBlock>
 
           {remedy.preparationMethod || remedy.usage ? (
-            <ContentBlock title="วิธีปรุงและใช้">
+            <ContentBlock title={t.remedy.preparation}>
               {[remedy.preparationMethod, remedy.usage].filter(Boolean).join("\n\n")}
             </ContentBlock>
           ) : null}
 
           {remedy.note ? (
             <Callout variant="caution">
-              <b>หมายเหตุ:</b> {remedy.note}
+              <b>{t.remedy.note}:</b> {remedy.note}
             </Callout>
           ) : null}
 
-          <h2 className="mb-3 mt-8 font-serif text-lg text-ink">เคสการรักษา · Treatment cases</h2>
+          <h2 className="mb-3 mt-8 font-serif text-lg text-ink">{t.remedy.treatmentCases}</h2>
           {cases.length === 0 ? (
             <EmptyState message="No treatment cases recorded for this remedy yet." />
           ) : (
@@ -94,8 +96,8 @@ export default async function RemedyPage({
                     {formatThaiDate(c.treatedOn)} · {patientSexLabel(c.patientSex)}, age {c.patientAge}
                   </p>
                   <p className="mt-1 text-ink">{c.symptoms}</p>
-                  {c.result ? <p className="mt-1 text-sm text-ink-soft">ผลการรักษา: {c.result}</p> : null}
-                  {c.note ? <p className="mt-1 text-sm text-ink-soft">หมายเหตุ: {c.note}</p> : null}
+                  {c.result ? <p className="mt-1 text-sm text-ink-soft">{t.remedy.result(c.result)}</p> : null}
+                  {c.note ? <p className="mt-1 text-sm text-ink-soft">{t.remedy.noteLine(c.note)}</p> : null}
                 </li>
               ))}
             </ul>
@@ -111,8 +113,8 @@ export default async function RemedyPage({
         </div>
         <aside className="md:sticky md:top-24">
           <FactPanel
-            title="ข้อมูลตำรับยา · Quick facts"
-            facts={[{ key: "อาการ", value: remedy.symptoms }]}
+            title={t.remedy.quickFacts}
+            facts={[{ key: t.remedy.symptoms, value: remedy.symptoms }]}
           />
         </aside>
       </div>

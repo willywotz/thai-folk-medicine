@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { LinkRow } from "@/components/LinkRow";
 import { Pagination } from "@/components/Pagination";
 import { SectionHead } from "@/components/SectionHead";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { firstPhotoUrl, getHealer, listRemediesByHealer } from "@/lib/api";
 
 export default async function HealerPage({
@@ -15,6 +16,7 @@ export default async function HealerPage({
   params: Promise<{ healerId: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const { healerId } = await params;
   const { page: pageParam } = await searchParams;
   const id = Number(healerId);
@@ -37,8 +39,8 @@ export default async function HealerPage({
     <section>
       <Breadcrumb
         items={[
-          { label: "หน้าแรก", href: "/" },
-          { label: "หมอพื้นบ้าน" },
+          { label: t.common.home, href: "/" },
+          { label: t.healer.crumb },
           { label: healer.fullName },
         ]}
       />
@@ -63,10 +65,10 @@ export default async function HealerPage({
         </div>
       </div>
       {healer.biography ? (
-        <ContentBlock title="ประวัติ">{healer.biography}</ContentBlock>
+        <ContentBlock title={t.healer.biography}>{healer.biography}</ContentBlock>
       ) : null}
 
-      <SectionHead title="ตำรับยาของหมอ" />
+      <SectionHead title={t.healer.remedies} />
       {remedies.length === 0 ? (
         <EmptyState message="No remedies recorded for this healer yet." />
       ) : (

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
 import { LinkRow } from "@/components/LinkRow";
 import { Pagination } from "@/components/Pagination";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { firstPhotoUrl, getHerb, listPhotosByOwner, listRemediesByHerb, photoUrl } from "@/lib/api";
 
 export default async function HerbPage({
@@ -17,6 +18,7 @@ export default async function HerbPage({
   params: Promise<{ herbId: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const { herbId } = await params;
   const { page: pageParam } = await searchParams;
   const id = Number(herbId);
@@ -39,8 +41,8 @@ export default async function HerbPage({
     <section>
       <Breadcrumb
         items={[
-          { label: "หน้าแรก", href: "/" },
-          { label: "สมุนไพร", href: "/herbs" },
+          { label: t.common.home, href: "/" },
+          { label: t.herb.title, href: "/herbs" },
           { label: herb.nameThai },
         ]}
       />
@@ -64,13 +66,13 @@ export default async function HerbPage({
             )}
           </div>
           {herb.properties ? (
-            <ContentBlock title="สรรพคุณ">{herb.properties}</ContentBlock>
+            <ContentBlock title={t.herb.properties}>{herb.properties}</ContentBlock>
           ) : null}
           {herb.description ? (
-            <ContentBlock title="ลักษณะและรายละเอียด">{herb.description}</ContentBlock>
+            <ContentBlock title={t.herb.description}>{herb.description}</ContentBlock>
           ) : null}
 
-          <h2 className="mb-3 mt-8 font-serif text-lg text-ink">ตำรับยาที่ใช้สมุนไพรนี้</h2>
+          <h2 className="mb-3 mt-8 font-serif text-lg text-ink">{t.herb.usedIn}</h2>
           {remedies.length === 0 ? (
             <EmptyState message="No remedies use this herb yet." />
           ) : (
@@ -97,8 +99,8 @@ export default async function HerbPage({
         </div>
         <aside className="md:sticky md:top-24">
           <FactPanel
-            title="ข้อมูลสมุนไพร · Quick facts"
-            facts={[{ key: "ชื่อวิทยาศาสตร์", value: herb.scientificName }]}
+            title={t.herb.quickFacts}
+            facts={[{ key: t.herb.scientificName, value: herb.scientificName }]}
           />
         </aside>
       </div>

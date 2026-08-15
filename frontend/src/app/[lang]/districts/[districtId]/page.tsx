@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
 import { RecordCard } from "@/components/RecordCard";
 import { SectionHead } from "@/components/SectionHead";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { listDistricts, listHealersByDistrict, listProvinces } from "@/lib/api";
 
 export default async function DistrictPage({
@@ -15,6 +16,7 @@ export default async function DistrictPage({
   params: Promise<{ districtId: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const { districtId } = await params;
   const { page: pageParam } = await searchParams;
   const id = Number(districtId);
@@ -34,18 +36,18 @@ export default async function DistrictPage({
     <section>
       <Breadcrumb
         items={[
-          { label: "หน้าแรก", href: "/" },
-          { label: "พื้นที่", href: "/districts" },
+          { label: t.common.home, href: "/" },
+          { label: t.district.crumbList, href: "/districts" },
           ...(province ? [{ label: province.nameThai, href: "/districts" }] : []),
           { label: district.nameThai },
         ]}
       />
       <DetailHeader
         titleThai={district.nameThai}
-        subtitle={province ? `จังหวัด${province.nameThai}` : district.nameEnglish}
+        subtitle={province ? t.district.provincePrefix(province.nameThai) : district.nameEnglish}
       />
 
-      <SectionHead title="หมอพื้นบ้านในพื้นที่นี้" />
+      <SectionHead title={t.district.healers} />
       {healers.length === 0 ? (
         <EmptyState message="No healers recorded in this district yet." />
       ) : (

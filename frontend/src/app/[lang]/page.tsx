@@ -33,7 +33,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <SectionHead titleThai="สมุนไพร" titleEnglish="Herbs" href="/herbs" />
+      <SectionHead title="สมุนไพร" href="/herbs" />
       {shownHerbs.length === 0 ? (
         <EmptyState message="No herbs yet." />
       ) : (
@@ -50,7 +50,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      <SectionHead titleThai="ตำรับยา" titleEnglish="Remedies" href="/remedies" />
+      <SectionHead title="ตำรับยา" href="/remedies" />
       {remedies.length === 0 ? (
         <EmptyState message="No remedies yet." />
       ) : (
@@ -67,7 +67,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      <SectionHead titleThai="เคสการรักษาล่าสุด" titleEnglish="Recent cases" />
+      <SectionHead title="เคสการรักษาล่าสุด" />
       {cases.length === 0 ? (
         <EmptyState message="No cases yet." />
       ) : (
@@ -88,7 +88,7 @@ export default async function HomePage() {
 
       {provinces.length > 0 ? (
         <>
-          <SectionHead titleThai="เลือกตามพื้นที่" titleEnglish="By area" href="/districts" />
+          <SectionHead title="เลือกตามพื้นที่" href="/districts" />
           <div className="flex flex-wrap gap-2">
             {provinces.map((p) => (
               <Chip key={p.id} href="/districts">

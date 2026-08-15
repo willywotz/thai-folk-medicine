@@ -1,21 +1,15 @@
 import Link from "next/link";
 
-export function SectionHead({
-  titleThai,
-  titleEnglish,
-  href,
-}: {
-  titleThai: string;
-  titleEnglish?: string;
-  href?: string;
-}) {
+import { getDictionary } from "@/lib/i18n/getDictionary";
+
+export async function SectionHead({ title, href }: { title: string; href?: string }) {
+  const t = await getDictionary();
   return (
     <div className="mb-4 mt-9 flex items-baseline gap-2.5">
-      <h2 className="font-serif text-xl text-ink">{titleThai}</h2>
-      {titleEnglish ? <span className="text-sm text-ink-faint">{titleEnglish}</span> : null}
+      <h2 className="font-serif text-xl text-ink">{title}</h2>
       {href ? (
         <Link href={href} className="ml-auto text-sm font-semibold text-brand hover:text-brand-strong">
-          ดูทั้งหมด →
+          {t.common.viewAll}
         </Link>
       ) : null}
     </div>

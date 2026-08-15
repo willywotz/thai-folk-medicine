@@ -63,12 +63,10 @@ export default async function HealerPage({
         </div>
       </div>
       {healer.biography ? (
-        <ContentBlock titleThai="ประวัติ" titleEnglish="Biography">
-          {healer.biography}
-        </ContentBlock>
+        <ContentBlock title="ประวัติ">{healer.biography}</ContentBlock>
       ) : null}
 
-      <SectionHead titleThai="ตำรับยาของหมอ" titleEnglish="Remedies" />
+      <SectionHead title="ตำรับยาของหมอ" />
       {remedies.length === 0 ? (
         <EmptyState message="No remedies recorded for this healer yet." />
       ) : (

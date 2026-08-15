@@ -52,11 +52,9 @@ export default async function RemedyPage({
             </div>
           ) : null}
 
-          <ContentBlock titleThai="อาการ" titleEnglish="Symptoms">
-            {remedy.symptoms}
-          </ContentBlock>
+          <ContentBlock title="อาการ">{remedy.symptoms}</ContentBlock>
 
-          <ContentBlock titleThai="ตัวยา" titleEnglish="Ingredients">
+          <ContentBlock title="ตัวยา">
             {remedy.herbs.length === 0 ? (
               "—"
             ) : (
@@ -74,7 +72,7 @@ export default async function RemedyPage({
           </ContentBlock>
 
           {remedy.preparationMethod || remedy.usage ? (
-            <ContentBlock titleThai="วิธีปรุงและใช้" titleEnglish="Preparation">
+            <ContentBlock title="วิธีปรุงและใช้">
               {[remedy.preparationMethod, remedy.usage].filter(Boolean).join("\n\n")}
             </ContentBlock>
           ) : null}

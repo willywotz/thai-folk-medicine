@@ -7,12 +7,15 @@ import { th } from "@/lib/i18n/dictionaries/th";
 import { SiteHeader } from "./SiteHeader";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/th" }));
+vi.mock("@/lib/i18n/getDictionary", () => ({
+  getDictionary: async () => (await import("@/lib/i18n/dictionaries/th")).th,
+}));
 
 describe("SiteHeader", () => {
-  it("shows a province-neutral brand and a staff link", () => {
+  it("shows a province-neutral brand and a staff link", async () => {
     render(
       <I18nProvider locale="th" dict={th}>
-        <SiteHeader />
+        {await SiteHeader()}
       </I18nProvider>,
     );
     const brand = screen.getByRole("link", { name: /ตำรายาพื้นบ้าน/ });

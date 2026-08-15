@@ -45,7 +45,7 @@ export default async function DistrictPage({
         subtitle={province ? `จังหวัด${province.nameThai}` : district.nameEnglish}
       />
 
-      <SectionHead titleThai="หมอพื้นบ้านในพื้นที่นี้" titleEnglish="Healers" />
+      <SectionHead title="หมอพื้นบ้านในพื้นที่นี้" />
       {healers.length === 0 ? (
         <EmptyState message="No healers recorded in this district yet." />
       ) : (

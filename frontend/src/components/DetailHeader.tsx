@@ -1,6 +1,8 @@
 import Link from "next/link";
 
-export function DetailHeader({
+import { getDictionary } from "@/lib/i18n/getDictionary";
+
+export async function DetailHeader({
   titleThai,
   subtitle,
   editHref,
@@ -9,6 +11,7 @@ export function DetailHeader({
   subtitle?: string;
   editHref?: string;
 }) {
+  const t = await getDictionary();
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
@@ -20,7 +23,7 @@ export function DetailHeader({
           href={editHref}
           className="whitespace-nowrap rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft hover:border-brand hover:text-brand"
         >
-          ✎ แก้ไข
+          {t.common.edit}
         </Link>
       ) : null}
     </div>

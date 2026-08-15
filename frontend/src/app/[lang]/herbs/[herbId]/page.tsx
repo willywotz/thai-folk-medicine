@@ -64,14 +64,10 @@ export default async function HerbPage({
             )}
           </div>
           {herb.properties ? (
-            <ContentBlock titleThai="สรรพคุณ" titleEnglish="Properties">
-              {herb.properties}
-            </ContentBlock>
+            <ContentBlock title="สรรพคุณ">{herb.properties}</ContentBlock>
           ) : null}
           {herb.description ? (
-            <ContentBlock titleThai="ลักษณะและรายละเอียด" titleEnglish="Description">
-              {herb.description}
-            </ContentBlock>
+            <ContentBlock title="ลักษณะและรายละเอียด">{herb.description}</ContentBlock>
           ) : null}
 
           <h2 className="mb-3 mt-8 font-serif text-lg text-ink">ตำรับยาที่ใช้สมุนไพรนี้</h2>

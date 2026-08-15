@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -17,16 +18,15 @@ import { treatmentCaseSchema, type TreatmentCaseInput } from "@/lib/treatment-ca
 type CaseFormValues = z.input<typeof treatmentCaseSchema>;
 
 export function CaseForm({
-  remedyId,
-  healerId,
   treatmentCase,
+  remedies,
 }: {
-  remedyId: number;
-  healerId: number;
   treatmentCase?: TreatmentCase;
+  remedies: { id: number; name: string; healerId: number }[];
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [remedyId, setRemedyId] = useState(treatmentCase?.remedyId ?? remedies[0]?.id ?? 0);
   const {
     register,
     handleSubmit,
@@ -44,13 +44,14 @@ export function CaseForm({
   });
 
   const save = useMutation({
-    mutationFn: (values: TreatmentCaseInput) =>
-      treatmentCase
-        ? updateCase(treatmentCase.id, values)
-        : createCase({ ...values, remedyId, healerId }),
+    mutationFn: (values: TreatmentCaseInput) => {
+      const healerId = remedies.find((r) => r.id === remedyId)?.healerId ?? 0;
+      const payload = { ...values, remedyId, healerId };
+      return treatmentCase ? updateCase(treatmentCase.id, payload) : createCase(payload);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: caseListKey(remedyId) });
-      router.push(`/staff/remedies/${remedyId}/treatment-cases`);
+      queryClient.invalidateQueries({ queryKey: caseListKey() });
+      router.push("/staff/cases");
       router.refresh();
     },
   });
@@ -59,6 +60,24 @@ export function CaseForm({
 
   return (
     <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} max-w-xl space-y-4 p-6`} noValidate>
+      <div className="space-y-1">
+        <label htmlFor="remedyId" className={staffLabel}>
+          Remedy (ตำรับยา)
+        </label>
+        <select
+          id="remedyId"
+          required
+          className={field}
+          value={remedyId}
+          onChange={(e) => setRemedyId(Number(e.target.value))}
+        >
+          {remedies.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="space-y-1">
         <label htmlFor="patientSex" className={staffLabel}>
           Patient sex (เพศ)
@@ -109,7 +128,7 @@ export function CaseForm({
         </button>
         <button
           type="button"
-          onClick={() => router.push(`/staff/remedies/${remedyId}/treatment-cases`)}
+          onClick={() => router.push("/staff/cases")}
           className={btnGhost}
         >
           Cancel

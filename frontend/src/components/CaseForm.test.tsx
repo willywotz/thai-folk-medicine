@@ -9,6 +9,11 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { CaseForm } from "./CaseForm";
 
+const remedies = [
+  { id: 5, name: "ยาต้ม", healerId: 2 },
+  { id: 6, name: "ยาพอก", healerId: 3 },
+];
+
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
@@ -20,16 +25,28 @@ afterEach(() => {
 });
 
 describe("CaseForm (create)", () => {
+  it("requires a remedy and defaults to the first option", () => {
+    renderWithClient(<CaseForm remedies={remedies} />);
+    const select = screen.getByLabelText(/^remedy/i);
+    expect(select).toHaveAttribute("required");
+    expect(select).toHaveValue("5");
+  });
+
   it("requires patient sex and a date", async () => {
-    renderWithClient(<CaseForm remedyId={5} healerId={2} />);
+    renderWithClient(<CaseForm remedies={remedies} />);
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(await screen.findByText(/patient sex is required/i)).toBeInTheDocument();
   });
 
-  it("posts a new case and navigates back", async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 9 }) }));
+  it("posts a new case with the chosen remedy and its derived healer, then navigates back", async () => {
+    const fetchMock = vi.fn(async (url: string, opts?: { method?: string; body?: string }) => {
+      void url;
+      void opts;
+      return { ok: true, status: 201, json: async () => ({ id: 9 }) };
+    });
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    renderWithClient(<CaseForm remedyId={5} healerId={2} />);
+    renderWithClient(<CaseForm remedies={remedies} />);
+    await userEvent.selectOptions(screen.getByLabelText(/^remedy/i), "6");
     await userEvent.type(screen.getByLabelText(/patient sex/i), "female");
     await userEvent.type(screen.getByLabelText(/age/i), "40");
     await userEvent.type(screen.getByLabelText(/date treated/i), "2026-03-01");
@@ -37,6 +54,28 @@ describe("CaseForm (create)", () => {
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/treatment-cases", expect.objectContaining({ method: "POST" })),
     );
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/remedies/5/treatment-cases"));
+    const call = fetchMock.mock.calls.find(([url]) => url === "/bff/treatment-cases")!;
+    const body = JSON.parse(call[1]!.body as string);
+    expect(body.remedyId).toBe(6);
+    expect(body.healerId).toBe(3);
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/cases"));
+  });
+
+  it("defaults the remedy select to the case's current remedy when editing", () => {
+    const treatmentCase = {
+      id: 8,
+      remedyId: 6,
+      healerId: 3,
+      patientAge: 40,
+      patientSex: "female",
+      symptoms: "",
+      result: "",
+      note: "",
+      treatedOn: "2026-03-01",
+      createdAt: "",
+      updatedAt: "",
+    };
+    renderWithClient(<CaseForm treatmentCase={treatmentCase} remedies={remedies} />);
+    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("6");
   });
 });

@@ -221,9 +221,40 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   (herb + amount rows) instead of an ingredients textarea.
 - **Seed:** `cmd/seed` seeds 12 curated herbs and links each remedy to 2–4 herbs.
 
-**The planned scope is complete:** backend API, public browse site (remedy/herb-first), and
-full staff admin (healers, remedies, herbs, treatment cases, and photos) all work end to end.
-Public search covers remedies, healers, and herbs.
+**Plan 11 — pagination, filters & merged search** (supersedes the `?limit=` recent
+endpoints and the three-group search above):
+- **Uniform paginated envelope.** Every public list endpoint now returns
+  `{ items, page, pageSize, total, totalPages }`. Query params `page` (1-indexed, `<1`→1) and
+  `pageSize` (default 12 for lists / 20 for search, capped at 48) are parsed by a shared
+  helper; `totalPages = max(1, ceil(total/pageSize))`; a page past the end returns valid
+  metadata with empty `items`. Kernel: `internal/domain/listing` (`Params{Limit,Offset}`,
+  `Page[T]{Items,Total}`) — pure Go, imported by every list use case; each sqlc list query
+  gained a matching `Count*` with an identical `WHERE`.
+- **Endpoints + filters** (all `/api/v1`, existing routes — params added; `?limit=` removed):
+  - `GET /remedies?page&pageSize&herbId&districtId&symptom` — filters optional, AND-combined;
+    `districtId` joins remedy→healer→district; `symptom` is an ILIKE substring.
+  - `GET /herbs?page&pageSize&query` — `query` matches Thai/English name or properties.
+  - `GET /treatment-cases?page&pageSize`; `GET /districts/{id}/healers?page&pageSize`;
+    `GET /herbs/{id}/remedies`, `GET /healers/{id}/remedies`,
+    `GET /remedies/{id}/treatment-cases` — all `?page&pageSize`.
+- **Merged search.** `GET /api/v1/search?searchTerm&page&pageSize` now returns ONE
+  relevance-ranked paginated list: `Page[SearchHit]` where
+  `SearchHit = { type: "remedy"|"healer"|"herb", id, title, subtitle, score }`. Backed by a
+  single SQL `UNION ALL` over the three entities ranked by trigram `similarity()` (`::real`
+  score), `ORDER BY score DESC, type, id` (deterministic paging). Cross-type scores are
+  uncalibrated (`withinlazy:` — add per-type weights if ordering needs tuning). The 2-rune
+  minimum (`ErrTermTooShort` → 400) is unchanged.
+- **Frontend (RSC/SSR, zero new client JS).** `lib/api.ts` list functions take
+  `{page,pageSize,...filters}` and return `Page<T>`. New `<Pagination>` (server component,
+  URL `?page=` links that preserve other params) and `<Filters>` (native `<form method="get">`
+  — no JS; omitting `page` resets to page 1 on a new filter). Every public list page reads
+  `searchParams` and renders grid + filters + pagination; `/search` renders the merged list
+  with a per-row type badge linking to the matching detail page.
+- **Reads publish no domain events** — pagination/filter/search touch no event code, by design.
+
+**The planned scope is complete:** backend API, public browse site (remedy/herb-first,
+paginated + filterable), and full staff admin (healers, remedies, herbs, treatment cases, and
+photos) all work end to end. Public search is one merged, ranked, paginated result list.
 
 ## How to run
 

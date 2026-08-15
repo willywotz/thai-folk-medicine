@@ -19,6 +19,8 @@ type fakeHealerRepo struct {
 	deleteErr  error
 	updateErr  error
 	lastCreate healer.CreateParams
+
+	lastListDistrictID *int64
 }
 
 func (f *fakeHealerRepo) Create(_ context.Context, p healer.CreateParams) (healer.Healer, error) {
@@ -33,6 +35,10 @@ func (f *fakeHealerRepo) GetByID(context.Context, int64) (healer.Healer, error) 
 	return f.created, nil
 }
 func (f *fakeHealerRepo) ListByDistrictPage(context.Context, int64, listing.Params) (listing.Page[healer.Healer], error) {
+	return listing.Page[healer.Healer]{Items: []healer.Healer{f.created}, Total: 1}, nil
+}
+func (f *fakeHealerRepo) ListPage(_ context.Context, _ listing.Params, districtID *int64) (listing.Page[healer.Healer], error) {
+	f.lastListDistrictID = districtID
 	return listing.Page[healer.Healer]{Items: []healer.Healer{f.created}, Total: 1}, nil
 }
 func (f *fakeHealerRepo) Update(_ context.Context, p healer.UpdateParams) (healer.Healer, error) {
@@ -100,6 +106,19 @@ func TestDeleteHealerPublishesDeletedEvent(t *testing.T) {
 
 	require.Len(t, pub.events, 1)
 	assert.Equal(t, "healer.deleted", pub.events[0].EventName())
+}
+
+func TestListHealerPageForwardsDistrictFilter(t *testing.T) {
+	repo := &fakeHealerRepo{created: healer.Healer{ID: 1, FullName: "หมอ ก"}}
+	service := NewHealerService(repo, &recordingPublisher{})
+	districtID := int64(9)
+
+	page, err := service.List(context.Background(), listing.Params{Limit: 12}, &districtID)
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, page.Total)
+	require.NotNil(t, repo.lastListDistrictID)
+	assert.Equal(t, districtID, *repo.lastListDistrictID)
 }
 
 func TestUpdateHealerPublishesUpdatedEvent(t *testing.T) {

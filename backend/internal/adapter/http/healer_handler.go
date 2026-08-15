@@ -25,6 +25,7 @@ func NewHealerHandler(service *usecase.HealerService) *HealerHandler {
 // RegisterRoutes mounts the healer routes: reads public, writes JWT-guarded.
 func (h *HealerHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/districts/:districtId/healers", h.ListByDistrict)
+	public.GET("/healers", h.ListPage)
 	public.GET("/healers/:healerId", h.Get)
 	protected.POST("/healers", h.Create)
 	protected.PUT("/healers/:healerId", h.Update)
@@ -72,6 +73,30 @@ func (h *HealerHandler) ListByDistrict(c *gin.Context) {
 	}
 	params, page, pageSize := parsePageParams(c, 12)
 	result, err := h.service.ListByDistrictPage(c.Request.Context(), districtID, params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list healers"})
+		return
+	}
+	out := make([]healerDTO, 0, len(result.Items))
+	for _, item := range result.Items {
+		out = append(out, toHealerDTO(item))
+	}
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
+}
+
+// ListPage handles GET /api/v1/healers?districtId&page&pageSize.
+func (h *HealerHandler) ListPage(c *gin.Context) {
+	var districtID *int64
+	if raw := c.Query("districtId"); raw != "" {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "district id must be a number"})
+			return
+		}
+		districtID = &id
+	}
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.List(c.Request.Context(), params, districtID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list healers"})
 		return

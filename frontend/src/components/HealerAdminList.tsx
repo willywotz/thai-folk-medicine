@@ -2,12 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
-import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
+import type { District } from "@/lib/api-types";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
 
-export function HealerAdminList({ districtId }: { districtId: number }) {
+export function HealerAdminList({ districts }: { districts: District[] }) {
+  const [districtId, setDistrictId] = useState<number | undefined>(undefined);
   const queryClient = useQueryClient();
   const { data: healers, isLoading, isError } = useQuery({
     queryKey: healerListKey(districtId),
@@ -19,16 +22,39 @@ export function HealerAdminList({ districtId }: { districtId: number }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: healerListKey(districtId) }),
   });
 
+  const districtName = (id: number) => {
+    const district = districts.find((d) => d.id === id);
+    return district ? `${district.nameEnglish} · ${district.nameThai}` : "—";
+  };
+
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load healers.</p>;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <label htmlFor="districtFilter" className={staffLabel}>
+            District
+          </label>
+          <select
+            id="districtFilter"
+            className={staffField}
+            value={districtId ?? ""}
+            onChange={(e) => setDistrictId(e.target.value ? Number(e.target.value) : undefined)}
+          >
+            <option value="">All districts</option>
+            {districts.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.nameEnglish} · {d.nameThai}
+              </option>
+            ))}
+          </select>
+        </div>
         <span className="text-sm text-ink-faint">
           {healers?.length ?? 0} {healers?.length === 1 ? "healer" : "healers"}
         </span>
-        <Link href={`/staff/districts/${districtId}/healers/new`} className={btnPrimary}>
+        <Link href="/staff/healers/new" className={btnPrimary}>
           <span aria-hidden>+</span> New healer
         </Link>
       </div>
@@ -38,7 +64,7 @@ export function HealerAdminList({ districtId }: { districtId: number }) {
         </p>
       ) : null}
       {!healers || healers.length === 0 ? (
-        <EmptyState message="No healers in this district yet." />
+        <EmptyState message="No healers yet." />
       ) : (
         <ul className={staffCard}>
           {healers.map((h) => (
@@ -48,13 +74,13 @@ export function HealerAdminList({ districtId }: { districtId: number }) {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{h.fullName}</p>
-                {h.specialty ? <p className="truncate text-sm text-ink-soft">{h.specialty}</p> : null}
+                <p className="truncate text-sm text-ink-soft">
+                  {districtName(h.districtId)}
+                  {h.specialty ? ` · ${h.specialty}` : ""}
+                </p>
               </div>
-              <Link href={`/staff/healers/${h.id}/remedies`} className={linkAction}>
-                Remedies
-              </Link>
               <Link
-                href={`/staff/districts/${districtId}/healers/${h.id}/edit`}
+                href={`/staff/healers/${h.id}/edit`}
                 aria-label={`Edit ${h.fullName}`}
                 className={iconBtn}
               >

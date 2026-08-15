@@ -3,16 +3,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
-import type { Healer } from "@/lib/api-types";
+import type { District, Healer } from "@/lib/api-types";
 import { healerSchema, type HealerInput } from "@/lib/healer-schema";
 import { createHealer, healerListKey, updateHealer } from "@/lib/staff-queries";
 
-export function HealerForm({ districtId, healer }: { districtId: number; healer?: Healer }) {
+export function HealerForm({ healer, districts }: { healer?: Healer; districts: District[] }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [districtId, setDistrictId] = useState(healer?.districtId ?? districts[0]?.id ?? 0);
   const {
     register,
     handleSubmit,
@@ -33,8 +35,8 @@ export function HealerForm({ districtId, healer }: { districtId: number; healer?
         ? updateHealer(healer.id, { ...values, districtId })
         : createHealer({ ...values, districtId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: healerListKey(districtId) });
-      router.push(`/staff/districts/${districtId}`);
+      queryClient.invalidateQueries({ queryKey: healerListKey() });
+      router.push("/staff/healers");
       router.refresh();
     },
   });
@@ -47,6 +49,24 @@ export function HealerForm({ districtId, healer }: { districtId: number; healer?
       className={`${staffCard} max-w-xl space-y-4 p-6`}
       noValidate
     >
+      <div className="space-y-1">
+        <label htmlFor="districtId" className={staffLabel}>
+          District (อำเภอ)
+        </label>
+        <select
+          id="districtId"
+          required
+          className={field}
+          value={districtId}
+          onChange={(e) => setDistrictId(Number(e.target.value))}
+        >
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.nameEnglish} · {d.nameThai}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="space-y-1">
         <label htmlFor="fullName" className={staffLabel}>
           Full name (ชื่อ)
@@ -83,7 +103,7 @@ export function HealerForm({ districtId, healer }: { districtId: number; healer?
         </button>
         <button
           type="button"
-          onClick={() => router.push(`/staff/districts/${districtId}`)}
+          onClick={() => router.push("/staff/healers")}
           className={btnGhost}
         >
           Cancel

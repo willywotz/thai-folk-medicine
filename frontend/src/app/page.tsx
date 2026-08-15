@@ -15,9 +15,11 @@ export default async function HomePage() {
     listProvinces(),
   ]);
   const shownHerbs = herbs.slice(0, 4);
-  const herbCovers = await Promise.all(
-    shownHerbs.map((h) => firstPhotoUrl("herb", h.id).catch(() => undefined)),
-  );
+  const [herbCovers, remedyCovers, caseCovers] = await Promise.all([
+    Promise.all(shownHerbs.map((h) => firstPhotoUrl("herb", h.id).catch(() => undefined))),
+    Promise.all(remedies.map((r) => firstPhotoUrl("remedy", r.id).catch(() => undefined))),
+    Promise.all(cases.map((c) => firstPhotoUrl("remedy", c.remedyId).catch(() => undefined))),
+  ]);
 
   return (
     <section>
@@ -51,8 +53,14 @@ export default async function HomePage() {
         <EmptyState message="No remedies yet." />
       ) : (
         <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-          {remedies.map((r) => (
-            <LinkRow key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
+          {remedies.map((r, i) => (
+            <LinkRow
+              key={r.id}
+              href={`/remedies/${r.id}`}
+              title={r.name}
+              subtitle={r.symptoms}
+              imageUrl={remedyCovers[i]}
+            />
           ))}
         </div>
       )}
@@ -62,11 +70,12 @@ export default async function HomePage() {
         <EmptyState message="No cases yet." />
       ) : (
         <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-          {cases.map((c) => (
+          {cases.map((c, i) => (
             <LinkRow
               key={c.id}
               href={`/remedies/${c.remedyId}`}
               icon="✚"
+              imageUrl={caseCovers[i]}
               title={c.symptoms || "—"}
               subtitle={`รักษาด้วยตำรับ #${c.remedyId}`}
               meta={formatThaiDate(c.treatedOn)}

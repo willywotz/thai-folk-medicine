@@ -95,11 +95,14 @@ pipelining = True
 
 - [ ] **Step 3: Write `deploy/inventory.ini`**
 
-The host address is not here; it comes from the vault as `ansible_host`.
+The host address is not here; `ansible_host` / `ansible_user` come from the
+vault as group vars for the `prod` group. Do NOT restate them as inventory
+host vars — a host var `ansible_host="{{ ansible_host }}"` self-references and
+fails with a template recursion error at connect time.
 
 ```ini
 [prod]
-production ansible_host="{{ ansible_host }}" ansible_user="{{ ansible_user }}"
+production
 ```
 
 - [ ] **Step 4: Write `deploy/group_vars/prod/vars.yml`**

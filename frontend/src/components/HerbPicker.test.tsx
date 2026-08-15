@@ -4,20 +4,22 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+function herb(id: number, nameThai: string) {
+  return {
+    id,
+    nameThai,
+    nameEnglish: "",
+    scientificName: "",
+    properties: "",
+    description: "",
+    createdAt: "",
+    updatedAt: "",
+  };
+}
+
 vi.mock("@/lib/staff-queries", () => ({
   herbListKey: ["herbs"],
-  fetchHerbs: vi.fn(async () => [
-    {
-      id: 1,
-      nameThai: "ขิง",
-      nameEnglish: "Ginger",
-      scientificName: "",
-      properties: "",
-      description: "",
-      createdAt: "",
-      updatedAt: "",
-    },
-  ]),
+  fetchHerbs: vi.fn(async () => [herb(1, "ขิง"), herb(2, "ขมิ้น"), herb(3, "ไพล")]),
 }));
 
 import { HerbPicker } from "./HerbPicker";
@@ -35,9 +37,23 @@ function renderWithClient(ui: React.ReactNode) {
 afterEach(() => vi.clearAllMocks());
 
 describe("HerbPicker", () => {
-  it("shows the herb options after adding a row", async () => {
+  it("filters herbs by search text and selects a match", async () => {
     renderWithClient(<Wrapper />);
     await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
-    expect(await screen.findByText("ขิง")).toBeInTheDocument();
+
+    const input = await screen.findByRole("combobox", { name: /herb/i });
+    await userEvent.click(input);
+    // All herbs are listed before filtering.
+    expect(await screen.findByRole("option", { name: "ขมิ้น" })).toBeInTheDocument();
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "ไพล");
+    // The search narrows the list to the single match.
+    expect(await screen.findByRole("option", { name: "ไพล" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "ขมิ้น" })).toBeNull();
+
+    await userEvent.click(screen.getByRole("option", { name: "ไพล" }));
+    // The selected herb name fills the search box.
+    expect(input).toHaveValue("ไพล");
   });
 });

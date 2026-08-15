@@ -1,19 +1,28 @@
 "use client";
 
+import { Combobox } from "@base-ui/react/combobox";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { fetchHerbs, herbListKey } from "@/lib/staff-queries";
 
 type HerbLink = { herbId: number; amount: string };
+type HerbOption = { value: number; label: string };
 
 export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (v: HerbLink[]) => void }) {
   const { data: herbs } = useQuery({ queryKey: herbListKey, queryFn: fetchHerbs });
 
+  // Base UI Combobox filters and labels {value,label} items automatically.
+  const options = useMemo<HerbOption[]>(
+    () => (herbs ?? []).map((h) => ({ value: h.id, label: h.nameThai })),
+    [herbs],
+  );
+
   const setRow = (i: number, patch: Partial<HerbLink>) =>
     onChange(value.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
   const addRow = () => {
-    if (!herbs || herbs.length === 0) return;
-    onChange([...value, { herbId: herbs[0].id, amount: "" }]);
+    if (options.length === 0) return;
+    onChange([...value, { herbId: options[0].value, amount: "" }]);
   };
   const removeRow = (i: number) => onChange(value.filter((_, idx) => idx !== i));
 
@@ -22,18 +31,37 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
       <p className="text-sm font-medium">ตัวยา (Herbs)</p>
       {value.map((row, i) => (
         <div key={i} className="flex gap-2">
-          <select
-            aria-label="herb"
-            className="rounded border border-stone-300 p-2"
-            value={row.herbId}
-            onChange={(e) => setRow(i, { herbId: Number(e.target.value) })}
+          <Combobox.Root
+            items={options}
+            value={options.find((o) => o.value === row.herbId) ?? null}
+            onValueChange={(next) => next && setRow(i, { herbId: next.value })}
           >
-            {(herbs ?? []).map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.nameThai}
-              </option>
-            ))}
-          </select>
+            <Combobox.Input
+              aria-label="herb"
+              placeholder="ค้นหาสมุนไพร (search herb)"
+              className="w-48 rounded border border-stone-300 p-2"
+            />
+            <Combobox.Portal>
+              <Combobox.Positioner sideOffset={4} className="z-50">
+                <Combobox.Popup className="max-h-60 w-[var(--anchor-width)] overflow-y-auto rounded border border-stone-300 bg-white shadow-md">
+                  <Combobox.Empty className="p-2 text-sm text-stone-500">
+                    ไม่พบสมุนไพร (no herbs found)
+                  </Combobox.Empty>
+                  <Combobox.List>
+                    {(item: HerbOption) => (
+                      <Combobox.Item
+                        key={item.value}
+                        value={item}
+                        className="cursor-pointer p-2 text-sm data-[highlighted]:bg-stone-100"
+                      >
+                        {item.label}
+                      </Combobox.Item>
+                    )}
+                  </Combobox.List>
+                </Combobox.Popup>
+              </Combobox.Positioner>
+            </Combobox.Portal>
+          </Combobox.Root>
           <input
             aria-label="amount"
             className="flex-1 rounded border border-stone-300 p-2"
@@ -49,7 +77,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
       <button
         type="button"
         onClick={addRow}
-        disabled={!herbs || herbs.length === 0}
+        disabled={options.length === 0}
         className="rounded border border-stone-300 px-3 py-1 text-sm disabled:opacity-50"
       >
         + add herb

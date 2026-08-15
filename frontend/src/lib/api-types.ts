@@ -102,3 +102,19 @@ export interface SearchResponse {
   healers: HealerSearchResult[];
   herbs: HerbSearchResult[];
 }
+
+export interface Page<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface SearchHit {
+  type: "remedy" | "healer" | "herb";
+  id: number;
+  title: string;
+  subtitle: string;
+  score: number;
+}

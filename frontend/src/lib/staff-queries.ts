@@ -1,4 +1,4 @@
-import type { Healer, Herb, Photo, Remedy, TreatmentCase } from "@/lib/api-types";
+import type { Healer, Herb, Page, Photo, Remedy, TreatmentCase } from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
 import type { HerbInput } from "@/lib/herb-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
@@ -8,11 +8,20 @@ export function healerListKey(districtId: number) {
   return ["healers", districtId] as const;
 }
 
+// fetchList reads a paginated public list and returns just its items. Staff
+// admin lists show every row at once, so we ask for the maximum page.
+// withinlazy: pageSize is capped at 48 server-side; add real staff pagination
+// if any single list can exceed 48 rows.
+async function fetchList<T>(path: string, error: string): Promise<T[]> {
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`/api/v1${path}${sep}pageSize=48`, { cache: "no-store" });
+  if (!res.ok) throw new Error(error);
+  return ((await res.json()) as Page<T>).items;
+}
+
 /** fetchHealers reads the public healer list through the same-origin /api proxy. */
 export async function fetchHealers(districtId: number): Promise<Healer[]> {
-  const res = await fetch(`/api/v1/districts/${districtId}/healers`, { cache: "no-store" });
-  if (!res.ok) throw new Error("cannot load healers");
-  return (await res.json()) as Healer[];
+  return fetchList<Healer>(`/districts/${districtId}/healers`, "cannot load healers");
 }
 
 /** deleteHealer removes a healer through the authenticated BFF. */
@@ -47,9 +56,7 @@ export function remedyListKey(healerId: number) {
 
 /** fetchRemedies reads a healer's remedies through the same-origin /api proxy. */
 export async function fetchRemedies(healerId: number): Promise<Remedy[]> {
-  const res = await fetch(`/api/v1/healers/${healerId}/remedies`, { cache: "no-store" });
-  if (!res.ok) throw new Error("cannot load remedies");
-  return (await res.json()) as Remedy[];
+  return fetchList<Remedy>(`/healers/${healerId}/remedies`, "cannot load remedies");
 }
 
 /** createRemedy posts a new remedy (with its healerId) through the BFF. */
@@ -84,9 +91,10 @@ export function caseListKey(remedyId: number) {
 
 /** fetchCases reads a remedy's treatment cases through the /api proxy. */
 export async function fetchCases(remedyId: number): Promise<TreatmentCase[]> {
-  const res = await fetch(`/api/v1/remedies/${remedyId}/treatment-cases`, { cache: "no-store" });
-  if (!res.ok) throw new Error("cannot load treatment cases");
-  return (await res.json()) as TreatmentCase[];
+  return fetchList<TreatmentCase>(
+    `/remedies/${remedyId}/treatment-cases`,
+    "cannot load treatment cases",
+  );
 }
 
 /** createCase posts a new case (with remedyId + healerId) through the BFF. */
@@ -154,9 +162,7 @@ export const herbListKey = ["herbs"] as const;
 
 /** fetchHerbs reads the herb list through the same-origin /api proxy. */
 export async function fetchHerbs(): Promise<Herb[]> {
-  const res = await fetch(`/api/v1/herbs`, { cache: "no-store" });
-  if (!res.ok) throw new Error("cannot load herbs");
-  return (await res.json()) as Herb[];
+  return fetchList<Herb>(`/herbs`, "cannot load herbs");
 }
 
 /** createHerb posts a new herb through the BFF. */

@@ -3,12 +3,26 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   deleteHealer,
   deletePhoto,
+  fetchCases,
   fetchHealers,
+  fetchHerbs,
   fetchPhotos,
+  fetchRemedies,
   healerListKey,
   photoListKey,
   uploadPhoto,
 } from "./staff-queries";
+
+function mockOk(body: unknown) {
+  const fetchMock = vi.fn(async () => ({ ok: true, json: async () => body }));
+  vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+  return fetchMock;
+}
+
+/** page wraps items in the Plan 11 pagination envelope the API returns. */
+function page<T>(items: T[]) {
+  return { items, page: 1, pageSize: 48, total: items.length, totalPages: 1 };
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -22,12 +36,48 @@ describe("healerListKey", () => {
 });
 
 describe("fetchHealers", () => {
-  it("reads the proxied list endpoint", async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [{ id: 1 }] }));
-    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+  it("unwraps the pagination envelope from the proxied list endpoint", async () => {
+    const fetchMock = mockOk(page([{ id: 1 }]));
     const got = await fetchHealers(3);
     expect(got).toHaveLength(1);
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/districts/3/healers", expect.anything());
+    expect(got[0].id).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/districts/3/healers?pageSize=48",
+      expect.anything(),
+    );
+  });
+});
+
+describe("fetchRemedies", () => {
+  it("unwraps the pagination envelope", async () => {
+    const fetchMock = mockOk(page([{ id: 2 }]));
+    const got = await fetchRemedies(5);
+    expect(got).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/healers/5/remedies?pageSize=48",
+      expect.anything(),
+    );
+  });
+});
+
+describe("fetchCases", () => {
+  it("unwraps the pagination envelope", async () => {
+    const fetchMock = mockOk(page([{ id: 3 }]));
+    const got = await fetchCases(7);
+    expect(got).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/remedies/7/treatment-cases?pageSize=48",
+      expect.anything(),
+    );
+  });
+});
+
+describe("fetchHerbs", () => {
+  it("unwraps the pagination envelope", async () => {
+    const fetchMock = mockOk(page([{ id: 4 }]));
+    const got = await fetchHerbs();
+    expect(got).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/herbs?pageSize=48", expect.anything());
   });
 });
 

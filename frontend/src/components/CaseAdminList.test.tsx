@@ -21,9 +21,12 @@ describe("CaseAdminList", () => {
       "fetch",
       vi.fn(async () => ({
         ok: true,
-        json: async () => [
-          { id: 8, remedyId: 5, healerId: 2, patientAge: 40, patientSex: "female", treatedOn: "2026-03-01", symptoms: "", result: "", note: "" },
-        ],
+        json: async () => ({
+          items: [
+            { id: 8, remedyId: 5, healerId: 2, patientAge: 40, patientSex: "female", treatedOn: "2026-03-01", symptoms: "", result: "", note: "" },
+          ],
+          page: 1, pageSize: 48, total: 1, totalPages: 1,
+        }),
       })) as unknown as typeof fetch,
     );
     renderWithClient(<CaseAdminList remedyId={5} />);
@@ -41,9 +44,12 @@ describe("CaseAdminList", () => {
         if (opts?.method === "DELETE") return { ok: false, status: 409 };
         return {
           ok: true,
-          json: async () => [
-            { id: 8, remedyId: 5, healerId: 2, patientAge: 40, patientSex: "female", treatedOn: "2026-03-01", symptoms: "", result: "", note: "" },
-          ],
+          json: async () => ({
+            items: [
+              { id: 8, remedyId: 5, healerId: 2, patientAge: 40, patientSex: "female", treatedOn: "2026-03-01", symptoms: "", result: "", note: "" },
+            ],
+            page: 1, pageSize: 48, total: 1, totalPages: 1,
+          }),
         };
       }) as unknown as typeof fetch,
     );

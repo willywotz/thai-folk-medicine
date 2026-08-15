@@ -19,7 +19,7 @@ describe("RemedyAdminList", () => {
   it("lists remedies with edit, cases, and delete controls", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({ ok: true, json: async () => [{ id: 5, healerId: 2, name: "ยาต้ม" }] })) as unknown as typeof fetch,
+      vi.fn(async () => ({ ok: true, json: async () => ({ items: [{ id: 5, healerId: 2, name: "ยาต้ม" }], page: 1, pageSize: 48, total: 1, totalPages: 1 }) })) as unknown as typeof fetch,
     );
     renderWithClient(<RemedyAdminList healerId={2} />);
     expect(await screen.findByText("ยาต้ม")).toBeInTheDocument();
@@ -38,7 +38,7 @@ describe("RemedyAdminList", () => {
       "fetch",
       vi.fn(async (_url: string, opts?: { method?: string }) => {
         if (opts?.method === "DELETE") return { ok: false, status: 409 };
-        return { ok: true, json: async () => [{ id: 5, healerId: 2, name: "ยาต้ม" }] };
+        return { ok: true, json: async () => ({ items: [{ id: 5, healerId: 2, name: "ยาต้ม" }], page: 1, pageSize: 48, total: 1, totalPages: 1 }) };
       }) as unknown as typeof fetch,
     );
     renderWithClient(<RemedyAdminList healerId={2} />);

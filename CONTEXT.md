@@ -231,6 +231,11 @@ endpoints and the three-group search above):
   metadata with empty `items`. Kernel: `internal/domain/listing` (`Params{Limit,Offset}`,
   `Page[T]{Items,Total}`) — pure Go, imported by every list use case; each sqlc list query
   gained a matching `Count*` with an identical `WHERE`.
+  - **Consumers must unwrap the envelope.** The staff admin `fetch*` helpers in
+    `lib/staff-queries.ts` return `.items` via a shared `fetchList` that asks for
+    `pageSize=48` (the max) so a whole list shows at once. `withinlazy:` add real staff
+    pagination if any single list can exceed 48 rows. (`fetchPhotos` is exempt — the photo
+    list endpoint returns a bare array, not the envelope.)
 - **Endpoints** (all `/api/v1`, existing routes — `?page&pageSize` added; `?limit=` removed).
   Note: list *filters* (remedy by herb/district/symptom, herb by name) were designed and
   built, then **removed by decision** — only pagination remains on these lists:

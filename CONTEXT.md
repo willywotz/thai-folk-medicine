@@ -69,20 +69,40 @@ backend/
 frontend/
 ├── next.config.ts                      # /api/* proxy → Go API (INTERNAL_API_URL)
 ├── src/
-│   ├── proxy.ts                        # route guard: /staff/* needs session cookie (Next 16 middleware)
+│   ├── proxy.ts                        # Next 16 middleware: (1) redirect locale-less path → /th, (2) staff/* auth guard on locale-stripped path
 │   ├── app/
-│   │   ├── page.tsx                    # public home: Yasothon districts
-│   │   ├── districts/ healers/ remedies/   # public browse pages
-│   │   ├── login/                      # staff login
-│   │   ├── staff/                      # guarded: six flat sections — dashboard, provinces (+districts CRUD), healers, remedies, cases, herbs
-│   │   ├── bff/session/                # POST login / DELETE logout (sets httpOnly cookie)
+│   │   ├── [lang]/                     # ALL UI routes nested here (lang = th|en); [lang]/layout.tsx is THE root layout
+│   │   │   ├── page.tsx                # public home: Yasothon districts
+│   │   │   ├── districts/ healers/ remedies/   # public browse pages
+│   │   │   ├── login/                  # staff login
+│   │   │   ├── staff/                  # guarded: six flat sections — dashboard, provinces (+districts CRUD), healers, remedies, cases, herbs
+│   │   │   └── layout.tsx              # root layout: <html lang>, fonts, TanStack Query Providers, I18nProvider (locale)
+│   │   ├── bff/session/                # POST login / DELETE logout (sets httpOnly cookie) — stays at root (not under [lang])
 │   │   ├── bff/healers/                # POST / [healerId] PUT·DELETE (cookie → Bearer → Go)
-│   │   └── layout.tsx                  # Thai font shell (Noto Sans Thai) + TanStack Query Providers
-│   ├── components/                     # public: RecordCard, Breadcrumb, …; staff shell: StaffNavLink, StaffPageHeader, staff-ui (brand class tokens); staff CRUD: HealerAdminList, HealerForm, LogoutButton
+│   │   └── globals.css                 # stays at app root; imported by [lang]/layout.tsx
+│   ├── components/                     # public: RecordCard, Breadcrumb, LanguageSwitcher, …; staff shell: StaffNavLink, StaffPageHeader, staff-ui (brand class tokens); staff CRUD: HealerAdminList, HealerForm, LogoutButton
 │   │   └── ui/                         # shadcn/ui primitives
 │   └── lib/                            # api.ts, api-types.ts, format.ts, session.ts, bff-forward.ts, staff-queries.ts, *-schema.ts
+│       └── i18n/                       # config (locales th|en, default th), dictionaries/{th,en}.ts (th=source of truth, en:Dictionary), getDictionary (server, next/root-params), useT/useLocale (client)
 └── vitest.config.ts                    # Vitest + RTL (jsdom)
 ```
+
+### Internationalization (i18n) — th (default) + en
+
+Official Next.js App Router sub-path standard. All UI routes live under
+`app/[lang]/`; `bff/*` API handlers stay at the root (a static segment beats the
+dynamic `[lang]`). `proxy.ts` redirects a locale-less path to `/th<path>`, then
+applies the staff auth guard to the locale-stripped path (keeping the prefix).
+**Server components** read chrome text with `await getDictionary()` (locale via
+`next/root-params` `lang()`); **client components** use `useT()`, which selects
+`{th,en}` by the locale from `I18nProvider` (locale-only context — the dict is
+imported client-side, so its function-valued keys survive the RSC boundary).
+`en` is typed as `Dictionary = typeof th`, so a missing key is a **compile
+error**. Only UI **chrome** is translated — record content shows as saved. The
+brand mark (`ตำรายาพื้นบ้าน` logo) stays Thai in both locales. A `LanguageSwitcher`
+in the site header swaps the leading locale segment.
+Spec: `docs/superpowers/specs/2026-08-16-i18n-th-en-design.md`.
+Plan: `docs/superpowers/plans/2026-08-16-i18n-th-en.md`.
 
 ## Current state — Plan 1 + Plan 2 + Plan 3 + Plan 4 (backend) + Plan 5 (public frontend) done
 

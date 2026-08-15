@@ -19,26 +19,13 @@ LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 SELECT COUNT(*) FROM remedy WHERE healer_id = sqlc.arg('healer_id');
 
 -- name: ListRemedyPage :many
-SELECT r.id, r.healer_id, r.name, r.symptoms, r.preparation_method, r.usage, r.note, r.created_at, r.updated_at
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-WHERE (sqlc.narg('herb_id')::bigint IS NULL
-       OR EXISTS (SELECT 1 FROM remedy_herb rh
-                  WHERE rh.remedy_id = r.id AND rh.herb_id = sqlc.narg('herb_id')::bigint))
-  AND (sqlc.narg('district_id')::bigint IS NULL OR h.district_id = sqlc.narg('district_id')::bigint)
-  AND (sqlc.narg('symptom')::text IS NULL OR r.symptoms ILIKE '%' || sqlc.narg('symptom')::text || '%')
-ORDER BY r.created_at DESC, r.id DESC
+SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
+FROM remedy
+ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
 -- name: CountRemedyPage :one
-SELECT COUNT(*)
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-WHERE (sqlc.narg('herb_id')::bigint IS NULL
-       OR EXISTS (SELECT 1 FROM remedy_herb rh
-                  WHERE rh.remedy_id = r.id AND rh.herb_id = sqlc.narg('herb_id')::bigint))
-  AND (sqlc.narg('district_id')::bigint IS NULL OR h.district_id = sqlc.narg('district_id')::bigint)
-  AND (sqlc.narg('symptom')::text IS NULL OR r.symptoms ILIKE '%' || sqlc.narg('symptom')::text || '%');
+SELECT COUNT(*) FROM remedy;
 
 -- name: UpdateRemedy :one
 UPDATE remedy

@@ -33,7 +33,7 @@ func (f *fakeRemedyRepo) ListByHealerPage(context.Context, int64, listing.Params
 func (f *fakeRemedyRepo) ListByHerbPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
-func (f *fakeRemedyRepo) ListPage(context.Context, remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
+func (f *fakeRemedyRepo) ListPage(context.Context, listing.Params) (listing.Page[remedy.Remedy], error) {
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
@@ -85,7 +85,7 @@ func TestCreateRemedyNoEventOnRepoError(t *testing.T) {
 
 func TestListPageRemedy(t *testing.T) {
 	page, err := NewRemedyService(&fakeRemedyRepo{}, &remedyRecorder{}).
-		ListPage(context.Background(), remedy.ListQuery{Page: listing.Params{Limit: 5}})
+		ListPage(context.Background(), listing.Params{Limit: 5})
 	require.NoError(t, err)
 	assert.Equal(t, 1, page.Total)
 	assert.Len(t, page.Items, 1)

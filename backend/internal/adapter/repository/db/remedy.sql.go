@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countRemedyByHealer = `-- name: CountRemedyByHealer :one
@@ -23,24 +21,11 @@ func (q *Queries) CountRemedyByHealer(ctx context.Context, healerID int64) (int6
 }
 
 const countRemedyPage = `-- name: CountRemedyPage :one
-SELECT COUNT(*)
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-WHERE ($1::bigint IS NULL
-       OR EXISTS (SELECT 1 FROM remedy_herb rh
-                  WHERE rh.remedy_id = r.id AND rh.herb_id = $1::bigint))
-  AND ($2::bigint IS NULL OR h.district_id = $2::bigint)
-  AND ($3::text IS NULL OR r.symptoms ILIKE '%' || $3::text || '%')
+SELECT COUNT(*) FROM remedy
 `
 
-type CountRemedyPageParams struct {
-	HerbID     pgtype.Int8
-	DistrictID pgtype.Int8
-	Symptom    pgtype.Text
-}
-
-func (q *Queries) CountRemedyPage(ctx context.Context, arg CountRemedyPageParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countRemedyPage, arg.HerbID, arg.DistrictID, arg.Symptom)
+func (q *Queries) CountRemedyPage(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyPage)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -165,34 +150,19 @@ func (q *Queries) ListRemedyByHealerPage(ctx context.Context, arg ListRemedyByHe
 }
 
 const listRemedyPage = `-- name: ListRemedyPage :many
-SELECT r.id, r.healer_id, r.name, r.symptoms, r.preparation_method, r.usage, r.note, r.created_at, r.updated_at
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-WHERE ($1::bigint IS NULL
-       OR EXISTS (SELECT 1 FROM remedy_herb rh
-                  WHERE rh.remedy_id = r.id AND rh.herb_id = $1::bigint))
-  AND ($2::bigint IS NULL OR h.district_id = $2::bigint)
-  AND ($3::text IS NULL OR r.symptoms ILIKE '%' || $3::text || '%')
-ORDER BY r.created_at DESC, r.id DESC
-LIMIT $5 OFFSET $4
+SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
+FROM remedy
+ORDER BY created_at DESC, id DESC
+LIMIT $2 OFFSET $1
 `
 
 type ListRemedyPageParams struct {
-	HerbID     pgtype.Int8
-	DistrictID pgtype.Int8
-	Symptom    pgtype.Text
 	PageOffset int32
 	PageLimit  int32
 }
 
 func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyPage,
-		arg.HerbID,
-		arg.DistrictID,
-		arg.Symptom,
-		arg.PageOffset,
-		arg.PageLimit,
-	)
+	rows, err := q.db.Query(ctx, listRemedyPage, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

@@ -55,14 +55,6 @@ type CreateParams struct {
 	Herbs             []HerbRef
 }
 
-// ListQuery selects and pages remedies for public browse.
-type ListQuery struct {
-	Page       listing.Params
-	HerbID     *int64
-	DistrictID *int64
-	Symptom    string
-}
-
 // UpdateParams holds the fields to update a remedy.
 type UpdateParams struct {
 	ID                int64
@@ -80,7 +72,7 @@ type Repository interface {
 	GetByID(ctx context.Context, id int64) (Remedy, error)
 	ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[Remedy], error)
 	ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[Remedy], error)
-	ListPage(ctx context.Context, q ListQuery) (listing.Page[Remedy], error)
+	ListPage(ctx context.Context, p listing.Params) (listing.Page[Remedy], error)
 	Update(ctx context.Context, p UpdateParams) (Remedy, error)
 	Delete(ctx context.Context, id int64) error
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
@@ -146,25 +145,15 @@ func (r *Remedy) ListByHerbPage(ctx context.Context, herbID int64, p listing.Par
 	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
-// ListPage returns one page of remedies matching the optional filters.
-func (r *Remedy) ListPage(ctx context.Context, q remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
-	symptom := pgtype.Text{}
-	if q.Symptom != "" {
-		symptom = pgtype.Text{String: q.Symptom, Valid: true}
-	}
+// ListPage returns one page of remedies, most recent first.
+func (r *Remedy) ListPage(ctx context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
 	rows, err := r.q.ListRemedyPage(ctx, db.ListRemedyPageParams{
-		HerbID:     optInt64(q.HerbID),
-		DistrictID: optInt64(q.DistrictID),
-		Symptom:    symptom,
-		PageLimit:  int32(q.Page.Limit),
-		PageOffset: int32(q.Page.Offset),
+		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
 	})
 	if err != nil {
 		return listing.Page[remedy.Remedy]{}, err
 	}
-	total, err := r.q.CountRemedyPage(ctx, db.CountRemedyPageParams{
-		HerbID: optInt64(q.HerbID), DistrictID: optInt64(q.DistrictID), Symptom: symptom,
-	})
+	total, err := r.q.CountRemedyPage(ctx)
 	if err != nil {
 		return listing.Page[remedy.Remedy]{}, err
 	}
@@ -173,14 +162,6 @@ func (r *Remedy) ListPage(ctx context.Context, q remedy.ListQuery) (listing.Page
 		items = append(items, toRemedy(row))
 	}
 	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
-}
-
-// optInt64 converts a nullable int64 pointer to its pgtype form.
-func optInt64(p *int64) pgtype.Int8 {
-	if p == nil {
-		return pgtype.Int8{}
-	}
-	return pgtype.Int8{Int64: *p, Valid: true}
 }
 
 // Update changes a remedy and replaces its herb links in one transaction.

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
@@ -62,21 +61,15 @@ func (r *Herb) GetByID(ctx context.Context, id int64) (herb.Herb, error) {
 	return toHerb(row), nil
 }
 
-// ListPage returns one page of herbs matching the optional name/property query.
-func (r *Herb) ListPage(ctx context.Context, q herb.ListQuery) (listing.Page[herb.Herb], error) {
-	query := pgtype.Text{}
-	if q.Query != "" {
-		query = pgtype.Text{String: q.Query, Valid: true}
-	}
+// ListPage returns one page of herbs, ordered by Thai name.
+func (r *Herb) ListPage(ctx context.Context, p listing.Params) (listing.Page[herb.Herb], error) {
 	rows, err := r.q.ListHerbPage(ctx, db.ListHerbPageParams{
-		Query:      query,
-		PageLimit:  int32(q.Page.Limit),
-		PageOffset: int32(q.Page.Offset),
+		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
 	})
 	if err != nil {
 		return listing.Page[herb.Herb]{}, err
 	}
-	total, err := r.q.CountHerbPage(ctx, query)
+	total, err := r.q.CountHerbPage(ctx)
 	if err != nil {
 		return listing.Page[herb.Herb]{}, err
 	}

@@ -46,9 +46,9 @@ func (s *RemedyService) ListByHealerPage(ctx context.Context, healerID int64, p 
 	return s.repo.ListByHealerPage(ctx, healerID, p)
 }
 
-// ListPage returns one paginated, filtered page of remedies.
-func (s *RemedyService) ListPage(ctx context.Context, q remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
-	return s.repo.ListPage(ctx, q)
+// ListPage returns one paginated page of remedies, most recent first.
+func (s *RemedyService) ListPage(ctx context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	return s.repo.ListPage(ctx, p)
 }
 
 // Update validates and changes a remedy, then publishes UpdatedEvent.

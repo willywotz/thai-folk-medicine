@@ -19,9 +19,9 @@ import (
 )
 
 type stubHerbRepo struct {
-	getErr   error
-	page     listing.Page[herb.Herb]
-	gotQuery herb.ListQuery
+	getErr    error
+	page      listing.Page[herb.Herb]
+	gotParams listing.Params
 }
 
 func (s *stubHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb, error) {
@@ -33,8 +33,8 @@ func (s *stubHerbRepo) GetByID(_ context.Context, id int64) (herb.Herb, error) {
 	}
 	return herb.Herb{ID: id, NameThai: "ไพล"}, nil
 }
-func (s *stubHerbRepo) ListPage(_ context.Context, q herb.ListQuery) (listing.Page[herb.Herb], error) {
-	s.gotQuery = q
+func (s *stubHerbRepo) ListPage(_ context.Context, p listing.Params) (listing.Page[herb.Herb], error) {
+	s.gotParams = p
 	return s.page, nil
 }
 func (s *stubHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb, error) {
@@ -98,7 +98,7 @@ func TestHerbHandler_ListEndpoint_Envelope(t *testing.T) {
 	router := newHerbRouter(repo)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/herbs?page=1&pageSize=12&query=ไพล", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/herbs?page=1&pageSize=12", nil)
 	router.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
@@ -112,7 +112,7 @@ func TestHerbHandler_ListEndpoint_Envelope(t *testing.T) {
 	assert.Equal(t, "ไพล", body.Items[0]["nameThai"])
 	assert.Equal(t, 1, body.Total)
 	assert.Equal(t, 1, body.TotalPages)
-	assert.Equal(t, "ไพล", repo.gotQuery.Query)
+	assert.Equal(t, 12, repo.gotParams.Limit)
 }
 
 func TestHerbHandler_ListRemediesEndpoint(t *testing.T) {

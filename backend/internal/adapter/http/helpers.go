@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -39,23 +38,4 @@ func newPageDTO[T any](items []T, page, pageSize, total int) pageDTO[T] {
 		Items: items, Page: page, PageSize: pageSize,
 		Total: total, TotalPages: listing.TotalPages(total, pageSize),
 	}
-}
-
-// optionalInt64Query parses an int64 query param, returning nil when the
-// param is missing or invalid.
-func optionalInt64Query(c *gin.Context, key string) *int64 {
-	raw := c.Query(key)
-	if raw == "" {
-		return nil
-	}
-	v, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil {
-		return nil
-	}
-	return &v
-}
-
-// trimmedQuery reads a query param and trims surrounding whitespace.
-func trimmedQuery(c *gin.Context, key string) string {
-	return strings.TrimSpace(c.Query(key))
 }

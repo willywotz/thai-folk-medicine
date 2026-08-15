@@ -73,13 +73,10 @@ type herbRequest struct {
 	Description    string `json:"description"`
 }
 
-// List handles GET /api/v1/herbs?page&pageSize&query.
+// List handles GET /api/v1/herbs?page&pageSize.
 func (h *HerbHandler) List(c *gin.Context) {
 	params, page, pageSize := parsePageParams(c, 12)
-	result, err := h.service.ListPage(c.Request.Context(), herb.ListQuery{
-		Page:  params,
-		Query: trimmedQuery(c, "query"),
-	})
+	result, err := h.service.ListPage(c.Request.Context(), params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list herbs"})
 		return

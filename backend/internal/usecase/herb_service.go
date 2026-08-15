@@ -41,9 +41,9 @@ func (s *HerbService) Get(ctx context.Context, id int64) (herb.Herb, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-// ListPage returns one paginated, filtered page of herbs.
-func (s *HerbService) ListPage(ctx context.Context, q herb.ListQuery) (listing.Page[herb.Herb], error) {
-	return s.repo.ListPage(ctx, q)
+// ListPage returns one paginated page of herbs, ordered by Thai name.
+func (s *HerbService) ListPage(ctx context.Context, p listing.Params) (listing.Page[herb.Herb], error) {
+	return s.repo.ListPage(ctx, p)
 }
 
 // Update validates and changes a herb, then publishes UpdatedEvent.

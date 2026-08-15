@@ -33,7 +33,7 @@ func TestHerbRepository_CRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, got.ID)
 
-	page, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}})
+	page, err := repo.ListPage(ctx, listing.Params{Limit: 10})
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(page.Items), 1)
 
@@ -45,8 +45,7 @@ func TestHerbRepository_CRUD(t *testing.T) {
 	assert.True(t, errors.Is(err, herb.ErrNotFound))
 }
 
-// seedHerbFixtures creates three herbs with distinct Thai names, English
-// names, and properties, so a query filter can be scoped to exactly one.
+// seedHerbFixtures creates three herbs for pagination tests.
 func seedHerbFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	t.Helper()
 	repo := NewHerb(db.New(pool))
@@ -58,32 +57,12 @@ func seedHerbFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	require.NoError(t, err)
 }
 
-func TestHerbRepository_ListPage_FilterByQuery(t *testing.T) {
-	ctx, pool := newTestPoolConn(t)
-	repo := NewHerb(db.New(pool))
-	seedHerbFixtures(t, ctx, pool)
-
-	all, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}})
-	require.NoError(t, err)
-	assert.Equal(t, 3, all.Total)
-
-	byName, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}, Query: "ขิง"})
-	require.NoError(t, err)
-	require.Equal(t, 1, byName.Total)
-	assert.Equal(t, "ขิง", byName.Items[0].NameThai)
-
-	byProperty, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}, Query: "ปวด"})
-	require.NoError(t, err)
-	require.Equal(t, 1, byProperty.Total)
-	assert.Equal(t, "ไพล", byProperty.Items[0].NameThai)
-}
-
 func TestHerbRepository_ListPage_OffsetWindow(t *testing.T) {
 	ctx, pool := newTestPoolConn(t)
 	repo := NewHerb(db.New(pool))
 	seedHerbFixtures(t, ctx, pool)
 
-	page2, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 2, Offset: 2}})
+	page2, err := repo.ListPage(ctx, listing.Params{Limit: 2, Offset: 2})
 	require.NoError(t, err)
 	assert.Equal(t, 3, page2.Total)
 	assert.Len(t, page2.Items, 1)

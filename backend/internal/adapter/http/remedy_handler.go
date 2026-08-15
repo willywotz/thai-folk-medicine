@@ -114,15 +114,10 @@ func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
-// ListPage handles GET /api/v1/remedies?page&pageSize&herbId&districtId&symptom.
+// ListPage handles GET /api/v1/remedies?page&pageSize.
 func (h *RemedyHandler) ListPage(c *gin.Context) {
 	params, page, pageSize := parsePageParams(c, 12)
-	result, err := h.service.ListPage(c.Request.Context(), remedy.ListQuery{
-		Page:       params,
-		HerbID:     optionalInt64Query(c, "herbId"),
-		DistrictID: optionalInt64Query(c, "districtId"),
-		Symptom:    trimmedQuery(c, "symptom"),
-	})
+	result, err := h.service.ListPage(c.Request.Context(), params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return

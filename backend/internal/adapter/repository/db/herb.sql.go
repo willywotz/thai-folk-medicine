@@ -7,20 +7,14 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countHerbPage = `-- name: CountHerbPage :one
 SELECT COUNT(*) FROM herb
-WHERE ($1::text IS NULL
-       OR name_thai ILIKE '%' || $1::text || '%'
-       OR name_english ILIKE '%' || $1::text || '%'
-       OR properties ILIKE '%' || $1::text || '%')
 `
 
-func (q *Queries) CountHerbPage(ctx context.Context, query pgtype.Text) (int64, error) {
-	row := q.db.QueryRow(ctx, countHerbPage, query)
+func (q *Queries) CountHerbPage(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countHerbPage)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -99,22 +93,17 @@ func (q *Queries) GetHerb(ctx context.Context, id int64) (Herb, error) {
 const listHerbPage = `-- name: ListHerbPage :many
 SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
 FROM herb
-WHERE ($1::text IS NULL
-       OR name_thai ILIKE '%' || $1::text || '%'
-       OR name_english ILIKE '%' || $1::text || '%'
-       OR properties ILIKE '%' || $1::text || '%')
 ORDER BY name_thai
-LIMIT $3 OFFSET $2
+LIMIT $2 OFFSET $1
 `
 
 type ListHerbPageParams struct {
-	Query      pgtype.Text
 	PageOffset int32
 	PageLimit  int32
 }
 
 func (q *Queries) ListHerbPage(ctx context.Context, arg ListHerbPageParams) ([]Herb, error) {
-	rows, err := q.db.Query(ctx, listHerbPage, arg.Query, arg.PageOffset, arg.PageLimit)
+	rows, err := q.db.Query(ctx, listHerbPage, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

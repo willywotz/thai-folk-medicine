@@ -20,7 +20,7 @@ func (f *fakeHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb
 	return f.created, nil
 }
 func (f *fakeHerbRepo) GetByID(context.Context, int64) (herb.Herb, error) { return f.created, nil }
-func (f *fakeHerbRepo) ListPage(context.Context, herb.ListQuery) (listing.Page[herb.Herb], error) {
+func (f *fakeHerbRepo) ListPage(context.Context, listing.Params) (listing.Page[herb.Herb], error) {
 	return listing.Page[herb.Herb]{Items: []herb.Herb{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb, error) {
@@ -44,7 +44,7 @@ func TestHerbService_CreateValidatesAndPublishes(t *testing.T) {
 
 func TestListPageHerb(t *testing.T) {
 	page, err := NewHerbService(&fakeHerbRepo{}, &recordingPublisher{}).
-		ListPage(context.Background(), herb.ListQuery{Page: listing.Params{Limit: 5}})
+		ListPage(context.Background(), listing.Params{Limit: 5})
 	require.NoError(t, err)
 	assert.Equal(t, 1, page.Total)
 	assert.Len(t, page.Items, 1)

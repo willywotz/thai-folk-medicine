@@ -19,9 +19,9 @@ import (
 )
 
 type stubRemedyRepo struct {
-	getErr   error
-	page     listing.Page[remedy.Remedy]
-	gotQuery remedy.ListQuery
+	getErr    error
+	page      listing.Page[remedy.Remedy]
+	gotParams listing.Params
 }
 
 func (s *stubRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remedy.Remedy, error) {
@@ -43,8 +43,8 @@ func (s *stubRemedyRepo) ListByHealerPage(_ context.Context, healerID int64, _ l
 func (s *stubRemedyRepo) ListByHerbPage(_ context.Context, _ int64, _ listing.Params) (listing.Page[remedy.Remedy], error) {
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1, Name: "ยา"}}, Total: 1}, nil
 }
-func (s *stubRemedyRepo) ListPage(_ context.Context, q remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
-	s.gotQuery = q
+func (s *stubRemedyRepo) ListPage(_ context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	s.gotParams = p
 	return s.page, nil
 }
 func (s *stubRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
@@ -124,7 +124,7 @@ func TestRemedyHandler_ListPage_Envelope(t *testing.T) {
 	}}
 	router := newRemedyRouter(repo)
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/remedies?page=1&pageSize=12&herbId=3", nil))
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/remedies?page=1&pageSize=12", nil))
 	require.Equal(t, http.StatusOK, rec.Code)
 	var body struct {
 		Items      []map[string]any `json:"items"`
@@ -135,8 +135,7 @@ func TestRemedyHandler_ListPage_Envelope(t *testing.T) {
 	require.Len(t, body.Items, 1)
 	assert.Equal(t, 1, body.Total)
 	assert.Equal(t, 1, body.TotalPages)
-	require.NotNil(t, repo.gotQuery.HerbID)
-	assert.Equal(t, int64(3), *repo.gotQuery.HerbID)
+	assert.Equal(t, 12, repo.gotParams.Limit)
 }
 
 func TestListRemedyByHealerEndpoint(t *testing.T) {

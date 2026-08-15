@@ -28,7 +28,6 @@ const (
 	maxRemedy   = 10
 	minCase     = 3
 	maxCase     = 10
-	maxPhotoCountPerOwner = 5
 	randomSeed  = 42
 )
 
@@ -111,7 +110,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 	var photoCount int
 
 	herbIDs := make([]int64, 0, len(herbSeedPool))
-	for i, hs := range herbSeedPool {
+	for _, hs := range herbSeedPool {
 		hb, err := herbRepo.Create(ctx, herb.CreateParams{
 			NameThai:       hs.NameThai,
 			NameEnglish:    hs.NameEnglish,
@@ -125,7 +124,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 		herbIDs = append(herbIDs, hb.ID)
 
 		// Attach a placeholder photo to the first few herbs.
-		if i < maxPhotoCountPerOwner {
+		if rng.Intn(2) == 0 {
 			key, err := store.Save(ctx, bytes.NewReader(placeholderJPEG(int(hb.ID)*11)), ".jpg")
 			if err != nil {
 				return err
@@ -144,7 +143,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 	}
 	logger.Info("herbs seeded", "count", len(herbIDs))
 
-	var healers, remedies, cases, healerPhotos, remedyPhotos int
+	var healers, remedies, cases int
 	for i := range healerCount {
 		district := districts[i%len(districts)]
 		h, err := healerRepo.Create(ctx, randomHealer(rng, district.ID))
@@ -153,7 +152,7 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 		}
 		healers++
 		
-		if healerPhotos < maxPhotoCountPerOwner {
+		if rng.Intn(2) == 0 {
 			key, err := store.Save(ctx, bytes.NewReader(placeholderJPEG(int(h.ID)*13)), ".jpg")
 			if err != nil {
 				return err
@@ -166,7 +165,6 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 			}); err != nil {
 				return err
 			}
-			healerPhotos++
 			photoCount++
 		}
 
@@ -186,10 +184,26 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 					return err
 				}
 				cases++
+
+				if rng.Intn(2) == 0 {
+					key, err := store.Save(ctx, bytes.NewReader(placeholderJPEG(int(rm.ID)*19)), ".jpg")
+					if err != nil {
+						return err
+					}
+					if _, err := photoRepo.Create(ctx, photo.CreateParams{
+						OwnerType: photo.OwnerCase,
+						OwnerID:   rm.ID,
+						ObjectKey: key,
+						Caption:   "ภาพตัวอย่างเคสรักษา",
+					}); err != nil {
+						return err
+					}
+					photoCount++
+				}
 			}
 
 			// Attach a placeholder photo to the first few remedies.
-			if remedyPhotos < maxPhotoCountPerOwner {
+			if rng.Intn(2) == 0 {
 				key, err := store.Save(ctx, bytes.NewReader(placeholderJPEG(int(rm.ID)*37)), ".jpg")
 				if err != nil {
 					return err
@@ -202,12 +216,9 @@ func run(ctx context.Context, logger *slog.Logger, reset bool) error {
 				}); err != nil {
 					return err
 				}
-				remedyPhotos++
 				photoCount++
 			}
 		}
-
-		remedyPhotos = 0
 	}
 
 	logger.Info("seed complete", "healers", healers, "remedies", remedies, "cases", cases, "photos", photoCount)

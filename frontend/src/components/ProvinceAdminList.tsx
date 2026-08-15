@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
-import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import { deleteProvince, fetchProvinces, provinceListKey } from "@/lib/staff-queries";
 
 export function ProvinceAdminList() {
@@ -53,6 +53,9 @@ export function ProvinceAdminList() {
               <Link href={`/staff/provinces/${p.id}`} className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{p.nameThai}</p>
                 {p.nameEnglish ? <p className="truncate text-sm text-ink-soft">{p.nameEnglish}</p> : null}
+              </Link>
+              <Link href={`/staff/provinces/${p.id}`} className={linkAction}>
+                Districts
               </Link>
               <Link href={`/staff/provinces/${p.id}/edit`} aria-label={`Edit ${p.nameThai}`} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/EmptyState";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { staffCard } from "@/components/staff-ui";
-import { getHerb, listRemediesByHerb } from "@/lib/api";
+import { getFirstProvince, getHerb, listDistricts, listHealers, listRemediesByHerb } from "@/lib/api";
 
 export default async function StaffHerbUsagePage({
   params,
@@ -19,6 +19,18 @@ export default async function StaffHerbUsagePage({
   if (!herb) notFound();
   const remedies = await listRemediesByHerb(id, { pageSize: 48 });
 
+  // Resolve each remedy's ancestry (healer -> district -> province) for the row.
+  const province = await getFirstProvince();
+  const districts = province ? await listDistricts(province.id) : [];
+  const healers = (await listHealers({ pageSize: 48 })).items; // withinlazy: pageSize=48 caps the lookup
+  const districtName = (districtId: number) =>
+    districts.find((d) => d.id === districtId)?.nameThai ?? "—";
+  const ancestry = (healerId: number) => {
+    const healer = healers.find((h) => h.id === healerId);
+    if (!healer) return "—";
+    return `${healer.fullName} · ${districtName(healer.districtId)} · ${province?.nameThai ?? "—"}`;
+  };
+
   return (
     <section>
       <StaffPageHeader
@@ -32,7 +44,10 @@ export default async function StaffHerbUsagePage({
         <ul className={staffCard}>
           {remedies.items.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
-              <p className="min-w-0 flex-1 truncate font-medium text-ink">{r.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-ink">{r.name}</p>
+                <p className="truncate text-sm text-ink-soft">{ancestry(r.healerId)}</p>
+              </div>
               <Link
                 href={`/staff/remedies/${r.id}/edit`}
                 className="text-sm font-semibold text-brand hover:text-brand-strong"

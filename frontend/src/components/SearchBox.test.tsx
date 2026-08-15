@@ -27,4 +27,10 @@ describe("SearchBox", () => {
     expect(screen.getByRole("searchbox")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ค้นหา" })).toBeInTheDocument();
   });
+
+  it("labels the input with the localized placeholder", async () => {
+    render(await SearchBox({}));
+    expect(screen.getByRole("searchbox", { name: "ค้นหาอาการหรือสมุนไพร (search symptom or herb)" }))
+      .toBeInTheDocument();
+  });
 });

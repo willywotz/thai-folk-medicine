@@ -16,7 +16,7 @@ export async function SearchBox({
         name="searchTerm"
         defaultValue={defaultValue}
         placeholder={t.search.boxPlaceholder}
-        aria-label="Search symptom or herb"
+        aria-label={t.search.boxPlaceholder}
         className={`w-full rounded-xl border border-line bg-surface text-ink ${pad}`}
       />
       <button

@@ -426,6 +426,16 @@ Tests: `go test ./...` (backend), `pnpm test` (frontend).
 Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=true`
 (local Docker config quirk, not a code issue).
 
+## CI/CD
+
+- `.github/workflows/ci.yml`: Go + frontend tests, and a static check of the
+  deploy files (ansible `--syntax-check`, render templates, `docker compose config`).
+- `.github/workflows/release.yml`: on a `v*` tag, builds backend and frontend
+  images, pushes to `ghcr.io/willywotz/thai-folk-medicine-{backend,frontend}`,
+  then runs `deploy/playbook.yml` over SSH.
+- `deploy/`: Ansible playbook + `compose.prod.yaml.j2` (GHCR images) + `.env`
+  from an encrypted vault. See `deploy/README.md` for setup.
+
 ## Docs
 
 - Design spec: `docs/superpowers/specs/2026-08-13-thai-folk-medicine-design.md`

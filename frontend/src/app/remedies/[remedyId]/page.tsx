@@ -7,7 +7,7 @@ import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
-import { getRemedy, listCasesByRemedy } from "@/lib/api";
+import { firstPhotoUrl, getRemedy, listCasesByRemedy } from "@/lib/api";
 
 export default async function RemedyPage({
   params,
@@ -21,7 +21,10 @@ export default async function RemedyPage({
   const remedy = await getRemedy(id);
   if (!remedy) notFound();
 
-  const cases = await listCasesByRemedy(id);
+  const [cases, coverUrl] = await Promise.all([
+    listCasesByRemedy(id),
+    firstPhotoUrl("remedy", id).catch(() => undefined),
+  ]);
 
   return (
     <section>
@@ -35,6 +38,13 @@ export default async function RemedyPage({
       <div className="grid items-start gap-8 md:grid-cols-[1fr_296px]">
         <div>
           <DetailHeader titleThai={remedy.name} editHref={`/staff/remedies/${remedy.id}/edit`} />
+
+          {coverUrl ? (
+            <div className="mt-4 aspect-[16/7] overflow-hidden rounded-2xl border border-line bg-brand-tint">
+              {/* eslint-disable-next-line @next/next/no-img-element -- served by our own /api proxy, no next/image optimization needed */}
+              <img src={coverUrl} alt={remedy.name} className="h-full w-full object-cover" />
+            </div>
+          ) : null}
 
           <ContentBlock titleThai="อาการ" titleEnglish="Symptoms">
             {remedy.symptoms}

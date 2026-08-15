@@ -5,7 +5,7 @@ import { ContentBlock } from "@/components/ContentBlock";
 import { EmptyState } from "@/components/EmptyState";
 import { LinkRow } from "@/components/LinkRow";
 import { SectionHead } from "@/components/SectionHead";
-import { getHealer, listRemediesByHealer } from "@/lib/api";
+import { firstPhotoUrl, getHealer, listRemediesByHealer } from "@/lib/api";
 
 export default async function HealerPage({
   params,
@@ -19,7 +19,10 @@ export default async function HealerPage({
   const healer = await getHealer(id);
   if (!healer) notFound();
 
-  const remedies = await listRemediesByHealer(id);
+  const [remedies, avatarUrl] = await Promise.all([
+    listRemediesByHealer(id),
+    firstPhotoUrl("healer", id).catch(() => undefined),
+  ]);
 
   return (
     <section>
@@ -31,9 +34,18 @@ export default async function HealerPage({
         ]}
       />
       <div className="flex flex-wrap items-center gap-4">
-        <span className="grid h-16 w-16 place-items-center rounded-full border border-brand bg-brand-tint font-serif text-2xl text-brand-strong">
-          {healer.fullName.slice(0, 1)}
-        </span>
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- served by our own /api proxy, no next/image optimization needed
+          <img
+            src={avatarUrl}
+            alt={healer.fullName}
+            className="h-16 w-16 rounded-full border border-brand object-cover"
+          />
+        ) : (
+          <span className="grid h-16 w-16 place-items-center rounded-full border border-brand bg-brand-tint font-serif text-2xl text-brand-strong">
+            {healer.fullName.slice(0, 1)}
+          </span>
+        )}
         <div>
           <h1 className="font-serif text-2xl text-ink">{healer.fullName}</h1>
           <p className="text-ink-soft">

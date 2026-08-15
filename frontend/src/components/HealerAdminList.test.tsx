@@ -19,7 +19,7 @@ describe("HealerAdminList", () => {
   it("lists healers with edit and delete controls", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({ ok: true, json: async () => [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }] })) as unknown as typeof fetch,
+      vi.fn(async () => ({ ok: true, json: async () => ({ items: [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }], page: 1, pageSize: 48, total: 1, totalPages: 1 }) })) as unknown as typeof fetch,
     );
     renderWithClient(<HealerAdminList districtId={3} />);
     expect(await screen.findByText("หมอ ก")).toBeInTheDocument();
@@ -39,7 +39,8 @@ describe("HealerAdminList", () => {
           deleted = true;
           return { ok: true, status: 204 };
         }
-        return { ok: true, json: async () => (deleted ? [] : [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }]) };
+        const list = deleted ? [] : [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }];
+        return { ok: true, json: async () => ({ items: list, page: 1, pageSize: 48, total: list.length, totalPages: 1 }) };
       }) as unknown as typeof fetch,
     );
     renderWithClient(<HealerAdminList districtId={3} />);
@@ -53,7 +54,7 @@ describe("HealerAdminList", () => {
       "fetch",
       vi.fn(async (url: string, opts?: { method?: string }) => {
         if (opts?.method === "DELETE") return { ok: false, status: 409 };
-        return { ok: true, json: async () => [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }] };
+        return { ok: true, json: async () => ({ items: [{ id: 1, districtId: 3, fullName: "หมอ ก", specialty: "" }], page: 1, pageSize: 48, total: 1, totalPages: 1 }) };
       }) as unknown as typeof fetch,
     );
     renderWithClient(<HealerAdminList districtId={3} />);

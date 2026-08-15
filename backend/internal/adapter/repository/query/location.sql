@@ -8,3 +8,8 @@ SELECT id, province_id, name_thai, name_english
 FROM district
 WHERE province_id = $1
 ORDER BY name_english;
+
+-- name: GetDistrict :one
+SELECT id, province_id, name_thai, name_english
+FROM district
+WHERE id = $1;

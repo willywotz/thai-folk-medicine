@@ -1,11 +1,13 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/location"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
@@ -23,6 +25,7 @@ func NewLocationHandler(service *usecase.LocationService) *LocationHandler {
 func (h *LocationHandler) RegisterRoutes(public, _ *gin.RouterGroup) {
 	public.GET("/provinces", h.ListProvince)
 	public.GET("/provinces/:provinceId/districts", h.ListDistrictByProvince)
+	public.GET("/districts/:districtId", h.GetDistrict)
 }
 
 type provinceDTO struct {
@@ -72,4 +75,25 @@ func (h *LocationHandler) ListDistrictByProvince(c *gin.Context) {
 		out = append(out, districtDTO(d))
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// GetDistrict handles GET /api/v1/districts/:districtId.
+func (h *LocationHandler) GetDistrict(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("districtId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "district id must be a number"})
+		return
+	}
+
+	district, err := h.service.GetDistrict(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, location.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "district not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot get district"})
+		return
+	}
+
+	c.JSON(http.StatusOK, districtDTO(district))
 }

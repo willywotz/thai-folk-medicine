@@ -9,6 +9,24 @@ import (
 	"context"
 )
 
+const getDistrict = `-- name: GetDistrict :one
+SELECT id, province_id, name_thai, name_english
+FROM district
+WHERE id = $1
+`
+
+func (q *Queries) GetDistrict(ctx context.Context, id int64) (District, error) {
+	row := q.db.QueryRow(ctx, getDistrict, id)
+	var i District
+	err := row.Scan(
+		&i.ID,
+		&i.ProvinceID,
+		&i.NameThai,
+		&i.NameEnglish,
+	)
+	return i, err
+}
+
 const listDistrictByProvince = `-- name: ListDistrictByProvince :many
 SELECT id, province_id, name_thai, name_english
 FROM district

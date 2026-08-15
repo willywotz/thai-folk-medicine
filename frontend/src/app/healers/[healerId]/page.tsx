@@ -23,6 +23,9 @@ export default async function HealerPage({
     listRemediesByHealer(id),
     firstPhotoUrl("healer", id).catch(() => undefined),
   ]);
+  const remedyCovers = await Promise.all(
+    remedies.map((r) => firstPhotoUrl("remedy", r.id).catch(() => undefined)),
+  );
 
   return (
     <section>
@@ -64,8 +67,14 @@ export default async function HealerPage({
         <EmptyState message="No remedies recorded for this healer yet." />
       ) : (
         <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-          {remedies.map((r) => (
-            <LinkRow key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
+          {remedies.map((r, i) => (
+            <LinkRow
+              key={r.id}
+              href={`/remedies/${r.id}`}
+              title={r.name}
+              subtitle={r.symptoms}
+              imageUrl={remedyCovers[i]}
+            />
           ))}
         </div>
       )}

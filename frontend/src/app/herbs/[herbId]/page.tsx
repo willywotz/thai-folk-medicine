@@ -7,7 +7,7 @@ import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
 import { LinkRow } from "@/components/LinkRow";
-import { getHerb, listPhotosByOwner, listRemediesByHerb, photoUrl } from "@/lib/api";
+import { firstPhotoUrl, getHerb, listPhotosByOwner, listRemediesByHerb, photoUrl } from "@/lib/api";
 
 export default async function HerbPage({ params }: { params: Promise<{ herbId: string }> }) {
   const { herbId } = await params;
@@ -21,6 +21,9 @@ export default async function HerbPage({ params }: { params: Promise<{ herbId: s
     listPhotosByOwner("herb", id),
   ]);
   const cover = photos[0];
+  const remedyCovers = await Promise.all(
+    remedies.map((r) => firstPhotoUrl("remedy", r.id).catch(() => undefined)),
+  );
 
   return (
     <section>
@@ -66,8 +69,14 @@ export default async function HerbPage({ params }: { params: Promise<{ herbId: s
             <EmptyState message="No remedies use this herb yet." />
           ) : (
             <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-              {remedies.map((r) => (
-                <LinkRow key={r.id} href={`/remedies/${r.id}`} title={r.name} subtitle={r.symptoms} />
+              {remedies.map((r, i) => (
+                <LinkRow
+                  key={r.id}
+                  href={`/remedies/${r.id}`}
+                  title={r.name}
+                  subtitle={r.symptoms}
+                  imageUrl={remedyCovers[i]}
+                />
               ))}
             </div>
           )}

@@ -1,14 +1,18 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
-import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
+import { StaffPagination } from "@/components/StaffPagination";
+import { StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { deleteRemedy, fetchRemedies, remedyListKey } from "@/lib/staff-queries";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function RemedyAdminList({
   healers,
@@ -17,16 +21,25 @@ export function RemedyAdminList({
   healers: Pick<Healer, "id" | "fullName">[];
   healerId?: number;
 }) {
-  const [query, setQuery] = useState("");
+  const [input, setInput] = useState("");
+  const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
+  const [page, setPage] = useState(1);
+  const [prevSearchTerm, setPrevSearchTerm] = useState(searchTerm);
+  if (searchTerm !== prevSearchTerm) {
+    setPrevSearchTerm(searchTerm);
+    setPage(1);
+  }
+
   const queryClient = useQueryClient();
-  const { data: remedies, isLoading, isError } = useQuery({
-    queryKey: remedyListKey(healerId),
-    queryFn: () => fetchRemedies(healerId),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: remedyListKey(page, searchTerm, healerId),
+    queryFn: () => fetchRemedies({ page, searchTerm, healerId }),
+    placeholderData: keepPreviousData,
   });
 
   const remove = useMutation({
     mutationFn: deleteRemedy,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey() }),
   });
 
   const healerName = (id: number) => healers.find((h) => h.id === id)?.fullName ?? "—";
@@ -34,16 +47,16 @@ export function RemedyAdminList({
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load remedies.</p>;
 
-  const shown = (remedies ?? []).filter((r) => matchesQuery(query, r.name));
+  const remedies = data?.items ?? [];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <StaffSearch value={query} onChange={setQuery} placeholder="Search remedies…" />
+          <StaffSearch value={input} onChange={setInput} placeholder="Search remedies…" />
         </div>
         <span className="text-sm text-ink-faint">
-          {shown.length} {shown.length === 1 ? "remedy" : "remedies"}
+          {data?.total ?? 0} {data?.total === 1 ? "remedy" : "remedies"}
         </span>
         <Link
           href={healerId !== undefined ? `/staff/remedies/new?healerId=${healerId}` : "/staff/remedies/new"}
@@ -57,11 +70,11 @@ export function RemedyAdminList({
           Could not delete this remedy. It may still have treatment cases.
         </p>
       ) : null}
-      {shown.length === 0 ? (
+      {remedies.length === 0 ? (
         <EmptyState message="No remedies yet." />
       ) : (
         <ul className={staffCard}>
-          {shown.map((r) => (
+          {remedies.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
                 {r.name.trim().charAt(0)}
@@ -99,6 +112,7 @@ export function RemedyAdminList({
           ))}
         </ul>
       )}
+      <StaffPagination page={data?.page ?? 1} totalPages={data?.totalPages ?? 1} onPage={setPage} />
     </div>
   );
 }

@@ -1,21 +1,34 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
-import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
+import { StaffPagination } from "@/components/StaffPagination";
+import { StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function HealerAdminList({ districts }: { districts: District[] }) {
-  const [query, setQuery] = useState("");
+  const [input, setInput] = useState("");
+  const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
+  const [page, setPage] = useState(1);
+  const [prevSearchTerm, setPrevSearchTerm] = useState(searchTerm);
+  if (searchTerm !== prevSearchTerm) {
+    setPrevSearchTerm(searchTerm);
+    setPage(1);
+  }
+
   const queryClient = useQueryClient();
-  const { data: healers, isLoading, isError } = useQuery({
-    queryKey: healerListKey(),
-    queryFn: () => fetchHealers(),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: healerListKey(page, searchTerm),
+    queryFn: () => fetchHealers({ page, searchTerm }),
+    placeholderData: keepPreviousData,
   });
 
   const remove = useMutation({
@@ -31,16 +44,16 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load healers.</p>;
 
-  const shown = (healers ?? []).filter((h) => matchesQuery(query, h.fullName, h.specialty));
+  const healers = data?.items ?? [];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <StaffSearch value={query} onChange={setQuery} placeholder="Search healers…" />
+          <StaffSearch value={input} onChange={setInput} placeholder="Search healers…" />
         </div>
         <span className="text-sm text-ink-faint">
-          {shown.length} {shown.length === 1 ? "healer" : "healers"}
+          {data?.total ?? 0} {data?.total === 1 ? "healer" : "healers"}
         </span>
         <Link href="/staff/healers/new" className={btnPrimary}>
           <span aria-hidden>+</span> New healer
@@ -51,11 +64,11 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
           Could not delete this healer. It may still have remedies or cases.
         </p>
       ) : null}
-      {shown.length === 0 ? (
+      {healers.length === 0 ? (
         <EmptyState message="No healers yet." />
       ) : (
         <ul className={staffCard}>
-          {shown.map((h) => (
+          {healers.map((h) => (
             <li key={h.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
                 {h.fullName.trim().charAt(0)}
@@ -94,6 +107,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
           ))}
         </ul>
       )}
+      <StaffPagination page={data?.page ?? 1} totalPages={data?.totalPages ?? 1} onPage={setPage} />
     </div>
   );
 }

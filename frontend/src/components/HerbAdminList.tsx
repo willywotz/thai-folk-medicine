@@ -1,36 +1,51 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
-import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
+import { StaffPagination } from "@/components/StaffPagination";
+import { StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import { deleteHerb, fetchHerbs, herbListKey } from "@/lib/staff-queries";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function HerbAdminList() {
-  const [query, setQuery] = useState("");
+  const [input, setInput] = useState("");
+  const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
+  const [page, setPage] = useState(1);
+  const [prevSearchTerm, setPrevSearchTerm] = useState(searchTerm);
+  if (searchTerm !== prevSearchTerm) {
+    setPrevSearchTerm(searchTerm);
+    setPage(1);
+  }
+
   const queryClient = useQueryClient();
-  const { data: herbs, isLoading, isError } = useQuery({ queryKey: herbListKey, queryFn: fetchHerbs });
+  const { data, isLoading, isError } = useQuery({
+    queryKey: herbListKey(page, searchTerm),
+    queryFn: () => fetchHerbs({ page, searchTerm }),
+    placeholderData: keepPreviousData,
+  });
+
   const remove = useMutation({
     mutationFn: deleteHerb,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: herbListKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: herbListKey() }),
   });
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load herbs.</p>;
 
-  const shown = (herbs ?? []).filter((h) =>
-    matchesQuery(query, h.nameThai, h.nameEnglish, h.scientificName),
-  );
+  const herbs = data?.items ?? [];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <StaffSearch value={query} onChange={setQuery} placeholder="Search herbs…" />
+        <StaffSearch value={input} onChange={setInput} placeholder="Search herbs…" />
         <span className="text-sm text-ink-faint">
-          {shown.length} {shown.length === 1 ? "herb" : "herbs"}
+          {data?.total ?? 0} {data?.total === 1 ? "herb" : "herbs"}
         </span>
         <Link href="/staff/herbs/new" className={btnPrimary}>
           <span aria-hidden>+</span> New herb
@@ -39,11 +54,11 @@ export function HerbAdminList() {
       {remove.isError ? (
         <p className="text-sm text-destructive">Could not delete. This herb may still be used by remedies.</p>
       ) : null}
-      {shown.length === 0 ? (
+      {herbs.length === 0 ? (
         <EmptyState message="No herbs yet." />
       ) : (
         <ul className={staffCard}>
-          {shown.map((h) => (
+          {herbs.map((h) => (
             <li key={h.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
                 {h.nameThai.trim().charAt(0)}
@@ -75,6 +90,7 @@ export function HerbAdminList() {
           ))}
         </ul>
       )}
+      <StaffPagination page={data?.page ?? 1} totalPages={data?.totalPages ?? 1} onPage={setPage} />
     </div>
   );
 }

@@ -18,8 +18,7 @@ function herb(id: number, nameThai: string) {
 }
 
 vi.mock("@/lib/staff-queries", () => ({
-  herbListKey: ["herbs"],
-  fetchHerbs: vi.fn(async () => [herb(1, "ขิง"), herb(2, "ขมิ้น"), herb(3, "ไพล")]),
+  fetchAllHerbs: vi.fn(async () => [herb(1, "ขิง"), herb(2, "ขมิ้น"), herb(3, "ไพล")]),
 }));
 
 import { HerbPicker } from "./HerbPicker";

@@ -42,60 +42,64 @@ afterEach(() => {
 });
 
 describe("healerListKey", () => {
-  it("namespaces by district", () => {
-    expect(healerListKey(3)).toEqual(["healers", 3]);
+  it("is a wildcard prefix when called with no args", () => {
+    expect(healerListKey()).toEqual(["healers"]);
+  });
+
+  it("namespaces by page and search term", () => {
+    expect(healerListKey(2, "ก")).toEqual(["healers", 2, "ก"]);
   });
 });
 
 describe("fetchHealers", () => {
-  it("reads the flat healer list and unwraps the pagination envelope", async () => {
+  it("reads a page of the flat healer list and returns the full envelope", async () => {
     const fetchMock = mockOk(page([{ id: 1 }]));
     const got = await fetchHealers();
-    expect(got).toHaveLength(1);
-    expect(got[0].id).toBe(1);
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/healers?pageSize=48", expect.anything());
+    expect(got.items).toHaveLength(1);
+    expect(got.total).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/healers?page=1&pageSize=20", expect.anything());
   });
 
-  it("filters by district when given", async () => {
+  it("threads page and searchTerm through", async () => {
     const fetchMock = mockOk(page([{ id: 1 }]));
-    await fetchHealers(3);
+    await fetchHealers({ page: 2, searchTerm: "ก" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/healers?districtId=3&pageSize=48",
+      "/api/v1/healers?page=2&pageSize=20&searchTerm=%E0%B8%81",
       expect.anything(),
     );
   });
 });
 
 describe("fetchRemedies", () => {
-  it("unwraps the pagination envelope", async () => {
+  it("returns the full envelope, scoped to a healer", async () => {
     const fetchMock = mockOk(page([{ id: 2 }]));
-    const got = await fetchRemedies(5);
-    expect(got).toHaveLength(1);
+    const got = await fetchRemedies({ healerId: 5 });
+    expect(got.items).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/healers/5/remedies?pageSize=48",
+      "/api/v1/healers/5/remedies?page=1&pageSize=20",
       expect.anything(),
     );
   });
 });
 
 describe("fetchCases", () => {
-  it("unwraps the pagination envelope", async () => {
+  it("returns the full envelope, scoped to a remedy", async () => {
     const fetchMock = mockOk(page([{ id: 3 }]));
-    const got = await fetchCases(7);
-    expect(got).toHaveLength(1);
+    const got = await fetchCases({ remedyId: 7, page: 2 });
+    expect(got.items).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/remedies/7/treatment-cases?pageSize=48",
+      "/api/v1/remedies/7/treatment-cases?page=2&pageSize=20",
       expect.anything(),
     );
   });
 });
 
 describe("fetchHerbs", () => {
-  it("unwraps the pagination envelope", async () => {
+  it("returns the full envelope", async () => {
     const fetchMock = mockOk(page([{ id: 4 }]));
     const got = await fetchHerbs();
-    expect(got).toHaveLength(1);
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/herbs?pageSize=48", expect.anything());
+    expect(got.items).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/herbs?page=1&pageSize=20", expect.anything());
   });
 });
 

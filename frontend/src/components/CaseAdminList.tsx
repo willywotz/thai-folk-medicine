@@ -1,10 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
+import { StaffPagination } from "@/components/StaffPagination";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
 import { caseListKey, deleteCase, fetchCases } from "@/lib/staff-queries";
@@ -18,21 +19,31 @@ export function CaseAdminList({
 }) {
   const [filterRemedyId, setFilterRemedyId] = useState<number | undefined>(undefined);
   const scopedRemedyId = remedyId ?? filterRemedyId;
+  const [page, setPage] = useState(1);
+  const [prevRemedyId, setPrevRemedyId] = useState(scopedRemedyId);
+  if (scopedRemedyId !== prevRemedyId) {
+    setPrevRemedyId(scopedRemedyId);
+    setPage(1);
+  }
+
   const queryClient = useQueryClient();
-  const { data: cases, isLoading, isError } = useQuery({
-    queryKey: caseListKey(scopedRemedyId),
-    queryFn: () => fetchCases(scopedRemedyId),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: caseListKey(page, scopedRemedyId),
+    queryFn: () => fetchCases({ page, remedyId: scopedRemedyId }),
+    placeholderData: keepPreviousData,
   });
 
   const remove = useMutation({
     mutationFn: deleteCase,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: caseListKey(scopedRemedyId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: caseListKey() }),
   });
 
   const remedyName = (id: number) => remedies.find((r) => r.id === id)?.name ?? "—";
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load treatment cases.</p>;
+
+  const cases = data?.items ?? [];
 
   return (
     <div className="space-y-4">
@@ -58,7 +69,7 @@ export function CaseAdminList({
           </div>
         ) : null}
         <span className="text-sm text-ink-faint">
-          {cases?.length ?? 0} {cases?.length === 1 ? "case" : "cases"}
+          {data?.total ?? 0} {data?.total === 1 ? "case" : "cases"}
         </span>
         <Link
           href={remedyId !== undefined ? `/staff/cases/new?remedyId=${remedyId}` : "/staff/cases/new"}
@@ -68,7 +79,7 @@ export function CaseAdminList({
         </Link>
       </div>
       {remove.isError ? <p className="text-sm text-destructive">Could not delete this case.</p> : null}
-      {!cases || cases.length === 0 ? (
+      {cases.length === 0 ? (
         <EmptyState message="No treatment cases yet." />
       ) : (
         <ul className={staffCard}>
@@ -110,6 +121,7 @@ export function CaseAdminList({
           ))}
         </ul>
       )}
+      <StaffPagination page={data?.page ?? 1} totalPages={data?.totalPages ?? 1} onPage={setPage} />
     </div>
   );
 }

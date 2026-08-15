@@ -332,6 +332,14 @@ District 1:n Healer stays.)
   parent column, and its `+ New` link pre-selects the parent via `?healerId=`/`?remedyId=`,
   which the new-forms read as `defaultHealerId`/`defaultRemedyId`). The flat top-level sections
   remain.
+- **Pagination + server search:** the Healer/Remedy/Herb/Case staff lists paginate server-side
+  (`STAFF_PAGE_SIZE=20`, client `StaffPagination` prev/next control; `staff-queries` fetchers
+  return the `Page<T>` envelope). Healer/Remedy/Herb search boxes now hit the server: the list
+  endpoints gained an optional `?searchTerm=` (ILIKE over name fields; healer also matches
+  specialty; herb matches thai/english/scientific) — absent term leaves the public zone
+  unchanged. Search is debounced (`useDebouncedValue`) and resets to page 1. Cases paginate but
+  have no search. Province/District lists stay client-side (tiny reference data). `HerbPicker`
+  uses `fetchAllHerbs` (pages through at 48) so the remedy form can reach every herb.
 
 ## How to run
 

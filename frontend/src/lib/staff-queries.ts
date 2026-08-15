@@ -15,25 +15,35 @@ import type { HerbInput } from "@/lib/herb-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
 import type { TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
-export function healerListKey(districtId?: number) {
-  return ["healers", districtId] as const;
+export const STAFF_PAGE_SIZE = 20;
+
+// healerListKey builds a query cache key. Called with no args it is a
+// wildcard prefix (matches every page/search variant) for invalidation.
+export function healerListKey(page?: number, searchTerm?: string) {
+  const key: (string | number)[] = ["healers"];
+  if (page !== undefined) key.push(page);
+  if (searchTerm !== undefined) key.push(searchTerm);
+  return key;
 }
 
-// fetchList reads a paginated public list and returns just its items. Staff
-// admin lists show every row at once, so we ask for the maximum page.
-// withinlazy: pageSize is capped at 48 server-side; add real staff pagination
-// if any single list can exceed 48 rows.
-async function fetchList<T>(path: string, error: string): Promise<T[]> {
-  const sep = path.includes("?") ? "&" : "?";
-  const res = await fetch(`/api/v1${path}${sep}pageSize=48`, { cache: "no-store" });
-  if (!res.ok) throw new Error(error);
-  return ((await res.json()) as Page<T>).items;
+/** fetchPage reads one page of a staff list endpoint through the /api proxy. */
+async function fetchPage<T>(
+  path: string,
+  opts: { page?: number; pageSize?: number; searchTerm?: string } = {},
+): Promise<Page<T>> {
+  const params = new URLSearchParams({
+    page: String(opts.page ?? 1),
+    pageSize: String(opts.pageSize ?? STAFF_PAGE_SIZE),
+  });
+  if (opts.searchTerm) params.set("searchTerm", opts.searchTerm);
+  const res = await fetch(`/api/v1${path}?${params.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`cannot load ${path}`);
+  return (await res.json()) as Page<T>;
 }
 
-/** fetchHealers reads the flat healer list, optionally filtered by district. */
-export async function fetchHealers(districtId?: number): Promise<Healer[]> {
-  const query = districtId !== undefined ? `?districtId=${districtId}` : "";
-  return fetchList<Healer>(`/healers${query}`, "cannot load healers");
+/** fetchHealers reads a page of the flat healer list, with optional name search. */
+export async function fetchHealers(opts: { page?: number; searchTerm?: string } = {}): Promise<Page<Healer>> {
+  return fetchPage<Healer>("/healers", opts);
 }
 
 /** deleteHealer removes a healer through the authenticated BFF. */
@@ -62,15 +72,20 @@ export async function updateHealer(id: number, input: HealerInput & { districtId
   if (!res.ok) throw new Error("cannot update healer");
 }
 
-export function remedyListKey(healerId?: number) {
-  return ["remedies", healerId] as const;
+export function remedyListKey(page?: number, searchTerm?: string, healerId?: number) {
+  const key: (string | number)[] = ["remedies"];
+  if (page !== undefined) key.push(page);
+  if (searchTerm !== undefined) key.push(searchTerm);
+  if (healerId !== undefined) key.push(healerId);
+  return key;
 }
 
-/** fetchRemedies reads the flat remedy list, optionally filtered by healer. */
-export async function fetchRemedies(healerId?: number): Promise<Remedy[]> {
-  return healerId !== undefined
-    ? fetchList<Remedy>(`/healers/${healerId}/remedies`, "cannot load remedies")
-    : fetchList<Remedy>(`/remedies`, "cannot load remedies");
+/** fetchRemedies reads a page of the remedy list, optionally scoped to a healer and/or searched by name. */
+export async function fetchRemedies(
+  opts: { page?: number; searchTerm?: string; healerId?: number } = {},
+): Promise<Page<Remedy>> {
+  const path = opts.healerId !== undefined ? `/healers/${opts.healerId}/remedies` : "/remedies";
+  return fetchPage<Remedy>(path, opts);
 }
 
 /** createRemedy posts a new remedy (with its healerId) through the BFF. */
@@ -99,15 +114,17 @@ export async function deleteRemedy(id: number): Promise<void> {
   if (!res.ok) throw new Error("cannot delete remedy");
 }
 
-export function caseListKey(remedyId?: number) {
-  return ["treatment-cases", remedyId] as const;
+export function caseListKey(page?: number, remedyId?: number) {
+  const key: (string | number)[] = ["treatment-cases"];
+  if (page !== undefined) key.push(page);
+  if (remedyId !== undefined) key.push(remedyId);
+  return key;
 }
 
-/** fetchCases reads the flat treatment case list, optionally filtered by remedy. */
-export async function fetchCases(remedyId?: number): Promise<TreatmentCase[]> {
-  return remedyId !== undefined
-    ? fetchList<TreatmentCase>(`/remedies/${remedyId}/treatment-cases`, "cannot load treatment cases")
-    : fetchList<TreatmentCase>(`/treatment-cases`, "cannot load treatment cases");
+/** fetchCases reads a page of the treatment case list, optionally scoped to a remedy (no search support). */
+export async function fetchCases(opts: { page?: number; remedyId?: number } = {}): Promise<Page<TreatmentCase>> {
+  const path = opts.remedyId !== undefined ? `/remedies/${opts.remedyId}/treatment-cases` : "/treatment-cases";
+  return fetchPage<TreatmentCase>(path, { page: opts.page });
 }
 
 /** createCase posts a new case (with remedyId + healerId) through the BFF. */
@@ -174,11 +191,31 @@ export async function deletePhoto(id: number): Promise<void> {
   if (!res.ok) throw new Error("cannot delete photo");
 }
 
-export const herbListKey = ["herbs"] as const;
+export function herbListKey(page?: number, searchTerm?: string) {
+  const key: (string | number)[] = ["herbs"];
+  if (page !== undefined) key.push(page);
+  if (searchTerm !== undefined) key.push(searchTerm);
+  return key;
+}
 
-/** fetchHerbs reads the herb list through the same-origin /api proxy. */
-export async function fetchHerbs(): Promise<Herb[]> {
-  return fetchList<Herb>(`/herbs`, "cannot load herbs");
+/** fetchHerbs reads a page of the herb list through the same-origin /api proxy, with optional name search. */
+export async function fetchHerbs(opts: { page?: number; searchTerm?: string } = {}): Promise<Page<Herb>> {
+  return fetchPage<Herb>("/herbs", opts);
+}
+
+/**
+ * fetchAllHerbs loads every herb (paging at the max page size) for pickers that
+ * need the whole catalogue rather than one page.
+ * withinlazy: one request per 48-herb page; fine for a small reference catalogue.
+ */
+export async function fetchAllHerbs(): Promise<Herb[]> {
+  const first = await fetchPage<Herb>("/herbs", { page: 1, pageSize: 48 });
+  const all = [...first.items];
+  for (let page = 2; page <= first.totalPages; page++) {
+    const next = await fetchPage<Herb>("/herbs", { page, pageSize: 48 });
+    all.push(...next.items);
+  }
+  return all;
 }
 
 /** createHerb posts a new herb through the BFF. */
@@ -211,7 +248,7 @@ export const activityKey = ["activity"] as const;
 
 // Reads /activity and /stats: those routes are JWT-guarded on the Go API, so
 // they go through the BFF (cookie -> Bearer) instead of the public /api proxy
-// fetchList uses.
+// fetchPage uses.
 async function fetchBffList<T>(path: string, error: string): Promise<T[]> {
   const sep = path.includes("?") ? "&" : "?";
   const res = await fetch(`/bff${path}${sep}pageSize=48`, { cache: "no-store" });

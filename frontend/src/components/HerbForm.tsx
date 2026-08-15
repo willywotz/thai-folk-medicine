@@ -32,7 +32,7 @@ export function HerbForm({ herb }: { herb?: Herb }) {
   const save = useMutation({
     mutationFn: (values: HerbInput) => (herb ? updateHerb(herb.id, values) : createHerb(values)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: herbListKey });
+      queryClient.invalidateQueries({ queryKey: herbListKey() });
       router.push("/staff/herbs");
       router.refresh();
     },

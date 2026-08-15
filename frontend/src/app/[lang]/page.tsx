@@ -90,7 +90,7 @@ export default async function HomePage() {
 
       {provinces.length > 0 ? (
         <>
-          <SectionHead title={t.home.byArea} href="/districts" />
+          <SectionHead title={t.home.byArea} />
           <div className="flex flex-wrap gap-2">
             {provinces.map((p) => (
               <Chip key={p.id} href={`/districts?provinceId=${p.id}`}>

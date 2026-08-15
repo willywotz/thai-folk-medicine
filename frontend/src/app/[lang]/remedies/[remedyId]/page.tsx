@@ -39,7 +39,7 @@ export default async function RemedyPage({
       <Breadcrumb
         items={[
           { label: t.common.home, href: "/" },
-          { label: t.remedy.title },
+          { label: t.remedy.title, href: "/remedies" },
           { label: remedy.name },
         ]}
       />

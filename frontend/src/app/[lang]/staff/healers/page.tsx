@@ -10,7 +10,11 @@ export default async function StaffHealersPage() {
 
   return (
     <section>
-      <StaffPageHeader eyebrow={t.staff.headers.healersEyebrow} title={t.staff.headers.healers} />
+      <StaffPageHeader
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.headers.healers }]}
+        eyebrow={t.staff.headers.healersEyebrow}
+        title={t.staff.headers.healers}
+      />
       <HealerAdminList districts={districts} />
     </section>
   );

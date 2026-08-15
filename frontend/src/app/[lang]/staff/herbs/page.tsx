@@ -6,7 +6,11 @@ export default async function StaffHerbsPage() {
   const t = await getDictionary();
   return (
     <section>
-      <StaffPageHeader eyebrow={t.staff.headers.herbsEyebrow} title={t.staff.headers.herbLibrary} />
+      <StaffPageHeader
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.crumbHerbs }]}
+        eyebrow={t.staff.headers.herbsEyebrow}
+        title={t.staff.headers.herbLibrary}
+      />
       <p className="-mt-4 mb-6 text-sm text-ink-soft">{t.staff.herbsSharedNote}</p>
       <HerbAdminList />
     </section>

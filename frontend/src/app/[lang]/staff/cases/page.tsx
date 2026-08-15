@@ -11,7 +11,11 @@ export default async function StaffCasesPage() {
 
   return (
     <section>
-      <StaffPageHeader eyebrow={t.staff.headers.casesEyebrow} title={t.staff.headers.cases} />
+      <StaffPageHeader
+        crumbs={[{ label: t.staff.nav.dashboard, href: "/staff" }, { label: t.staff.crumbCases }]}
+        eyebrow={t.staff.headers.casesEyebrow}
+        title={t.staff.headers.cases}
+      />
       <CaseAdminList remedies={remedies} />
     </section>
   );

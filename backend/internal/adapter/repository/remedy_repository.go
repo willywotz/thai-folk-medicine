@@ -181,6 +181,7 @@ func (r *Remedy) Update(ctx context.Context, p remedy.UpdateParams) (remedy.Reme
 
 	row, err := qtx.UpdateRemedy(ctx, db.UpdateRemedyParams{
 		ID:                p.ID,
+		HealerID:          p.HealerID,
 		Name:              p.Name,
 		Symptoms:          p.Symptoms,
 		PreparationMethod: p.PreparationMethod,

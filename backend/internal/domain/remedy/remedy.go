@@ -58,6 +58,7 @@ type CreateParams struct {
 // UpdateParams holds the fields to update a remedy.
 type UpdateParams struct {
 	ID                int64
+	HealerID          int64
 	Name              string
 	Symptoms          string
 	PreparationMethod string

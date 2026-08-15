@@ -53,7 +53,7 @@ func (s *RemedyService) ListPage(ctx context.Context, p listing.Params) (listing
 
 // Update validates and changes a remedy, then publishes UpdatedEvent.
 func (s *RemedyService) Update(ctx context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
-	if strings.TrimSpace(p.Name) == "" {
+	if strings.TrimSpace(p.Name) == "" || p.HealerID <= 0 {
 		return remedy.Remedy{}, ErrInvalidRemedy
 	}
 	updated, err := s.repo.Update(ctx, p)

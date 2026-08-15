@@ -51,11 +51,23 @@ func TestTreatmentCaseCreateGetListUpdateDelete(t *testing.T) {
 	assert.Len(t, page.Items, 1)
 
 	updated, err := repo.Update(ctx, treatmentcase.UpdateParams{
-		ID: created.ID, PatientAge: 46, PatientSex: "female", Result: "ดีขึ้น", TreatedOn: day,
+		ID: created.ID, RemedyID: remedyID, HealerID: healerID, PatientAge: 46, PatientSex: "female", Result: "ดีขึ้น", TreatedOn: day,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 46, updated.PatientAge)
 	assert.Equal(t, "ดีขึ้น", updated.Result)
+
+	otherHealerID, otherRemedyID := makeRemedy(t, ctx, pool)
+	reassigned, err := repo.Update(ctx, treatmentcase.UpdateParams{
+		ID: created.ID, RemedyID: otherRemedyID, HealerID: otherHealerID, PatientAge: 46, PatientSex: "female", TreatedOn: day,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, otherRemedyID, reassigned.RemedyID)
+	assert.Equal(t, otherHealerID, reassigned.HealerID)
+	got, err = repo.GetByID(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, otherRemedyID, got.RemedyID)
+	assert.Equal(t, otherHealerID, got.HealerID)
 
 	require.NoError(t, repo.Delete(ctx, created.ID))
 	_, err = repo.GetByID(ctx, created.ID)

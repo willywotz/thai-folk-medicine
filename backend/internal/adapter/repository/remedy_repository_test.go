@@ -46,10 +46,18 @@ func TestRemedyCreateGetListUpdateDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, page.Items, 1)
 
-	updated, err := repo.Update(ctx, remedy.UpdateParams{ID: created.ID, Name: "ยาต้มใหม่", Usage: "ดื่มวันละ 2 ครั้ง"})
+	updated, err := repo.Update(ctx, remedy.UpdateParams{ID: created.ID, HealerID: healerID, Name: "ยาต้มใหม่", Usage: "ดื่มวันละ 2 ครั้ง"})
 	require.NoError(t, err)
 	assert.Equal(t, "ยาต้มใหม่", updated.Name)
 	assert.Equal(t, "ดื่มวันละ 2 ครั้ง", updated.Usage)
+
+	otherHealerID := makeHealer(t, ctx, NewHealer(queries), districtID)
+	reassigned, err := repo.Update(ctx, remedy.UpdateParams{ID: created.ID, HealerID: otherHealerID, Name: "ยาต้มใหม่"})
+	require.NoError(t, err)
+	assert.Equal(t, otherHealerID, reassigned.HealerID)
+	got, err = repo.GetByID(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, otherHealerID, got.HealerID)
 
 	require.NoError(t, repo.Delete(ctx, created.ID))
 	_, err = repo.GetByID(ctx, created.ID)
@@ -107,7 +115,7 @@ func TestRemedyRepository_HerbLinks(t *testing.T) {
 	assert.Len(t, byHerb.Items, 1)
 
 	_, err = remedyRepo.Update(ctx, remedy.UpdateParams{
-		ID: created.ID, Name: "ยาต้ม*",
+		ID: created.ID, HealerID: healerID, Name: "ยาต้ม*",
 		Herbs: []remedy.HerbRef{{HerbID: hb2.ID, Amount: "1 ช้อน"}},
 	})
 	require.NoError(t, err)

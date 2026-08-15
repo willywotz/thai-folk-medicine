@@ -29,7 +29,7 @@ SELECT COUNT(*) FROM treatment_case;
 
 -- name: UpdateTreatmentCase :one
 UPDATE treatment_case
-SET patient_age = $2, patient_sex = $3, symptoms = $4, result = $5, note = $6, treated_on = $7, updated_at = now()
+SET remedy_id = $2, healer_id = $3, patient_age = $4, patient_sex = $5, symptoms = $6, result = $7, note = $8, treated_on = $9, updated_at = now()
 WHERE id = $1
 RETURNING id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at;
 

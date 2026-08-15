@@ -181,6 +181,8 @@ func (h *TreatmentCaseHandler) Update(c *gin.Context) {
 	}
 	updated, err := h.service.Update(c.Request.Context(), treatmentcase.UpdateParams{
 		ID:         id,
+		RemedyID:   req.RemedyID,
+		HealerID:   req.HealerID,
 		PatientAge: req.PatientAge,
 		PatientSex: req.PatientSex,
 		Symptoms:   req.Symptoms,
@@ -191,7 +193,7 @@ func (h *TreatmentCaseHandler) Update(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidTreatmentCase):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "patientSex is required and patientAge must be >= 0"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "remedyId, healerId, patientSex are required and patientAge must be >= 0"})
 		case errors.Is(err, treatmentcase.ErrNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "treatment case not found"})
 		default:

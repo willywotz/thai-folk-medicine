@@ -193,13 +193,14 @@ func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) 
 
 const updateRemedy = `-- name: UpdateRemedy :one
 UPDATE remedy
-SET name = $2, symptoms = $3, preparation_method = $4, usage = $5, note = $6, updated_at = now()
+SET healer_id = $2, name = $3, symptoms = $4, preparation_method = $5, usage = $6, note = $7, updated_at = now()
 WHERE id = $1
 RETURNING id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 `
 
 type UpdateRemedyParams struct {
 	ID                int64
+	HealerID          int64
 	Name              string
 	Symptoms          string
 	PreparationMethod string
@@ -210,6 +211,7 @@ type UpdateRemedyParams struct {
 func (q *Queries) UpdateRemedy(ctx context.Context, arg UpdateRemedyParams) (Remedy, error) {
 	row := q.db.QueryRow(ctx, updateRemedy,
 		arg.ID,
+		arg.HealerID,
 		arg.Name,
 		arg.Symptoms,
 		arg.PreparationMethod,

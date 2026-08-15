@@ -73,6 +73,12 @@ func TestCreateRemedyRejectsBadHealer(t *testing.T) {
 	assert.ErrorIs(t, err, ErrInvalidRemedy)
 }
 
+func TestUpdateRemedyRejectsBadHealer(t *testing.T) {
+	_, err := NewRemedyService(&fakeRemedyRepo{}, &remedyRecorder{}).
+		Update(context.Background(), remedy.UpdateParams{ID: 1, HealerID: 0, Name: "ยา"})
+	assert.ErrorIs(t, err, ErrInvalidRemedy)
+}
+
 func TestCreateRemedyNoEventOnRepoError(t *testing.T) {
 	pub := &remedyRecorder{}
 	service := NewRemedyService(&fakeRemedyRepo{createErr: errors.New("db")}, pub)

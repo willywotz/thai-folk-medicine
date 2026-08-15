@@ -76,6 +76,24 @@ func TestCreateCaseRejectsNegativeAge(t *testing.T) {
 	assert.ErrorIs(t, err, ErrInvalidTreatmentCase)
 }
 
+func validUpdate() treatmentcase.UpdateParams {
+	return treatmentcase.UpdateParams{ID: 1, RemedyID: 2, HealerID: 3, PatientAge: 40, PatientSex: "male", TreatedOn: time.Now().UTC()}
+}
+
+func TestUpdateCaseRejectsBadRemedy(t *testing.T) {
+	p := validUpdate()
+	p.RemedyID = 0
+	_, err := NewTreatmentCaseService(&fakeCaseRepo{}, &caseRecorder{}).Update(context.Background(), p)
+	assert.ErrorIs(t, err, ErrInvalidTreatmentCase)
+}
+
+func TestUpdateCaseRejectsBadHealer(t *testing.T) {
+	p := validUpdate()
+	p.HealerID = 0
+	_, err := NewTreatmentCaseService(&fakeCaseRepo{}, &caseRecorder{}).Update(context.Background(), p)
+	assert.ErrorIs(t, err, ErrInvalidTreatmentCase)
+}
+
 func TestCreateCaseNoEventOnRepoError(t *testing.T) {
 	pub := &caseRecorder{}
 	_, err := NewTreatmentCaseService(&fakeCaseRepo{createErr: errors.New("db")}, pub).Create(context.Background(), validCreate())

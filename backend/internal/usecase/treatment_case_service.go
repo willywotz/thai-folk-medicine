@@ -53,7 +53,7 @@ func (s *TreatmentCaseService) ListPage(ctx context.Context, p listing.Params) (
 
 // Update validates and changes a case, then publishes UpdatedEvent.
 func (s *TreatmentCaseService) Update(ctx context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
-	if p.PatientAge < 0 || strings.TrimSpace(p.PatientSex) == "" {
+	if p.RemedyID <= 0 || p.HealerID <= 0 || p.PatientAge < 0 || strings.TrimSpace(p.PatientSex) == "" {
 		return treatmentcase.TreatmentCase{}, ErrInvalidTreatmentCase
 	}
 	updated, err := s.repo.Update(ctx, p)

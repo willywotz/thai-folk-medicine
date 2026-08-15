@@ -48,7 +48,7 @@ func (s *stubRemedyRepo) ListPage(_ context.Context, p listing.Params) (listing.
 	return s.page, nil
 }
 func (s *stubRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
-	return remedy.Remedy{ID: p.ID, Name: p.Name}, nil
+	return remedy.Remedy{ID: p.ID, HealerID: p.HealerID, Name: p.Name}, nil
 }
 func (s *stubRemedyRepo) Delete(context.Context, int64) error { return nil }
 
@@ -85,6 +85,20 @@ func TestCreateRemedyRejectsEmptyName(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateRemedyReassignsHealerEndpoint(t *testing.T) {
+	router := newRemedyRouter(&stubRemedyRepo{})
+	body, _ := json.Marshal(map[string]any{"healerId": 9, "name": "ยาต้มใหม่"})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/remedies/1", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Equal(t, float64(9), got["healerId"])
 }
 
 func TestGetRemedyNotFound(t *testing.T) {

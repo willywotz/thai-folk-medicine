@@ -189,6 +189,7 @@ func (h *RemedyHandler) Update(c *gin.Context) {
 	}
 	updated, err := h.service.Update(c.Request.Context(), remedy.UpdateParams{
 		ID:                id,
+		HealerID:          req.HealerID,
 		Name:              req.Name,
 		Symptoms:          req.Symptoms,
 		PreparationMethod: req.PreparationMethod,
@@ -199,7 +200,7 @@ func (h *RemedyHandler) Update(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, usecase.ErrInvalidRemedy):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "name is required and healer id must be valid"})
 		case errors.Is(err, remedy.ErrNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "remedy not found"})
 		default:

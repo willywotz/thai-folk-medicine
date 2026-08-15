@@ -207,13 +207,15 @@ func (q *Queries) ListRecentCasePage(ctx context.Context, arg ListRecentCasePage
 
 const updateTreatmentCase = `-- name: UpdateTreatmentCase :one
 UPDATE treatment_case
-SET patient_age = $2, patient_sex = $3, symptoms = $4, result = $5, note = $6, treated_on = $7, updated_at = now()
+SET remedy_id = $2, healer_id = $3, patient_age = $4, patient_sex = $5, symptoms = $6, result = $7, note = $8, treated_on = $9, updated_at = now()
 WHERE id = $1
 RETURNING id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
 `
 
 type UpdateTreatmentCaseParams struct {
 	ID         int64
+	RemedyID   int64
+	HealerID   int64
 	PatientAge int32
 	PatientSex string
 	Symptoms   string
@@ -225,6 +227,8 @@ type UpdateTreatmentCaseParams struct {
 func (q *Queries) UpdateTreatmentCase(ctx context.Context, arg UpdateTreatmentCaseParams) (TreatmentCase, error) {
 	row := q.db.QueryRow(ctx, updateTreatmentCase,
 		arg.ID,
+		arg.RemedyID,
+		arg.HealerID,
 		arg.PatientAge,
 		arg.PatientSex,
 		arg.Symptoms,

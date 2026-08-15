@@ -121,6 +121,8 @@ func (r *TreatmentCase) Count(ctx context.Context) (int, error) {
 func (r *TreatmentCase) Update(ctx context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	row, err := r.q.UpdateTreatmentCase(ctx, db.UpdateTreatmentCaseParams{
 		ID:         p.ID,
+		RemedyID:   p.RemedyID,
+		HealerID:   p.HealerID,
 		PatientAge: int32(p.PatientAge),
 		PatientSex: p.PatientSex,
 		Symptoms:   p.Symptoms,

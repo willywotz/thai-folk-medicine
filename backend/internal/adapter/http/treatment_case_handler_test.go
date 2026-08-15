@@ -35,7 +35,7 @@ func (s *stubCaseRepo) ListPage(context.Context, listing.Params) (listing.Page[t
 	return listing.Page[treatmentcase.TreatmentCase]{Items: []treatmentcase.TreatmentCase{{ID: 1}}, Total: 1}, nil
 }
 func (s *stubCaseRepo) Update(_ context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
-	return treatmentcase.TreatmentCase{ID: p.ID}, nil
+	return treatmentcase.TreatmentCase{ID: p.ID, RemedyID: p.RemedyID, HealerID: p.HealerID}, nil
 }
 func (s *stubCaseRepo) Delete(context.Context, int64) error { return nil }
 
@@ -72,6 +72,23 @@ func TestCreateCaseRejectsBadDate(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateCaseReassignsRemedyAndHealerEndpoint(t *testing.T) {
+	router := newCaseRouter(&stubCaseRepo{})
+	body, _ := json.Marshal(map[string]any{
+		"remedyId": 5, "healerId": 9, "patientAge": 40, "patientSex": "male", "treatedOn": "2026-03-01",
+	})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/treatment-cases/1", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Equal(t, float64(5), got["remedyId"])
+	assert.Equal(t, float64(9), got["healerId"])
 }
 
 func TestGetCaseNotFound(t *testing.T) {

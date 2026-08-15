@@ -11,9 +11,11 @@ import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Herb } from "@/lib/api-types";
 import { herbSchema, type HerbInput } from "@/lib/herb-schema";
+import { useT } from "@/lib/i18n/useT";
 import { createHerb, herbListKey, updateHerb, uploadPhoto } from "@/lib/staff-queries";
 
 export function HerbForm({ herb }: { herb?: Herb }) {
+  const t = useT();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
@@ -56,7 +58,7 @@ export function HerbForm({ herb }: { herb?: Herb }) {
       <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
         <div className="space-y-1">
           <label htmlFor="nameThai" className={staffLabel}>
-            ชื่อไทย (Thai name)
+            {t.staff.form.thaiName}
           </label>
           <input id="nameThai" className={field} {...register("nameThai")} />
           {errors.nameThai ? <p className={staffFieldError}>{errors.nameThai.message}</p> : null}
@@ -69,19 +71,19 @@ export function HerbForm({ herb }: { herb?: Herb }) {
         </div>
         <div className="space-y-1">
           <label htmlFor="scientificName" className={staffLabel}>
-            ชื่อวิทยาศาสตร์ (Scientific name)
+            {t.staff.form.scientificName}
           </label>
           <input id="scientificName" className={field} {...register("scientificName")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="properties" className={staffLabel}>
-            สรรพคุณ (Properties)
+            {t.staff.form.properties}
           </label>
           <textarea id="properties" rows={3} className={field} {...register("properties")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="description" className={staffLabel}>
-            รายละเอียด (Description)
+            {t.staff.form.description}
           </label>
           <textarea id="description" rows={3} className={field} {...register("description")} />
         </div>

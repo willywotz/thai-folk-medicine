@@ -3,6 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 const push = vi.fn();
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
@@ -16,7 +18,11 @@ const healerOptions = [
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 // stubFetch serves the HerbPicker's own herb list, PhotoManager's empty photo
@@ -66,7 +72,7 @@ describe("RemedyForm (create)", () => {
     const fetchMock = stubFetch();
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<RemedyForm healerOptions={healerOptions} />);
-    await userEvent.type(screen.getByLabelText(/^name/i), "ยาต้ม");
+    await userEvent.type(screen.getByLabelText("ชื่อตำรับยา"), "ยาต้ม");
     const healerInput = screen.getByLabelText(/healer/i);
     await userEvent.click(healerInput);
     await userEvent.clear(healerInput);

@@ -4,12 +4,14 @@ import { Combobox } from "@base-ui/react/combobox";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
+import { useT } from "@/lib/i18n/useT";
 import { fetchAllHerbs } from "@/lib/staff-queries";
 
 type HerbLink = { herbId: number; amount: string };
 type HerbOption = { value: number; label: string };
 
 export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (v: HerbLink[]) => void }) {
+  const t = useT();
   const { data } = useQuery({ queryKey: ["herbs", "all"], queryFn: fetchAllHerbs });
 
   // Base UI Combobox filters and labels {value,label} items automatically.
@@ -28,7 +30,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">ตัวยา (Herbs)</p>
+      <p className="text-sm font-medium">{t.staff.form.herbs}</p>
       {value.map((row, i) => (
         <div key={i} className="flex gap-2">
           <Combobox.Root
@@ -38,14 +40,14 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
           >
             <Combobox.Input
               aria-label="herb"
-              placeholder="ค้นหาสมุนไพร (search herb)"
+              placeholder={t.staff.form.searchHerb}
               className="w-48 rounded border border-stone-300 p-2"
             />
             <Combobox.Portal>
               <Combobox.Positioner sideOffset={4} className="z-50">
                 <Combobox.Popup className="max-h-60 w-[var(--anchor-width)] overflow-y-auto rounded border border-stone-300 bg-white shadow-md">
                   <Combobox.Empty className="p-2 text-sm text-stone-500">
-                    ไม่พบสมุนไพร (no herbs found)
+                    {t.staff.form.noHerbsFound}
                   </Combobox.Empty>
                   <Combobox.List>
                     {(item: HerbOption) => (
@@ -65,7 +67,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
           <input
             aria-label="amount"
             className="flex-1 rounded border border-stone-300 p-2"
-            placeholder="ปริมาณ (amount)"
+            placeholder={t.staff.form.amount}
             value={row.amount}
             onChange={(e) => setRow(i, { amount: e.target.value })}
           />

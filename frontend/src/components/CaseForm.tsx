@@ -12,6 +12,7 @@ import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { TreatmentCase } from "@/lib/api-types";
+import { useT } from "@/lib/i18n/useT";
 import { caseListKey, createCase, updateCase, uploadPhoto } from "@/lib/staff-queries";
 import { treatmentCaseSchema, type TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
@@ -29,6 +30,7 @@ export function CaseForm({
   remedyOptions: { value: number; label: string; healerId: number }[];
   defaultRemedyId?: number;
 }) {
+  const t = useT();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [remedyId, setRemedyId] = useState(
@@ -77,52 +79,52 @@ export function CaseForm({
       <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
         <div className="space-y-1">
           <label htmlFor="remedyId" className={staffLabel}>
-            Remedy (ตำรับยา)
+            {t.staff.form.remedy}
           </label>
           <EntityCombobox
             options={remedyOptions}
             value={remedyId}
             onChange={setRemedyId}
-            placeholder="ค้นหาตำรับยา (search remedy)"
+            placeholder={t.staff.form.searchRemedy}
             ariaLabel="remedy"
           />
         </div>
         <div className="space-y-1">
           <label htmlFor="patientSex" className={staffLabel}>
-            Patient sex (เพศ)
+            {t.staff.form.patientSex}
           </label>
           <input id="patientSex" className={field} {...register("patientSex")} />
           {errors.patientSex ? <p className={staffFieldError}>{errors.patientSex.message}</p> : null}
         </div>
         <div className="space-y-1">
           <label htmlFor="patientAge" className={staffLabel}>
-            Patient age (อายุ)
+            {t.staff.form.patientAge}
           </label>
           <input id="patientAge" type="number" min={0} className={field} {...register("patientAge")} />
           {errors.patientAge ? <p className={staffFieldError}>{errors.patientAge.message}</p> : null}
         </div>
         <div className="space-y-1">
           <label htmlFor="treatedOn" className={staffLabel}>
-            Date treated (วันที่รักษา)
+            {t.staff.form.dateTreated}
           </label>
           <input id="treatedOn" type="date" className={field} {...register("treatedOn")} />
           {errors.treatedOn ? <p className={staffFieldError}>{errors.treatedOn.message}</p> : null}
         </div>
         <div className="space-y-1">
           <label htmlFor="symptoms" className={staffLabel}>
-            Symptoms (อาการ)
+            {t.staff.form.symptoms}
           </label>
           <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="result" className={staffLabel}>
-            Result (ผลการรักษา)
+            {t.staff.form.result}
           </label>
           <textarea id="result" rows={2} className={field} {...register("result")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="note" className={staffLabel}>
-            Note (หมายเหตุ)
+            {t.staff.form.note}
           </label>
           <textarea id="note" rows={2} className={field} {...register("note")} />
         </div>

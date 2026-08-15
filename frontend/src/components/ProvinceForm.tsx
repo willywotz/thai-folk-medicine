@@ -10,10 +10,12 @@ import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Province } from "@/lib/api-types";
+import { useT } from "@/lib/i18n/useT";
 import { provinceSchema, type ProvinceInput } from "@/lib/province-schema";
 import { createProvince, provinceListKey, updateProvince, uploadPhoto } from "@/lib/staff-queries";
 
 export function ProvinceForm({ province }: { province?: Province }) {
+  const t = useT();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
@@ -53,7 +55,7 @@ export function ProvinceForm({ province }: { province?: Province }) {
       <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
         <div className="space-y-1">
           <label htmlFor="nameThai" className={staffLabel}>
-            ชื่อไทย (Thai name)
+            {t.staff.form.thaiName}
           </label>
           <input id="nameThai" className={field} {...register("nameThai")} />
           {errors.nameThai ? <p className={staffFieldError}>{errors.nameThai.message}</p> : null}

@@ -12,6 +12,7 @@ import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { healerSchema, type HealerInput } from "@/lib/healer-schema";
+import { useT } from "@/lib/i18n/useT";
 import { createHealer, healerListKey, updateHealer, uploadPhoto } from "@/lib/staff-queries";
 
 export function HealerForm({
@@ -21,6 +22,7 @@ export function HealerForm({
   healer?: Healer;
   districtOptions: { value: number; label: string }[];
 }) {
+  const t = useT();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [districtId, setDistrictId] = useState(healer?.districtId ?? districtOptions[0]?.value ?? 0);
@@ -63,38 +65,38 @@ export function HealerForm({
       <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
         <div className="space-y-1">
           <label htmlFor="districtId" className={staffLabel}>
-            District (อำเภอ)
+            {t.staff.form.district}
           </label>
           <EntityCombobox
             options={districtOptions}
             value={districtId}
             onChange={setDistrictId}
-            placeholder="ค้นหาอำเภอ (search district)"
+            placeholder={t.staff.form.searchDistrict}
             ariaLabel="district"
           />
         </div>
         <div className="space-y-1">
           <label htmlFor="fullName" className={staffLabel}>
-            Full name (ชื่อ)
+            {t.staff.form.fullName}
           </label>
           <input id="fullName" className={field} {...register("fullName")} />
           {errors.fullName ? <p className={staffFieldError}>{errors.fullName.message}</p> : null}
         </div>
         <div className="space-y-1">
           <label htmlFor="subDistrict" className={staffLabel}>
-            Sub-district (ตำบล/หมู่บ้าน)
+            {t.staff.form.subDistrict}
           </label>
           <input id="subDistrict" className={field} {...register("subDistrict")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="specialty" className={staffLabel}>
-            Specialty (ความชำนาญ)
+            {t.staff.form.specialty}
           </label>
           <input id="specialty" className={field} {...register("specialty")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="biography" className={staffLabel}>
-            Biography (ประวัติ)
+            {t.staff.form.biography}
           </label>
           <textarea id="biography" rows={4} className={field} {...register("biography")} />
         </div>

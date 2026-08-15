@@ -3,11 +3,17 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 import { DistrictForm } from "./DistrictForm";
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -27,7 +33,7 @@ describe("DistrictForm (create)", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     const onDone = vi.fn();
     renderWithClient(<DistrictForm provinceId={1} onDone={onDone} />);
-    await userEvent.type(screen.getByLabelText(/thai name/i), "อำเภอเมือง");
+    await userEvent.type(screen.getByLabelText("ชื่อไทย"), "อำเภอเมือง");
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/districts", expect.objectContaining({ method: "POST" })),

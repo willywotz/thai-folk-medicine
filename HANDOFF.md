@@ -19,18 +19,30 @@ and plans under `docs/superpowers/`.
 - Public browse site (Next.js, server-rendered), remedy/herb-first — done.
 - Staff admin (Next.js) — login + full CRUD for healers, remedies, herbs, treatment cases,
   and photos — done.
-- Public search (remedies + healers + herbs, Thai-friendly `pg_trgm`) — done.
+- **Pagination** on every public list endpoint (uniform `{items,page,pageSize,total,totalPages}`
+  envelope) — done (**Plan 11**).
+- **Public search** — one merged, relevance-ranked, **paginated** list across remedies +
+  healers + herbs (Thai-friendly `pg_trgm`) — done (Plan 11).
 - Demo-data seed command (`cmd/seed`) — done.
-- Root `docker-compose.yml` runs the whole stack and is verified end to end.
+- Root compose runs the whole stack (prod images) and a **hot-reload dev workflow**
+  (`docker compose watch`) — both verified end to end.
 
 **Nothing has been pushed to a remote.** There is no git remote configured. Everything
 lives in local `main`. Add a remote and push when you are ready (that is an outward action
 — get sign-off first).
 
 Git branch model: each increment ("plan") is built on a `feat/*` branch and merged into
-`main` with `--no-ff`. `main` is the integration branch. The most recent merges are the demo
-seed, the public staff link, and **Plan 10 — herb + remedy focus** (`feat/herb-catalog`,
-left un-deleted).
+`main` with `--no-ff`. `main` is the integration branch. The most recent merges are
+**Plan 11 — pagination + merged search** (`feat/pagination-filter-search`) and the
+**backend docker hot-reload dev workflow** (`feat/docker-dev-hot-reload`); before those,
+Plan 10 — herb + remedy focus.
+
+> **Note on Plan 11 scope:** list *filters* (remedy by herb/district/symptom, herb by
+> name/property) and a native GET-form `<Filters>` component were fully designed, built,
+> reviewed, and then **removed by decision** — only pagination and the merged search remain.
+> If you want filters back, the design lives in
+> `docs/superpowers/specs/2026-08-15-pagination-filter-search-design.md` and the build is in
+> git history on the (deleted) branch.
 
 ---
 
@@ -42,6 +54,23 @@ left un-deleted).
 docker compose up --build      # from the repo root → http://localhost:3000
 docker compose down            # stop (add -v to also drop the data volumes)
 ```
+
+**Compose has two layers.** `compose.yaml` is the **production** layer (`backend`/`frontend`
+build their Dockerfile `production` target). `compose.override.yaml` is auto-merged by plain
+`docker compose` and is the **development** layer (both services build their `development`
+target and declare `develop.watch` rules). So:
+
+```bash
+docker compose watch                 # hot-reload dev: syncs source into the containers
+docker compose up                    # dev images, no file-watching
+docker compose -f compose.yaml up    # pure production images (skip the override)
+```
+
+Under `docker compose watch`, a change under `./backend` triggers `sync+restart` — the
+`development` stage runs `go run ./cmd/api`, so it recompiles on restart; a `go.mod` change
+triggers a rebuild. The frontend uses Next fast refresh (`sync`); lockfile/`package.json`
+changes rebuild. (Note: `docker compose up` currently runs the **dev** images because of the
+override — add `-f compose.yaml` for production.)
 
 Default admin login: `admin` / `change-me`. Override the secrets in a root `.env`:
 `JWT_SECRET`, `STAFF_ADMIN_USERNAME`, `STAFF_ADMIN_PASSWORD`.
@@ -93,7 +122,16 @@ migrations/        SQL + Yasothon seed (embedded)
 ```
 
 Dependency rule: `domain` ← `usecase` ← `adapter`/`platform`. Every write publishes a
-domain event through an in-process bus; an audit handler logs each one.
+domain event through an in-process bus; an audit handler logs each one. **Reads publish no
+events** (pagination and search are read-only).
+
+**Pagination kernel:** `internal/domain/listing` (`Params{Limit,Offset}`, generic
+`Page[T]{Items,Total}`) is a pure-Go shared kernel every list use case returns. Each sqlc
+list query has a matching `Count*` with an identical `WHERE`; the HTTP layer wraps results in
+the uniform `{items,page,pageSize,total,totalPages}` envelope (`newPageDTO`, `parsePageParams`
+in `adapter/http/helpers.go`; `pageSize` default 12 / 20 for search, capped at 48). **Merged
+search** is one SQL `UNION ALL` over remedy/healer/herb ranked by trigram `similarity()`
+(`adapter/repository/query/search.sql`), returned as `Page[SearchHit]`.
 
 **Domain model.** `Province → District → Healer → Remedy → Case`, plus **`Herb ↔ Remedy`
 many-to-many** through `remedy_herb` (with a per-link `amount`). A remedy's ingredients ARE
@@ -107,7 +145,10 @@ rich record (Thai/English/scientific name, properties, description) with its own
   →"), plus a secondary "browse by district" link. Pages: `/herbs`, `/herbs/{id}` (herb
   profile + remedies using it), `/remedies`, `/treatment-cases`, `/districts`, and the
   detail pages. A remedy page shows its linked herbs (name → `/herbs/{id}`, with amount) and
-  keeps "recorded by healer · district" context. `/search` has three result groups.
+  keeps "recorded by healer · district" context. Every list page is **paginated** via a
+  server `<Pagination>` component (URL `?page=` links that preserve other params). `/search`
+  is **one merged, ranked list** — each row a type badge linking to the remedy/healer/herb
+  detail page.
 - **Staff pages** (`/staff/*`, guarded by `src/proxy.ts`) use TanStack Query +
   react-hook-form + zod + shadcn/ui. Includes `/staff/herbs` CRUD; the remedy form uses a
   **herb picker** (herb + amount rows).
@@ -205,11 +246,25 @@ gotcha below.
    and writes the remedy + its `remedy_herb` rows in one transaction (Create/Update);
    `GetByID` loads the herb links after commit.
 10. **Search uses `pg_trgm`, not `to_tsvector`** (Thai has no word spaces). Migrations
-    `000008`–`000010` maintain the GIN trigram indexes. Search covers remedies (name,
-    symptoms, and **linked herb names** via join), healers, and herbs. Minimum term is **2
-    runes** (`utf8.RuneCountInString`). Remedy search **ranks by trigram `similarity()`**:
-    it `GROUP BY`s the remedy (the herb join is one-to-many) and orders by
-    `GREATEST(similarity(name), similarity(symptoms), max(similarity(herb names))) DESC`.
+    `000008`–`000010` maintain the GIN trigram indexes. Minimum term is **2 runes**
+    (`utf8.RuneCountInString`). Search is now **one merged, paginated list** (`SearchAll` in
+    `query/search.sql`): a `UNION ALL` of remedy / healer / herb, each scored by
+    `GREATEST(similarity(...))::real`, ordered `score DESC, type, id` (deterministic paging).
+    Cross-type scores are **uncalibrated** (a herb-name match and a remedy-symptom match are
+    not on the same scale) — `withinlazy:` in `search_repository.go` marks where to add
+    per-type weights if the ordering needs tuning.
+11. **Every public list returns the same envelope** `{items,page,pageSize,total,totalPages}`.
+    `pageSize` defaults to 12 (20 for search), caps at 48; `page` past the end returns valid
+    metadata with empty `items`. Each list SQL query has a paired `Count*` with an **identical
+    `WHERE`** — if you add a scope/filter to a list query, add it to its count too or `total`
+    disagrees with `items`. List *filters* were built then removed (see the Plan 11 note up
+    top); only pagination remains.
+12. **Compose has a prod layer and a dev layer.** `compose.yaml` = production (`production`
+    build target). `compose.override.yaml` = development (`development` target + `develop.watch`)
+    and is **auto-merged by plain `docker compose`** — so `docker compose up` runs the DEV
+    images. Use `docker compose watch` for hot reload; `docker compose -f compose.yaml up` for
+    pure production. The backend `development` stage runs `go run ./cmd/api` (recompiles on the
+    watch `sync+restart`); `seed` is pinned to the `production` target.
 
 ---
 
@@ -217,7 +272,10 @@ gotcha below.
 
 - **Herb categories/tags** and structured **herb ↔ symptom** links.
 - **Amount as a structured quantity + unit** (kept as free text today).
-- **Search follow-ups** — filter by district/field, pagination, match highlighting.
+- **List filters** — remedy by herb/district/symptom and herb by name/property were built and
+  reviewed, then removed by decision; the spec + git history make re-adding them cheap.
+- **Search follow-ups** — match highlighting, per-type score weighting (cross-type ranking is
+  uncalibrated today), a type-facet on `/search`. (Pagination is done.)
 - **`GET /districts/{id}`** so staff breadcrumbs can show the district name.
 - **S3 / MinIO** photo store to replace local disk before horizontal scaling.
 - **Staff roles** (admin vs normal) if the team grows — one flat staff type today.
@@ -231,7 +289,8 @@ gotcha below.
 - Design specs: `docs/superpowers/specs/` (original design + search + herb/remedy focus).
 - Plans (one per increment): `docs/superpowers/plans/` — backend foundation, healer + events,
   remedy + case, auth + photos, public frontend, staff healer admin, staff remedy/case admin,
-  photo management, search by symptom/herb, and **herb + remedy focus** (Plan 10).
+  photo management, search by symptom/herb, **herb + remedy focus** (Plan 10), and
+  **pagination + merged search** (Plan 11, `2026-08-15-pagination-filter-search.md`).
 - SDD ledgers / per-task reports: `.superpowers/sdd/` (git-ignored scratch).
 - System reference: `CONTEXT.md`.
 - Project rules and agent config: `.claude/`.

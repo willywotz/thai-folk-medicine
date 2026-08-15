@@ -219,7 +219,9 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   `/districts`. Remedy detail shows the linked herb list (name → `/herbs/{id}`, with amount)
   and keeps "recorded by healer · district" context.
 - **Staff:** `/staff/herbs` CRUD (+ `bff/herbs*`); the remedy form uses a **herb picker**
-  (herb + amount rows) instead of an ingredients textarea.
+  (herb + amount rows) instead of an ingredients textarea. Each row selects its herb with a
+  searchable **Base UI `Combobox`** (`@base-ui/react`, already a dependency) — type to filter
+  by Thai name; a new row still defaults to the first herb.
 - **Seed:** `cmd/seed` seeds 12 curated herbs and links each remedy to 2–4 herbs.
 
 **Plan 11 — pagination & merged search** (supersedes the `?limit=` recent

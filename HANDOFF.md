@@ -26,6 +26,24 @@ and plans under `docs/superpowers/`.
 - Demo-data seed command (`cmd/seed`) — done.
 - Root compose runs the whole stack (prod images) and a **hot-reload dev workflow**
   (`docker compose watch`) — both verified end to end.
+- **`GET /api/v1/districts/{districtId}`** (public, single district read) — done; the staff
+  district page now shows the real district name.
+- **Searchable herb picker** — the staff remedy form filters herbs by Thai name with a
+  Base UI `Combobox` (no new dependency) — done.
+
+Two follow-ups since the previous handoff (both merged to `main`):
+
+1. **`GET /districts/{id}` + a staff pagination-envelope fix** (merge `1c3142f`). Adding the
+   endpoint surfaced a **pre-existing Plan 11 regression**: the staff admin `fetch*` helpers
+   in `frontend/src/lib/staff-queries.ts` still cast list responses to bare arrays, but every
+   public list endpoint returns the `{items,…}` envelope now — so `HealerAdminList` and its
+   Remedy/Case/Herb siblings crashed with `healers.map is not a function`. All four fetches
+   now go through a shared `fetchList` that unwraps `.items` and asks for `pageSize=48`
+   (`withinlazy:` add real staff pagination if any list can exceed 48 rows). `fetchPhotos` is
+   exempt (its endpoint returns a bare array).
+2. **Searchable herb picker** (merge `7a27187`). `HerbPicker` swaps the per-row native
+   `<select>` for a Base UI `Combobox`; items use the auto-supported `{value,label}` shape
+   (`value` = `herbId`). A new row still defaults to the first herb.
 
 **Nothing has been pushed to a remote.** There is no git remote configured. Everything
 lives in local `main`. Add a remote and push when you are ready (that is an outward action
@@ -33,9 +51,10 @@ lives in local `main`. Add a remote and push when you are ready (that is an outw
 
 Git branch model: each increment ("plan") is built on a `feat/*` branch and merged into
 `main` with `--no-ff`. `main` is the integration branch. The most recent merges are
-**Plan 11 — pagination + merged search** (`feat/pagination-filter-search`) and the
-**backend docker hot-reload dev workflow** (`feat/docker-dev-hot-reload`); before those,
-Plan 10 — herb + remedy focus.
+`feat/herb-picker-search` (searchable herb picker) and `feat/get-district-by-id`
+(`GET /districts/{id}` + the staff pagination-envelope fix); before those, **Plan 11 —
+pagination + merged search** (`feat/pagination-filter-search`), the **backend docker
+hot-reload dev workflow** (`feat/docker-dev-hot-reload`), and Plan 10 — herb + remedy focus.
 
 > **Note on Plan 11 scope:** list *filters* (remedy by herb/district/symptom, herb by
 > name/property) and a native GET-form `<Filters>` component were fully designed, built,
@@ -276,7 +295,6 @@ gotcha below.
   reviewed, then removed by decision; the spec + git history make re-adding them cheap.
 - **Search follow-ups** — match highlighting, per-type score weighting (cross-type ranking is
   uncalibrated today), a type-facet on `/search`. (Pagination is done.)
-- **`GET /districts/{id}`** so staff breadcrumbs can show the district name.
 - **S3 / MinIO** photo store to replace local disk before horizontal scaling.
 - **Staff roles** (admin vs normal) if the team grows — one flat staff type today.
 - **Playwright** end-to-end tests across login → manage → browse.

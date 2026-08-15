@@ -14,12 +14,15 @@ import (
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/event"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
 type stubHealerRepo struct {
 	getErr  error
 	created healer.Healer
+	page    listing.Page[healer.Healer]
+	gotPage listing.Params
 }
 
 func (s *stubHealerRepo) Create(_ context.Context, p healer.CreateParams) (healer.Healer, error) {
@@ -31,8 +34,9 @@ func (s *stubHealerRepo) GetByID(_ context.Context, id int64) (healer.Healer, er
 	}
 	return healer.Healer{ID: id, FullName: "หมอ ก"}, nil
 }
-func (s *stubHealerRepo) ListByDistrict(_ context.Context, districtID int64) ([]healer.Healer, error) {
-	return []healer.Healer{{ID: 1, DistrictID: districtID, FullName: "หมอ ก"}}, nil
+func (s *stubHealerRepo) ListByDistrictPage(_ context.Context, _ int64, p listing.Params) (listing.Page[healer.Healer], error) {
+	s.gotPage = p
+	return s.page, nil
 }
 func (s *stubHealerRepo) Update(_ context.Context, p healer.UpdateParams) (healer.Healer, error) {
 	return healer.Healer{ID: p.ID, FullName: p.FullName}, nil
@@ -88,15 +92,24 @@ func TestGetHealerNotFound(t *testing.T) {
 }
 
 func TestListHealerByDistrictEndpoint(t *testing.T) {
-	router := newHealerRouter(&stubHealerRepo{})
+	repo := &stubHealerRepo{page: listing.Page[healer.Healer]{
+		Items: []healer.Healer{{ID: 1, DistrictID: 2, FullName: "หมอ ก"}}, Total: 1,
+	}}
+	router := newHealerRouter(repo)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/districts/2/healers", nil)
 	router.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
-	assert.Equal(t, float64(2), got[0]["districtId"])
+	var body struct {
+		Items      []map[string]any `json:"items"`
+		Total      int              `json:"total"`
+		TotalPages int              `json:"totalPages"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, float64(2), body.Items[0]["districtId"])
+	assert.Equal(t, 1, body.Total)
+	assert.Equal(t, 1, body.TotalPages)
 }

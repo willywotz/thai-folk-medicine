@@ -25,7 +25,7 @@ func NewRemedyHandler(service *usecase.RemedyService) *RemedyHandler {
 // RegisterRoutes mounts the remedy routes: reads public, writes JWT-guarded.
 func (h *RemedyHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/healers/:healerId/remedies", h.ListByHealer)
-	public.GET("/remedies", h.ListRecent)
+	public.GET("/remedies", h.ListPage)
 	public.GET("/remedies/:remedyId", h.Get)
 	protected.POST("/remedies", h.Create)
 	protected.PUT("/remedies/:remedyId", h.Update)
@@ -94,38 +94,39 @@ func toHerbRefs(req []remedyHerbRequest) []remedy.HerbRef {
 	return refs
 }
 
-// ListByHealer handles GET /api/v1/healers/:healerId/remedies.
+// ListByHealer handles GET /api/v1/healers/:healerId/remedies?page&pageSize.
 func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 	healerID, err := strconv.ParseInt(c.Param("healerId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "healer id must be a number"})
 		return
 	}
-	list, err := h.service.ListByHealer(c.Request.Context(), healerID)
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListByHealerPage(c.Request.Context(), healerID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return
 	}
-	out := make([]remedyDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]remedyDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toRemedyDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
-// ListRecent handles GET /api/v1/remedies?limit=N (default 12).
-func (h *RemedyHandler) ListRecent(c *gin.Context) {
-	limit := parseLimit(c.Query("limit"), 12)
-	list, err := h.service.ListRecent(c.Request.Context(), limit)
+// ListPage handles GET /api/v1/remedies?page&pageSize.
+func (h *RemedyHandler) ListPage(c *gin.Context) {
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListPage(c.Request.Context(), params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return
 	}
-	out := make([]remedyDTO, 0, len(list))
-	for _, item := range list {
-		out = append(out, toRemedyDTO(item))
+	out := make([]remedyDTO, 0, len(result.Items))
+	for _, r := range result.Items {
+		out = append(out, toRemedyDTO(r))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Get handles GET /api/v1/remedies/:remedyId.

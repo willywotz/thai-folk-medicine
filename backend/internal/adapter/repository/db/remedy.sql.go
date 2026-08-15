@@ -9,6 +9,28 @@ import (
 	"context"
 )
 
+const countRemedyByHealer = `-- name: CountRemedyByHealer :one
+SELECT COUNT(*) FROM remedy WHERE healer_id = $1
+`
+
+func (q *Queries) CountRemedyByHealer(ctx context.Context, healerID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyByHealer, healerID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countRemedyPage = `-- name: CountRemedyPage :one
+SELECT COUNT(*) FROM remedy
+`
+
+func (q *Queries) CountRemedyPage(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyPage)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createRemedy = `-- name: CreateRemedy :one
 INSERT INTO remedy (healer_id, name, symptoms, preparation_method, usage, note)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -83,52 +105,22 @@ func (q *Queries) GetRemedy(ctx context.Context, id int64) (Remedy, error) {
 	return i, err
 }
 
-const listRecentRemedy = `-- name: ListRecentRemedy :many
-SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
-FROM remedy
-ORDER BY created_at DESC, id DESC
-LIMIT $1
-`
-
-func (q *Queries) ListRecentRemedy(ctx context.Context, limit int32) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRecentRemedy, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Remedy{}
-	for rows.Next() {
-		var i Remedy
-		if err := rows.Scan(
-			&i.ID,
-			&i.HealerID,
-			&i.Name,
-			&i.Symptoms,
-			&i.PreparationMethod,
-			&i.Usage,
-			&i.Note,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listRemedyByHealer = `-- name: ListRemedyByHealer :many
+const listRemedyByHealerPage = `-- name: ListRemedyByHealerPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 WHERE healer_id = $1
 ORDER BY name
+LIMIT $3 OFFSET $2
 `
 
-func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyByHealer, healerID)
+type ListRemedyByHealerPageParams struct {
+	HealerID   int64
+	PageOffset int32
+	PageLimit  int32
+}
+
+func (q *Queries) ListRemedyByHealerPage(ctx context.Context, arg ListRemedyByHealerPageParams) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRemedyByHealerPage, arg.HealerID, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -157,48 +149,37 @@ func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Rem
 	return items, nil
 }
 
-const searchRemedy = `-- name: SearchRemedy :many
-SELECT r.id, r.name, r.symptoms, r.healer_id, h.full_name AS healer_full_name
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-LEFT JOIN remedy_herb rh ON rh.remedy_id = r.id
-LEFT JOIN herb hb ON hb.id = rh.herb_id
-WHERE r.name ILIKE '%' || $1::text || '%'
-   OR r.symptoms ILIKE '%' || $1::text || '%'
-   OR hb.name_thai ILIKE '%' || $1::text || '%'
-   OR hb.name_english ILIKE '%' || $1::text || '%'
-GROUP BY r.id, r.name, r.symptoms, r.healer_id, h.full_name
-ORDER BY GREATEST(
-    similarity(r.name, $1::text),
-    similarity(r.symptoms, $1::text),
-    max(similarity(hb.name_thai, $1::text)),
-    max(similarity(hb.name_english, $1::text))
-) DESC, r.name
+const listRemedyPage = `-- name: ListRemedyPage :many
+SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
+FROM remedy
+ORDER BY created_at DESC, id DESC
+LIMIT $2 OFFSET $1
 `
 
-type SearchRemedyRow struct {
-	ID             int64
-	Name           string
-	Symptoms       string
-	HealerID       int64
-	HealerFullName string
+type ListRemedyPageParams struct {
+	PageOffset int32
+	PageLimit  int32
 }
 
-func (q *Queries) SearchRemedy(ctx context.Context, searchTerm string) ([]SearchRemedyRow, error) {
-	rows, err := q.db.Query(ctx, searchRemedy, searchTerm)
+func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRemedyPage, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SearchRemedyRow{}
+	items := []Remedy{}
 	for rows.Next() {
-		var i SearchRemedyRow
+		var i Remedy
 		if err := rows.Scan(
 			&i.ID,
+			&i.HealerID,
 			&i.Name,
 			&i.Symptoms,
-			&i.HealerID,
-			&i.HealerFullName,
+			&i.PreparationMethod,
+			&i.Usage,
+			&i.Note,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

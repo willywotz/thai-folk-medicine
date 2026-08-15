@@ -12,9 +12,16 @@ JOIN herb h ON h.id = rh.herb_id
 WHERE rh.remedy_id = $1
 ORDER BY rh.position, h.name_thai;
 
--- name: ListRemedyByHerb :many
+-- name: ListRemedyByHerbPage :many
 SELECT r.id, r.healer_id, r.name, r.symptoms, r.preparation_method, r.usage, r.note, r.created_at, r.updated_at
 FROM remedy r
 JOIN remedy_herb rh ON rh.remedy_id = r.id
-WHERE rh.herb_id = $1
-ORDER BY r.name;
+WHERE rh.herb_id = sqlc.arg('herb_id')
+ORDER BY r.name
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountRemedyByHerb :one
+SELECT COUNT(*)
+FROM remedy r
+JOIN remedy_herb rh ON rh.remedy_id = r.id
+WHERE rh.herb_id = sqlc.arg('herb_id');

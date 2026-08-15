@@ -13,11 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/event"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
-type stubRemedyRepo struct{ getErr error }
+type stubRemedyRepo struct {
+	getErr    error
+	page      listing.Page[remedy.Remedy]
+	gotParams listing.Params
+}
 
 func (s *stubRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remedy.Remedy, error) {
 	herbs := make([]remedy.HerbLink, 0, len(p.Herbs))
@@ -32,14 +37,15 @@ func (s *stubRemedyRepo) GetByID(_ context.Context, id int64) (remedy.Remedy, er
 	}
 	return remedy.Remedy{ID: id, Name: "ยา"}, nil
 }
-func (s *stubRemedyRepo) ListByHealer(_ context.Context, healerID int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1, HealerID: healerID, Name: "ยา"}}, nil
+func (s *stubRemedyRepo) ListByHealerPage(_ context.Context, healerID int64, _ listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1, HealerID: healerID, Name: "ยา"}}, Total: 1}, nil
 }
-func (s *stubRemedyRepo) ListByHerb(_ context.Context, herbID int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1, Name: "ยา"}}, nil
+func (s *stubRemedyRepo) ListByHerbPage(_ context.Context, _ int64, _ listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1, Name: "ยา"}}, Total: 1}, nil
 }
-func (s *stubRemedyRepo) ListRecent(context.Context, int32) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1, Name: "ยา"}}, nil
+func (s *stubRemedyRepo) ListPage(_ context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	s.gotParams = p
+	return s.page, nil
 }
 func (s *stubRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
 	return remedy.Remedy{ID: p.ID, Name: p.Name}, nil
@@ -112,15 +118,24 @@ func TestCreateRemedyEndpointWithHerbs(t *testing.T) {
 	assert.NotContains(t, got, "ingredients")
 }
 
-func TestListRecentRemedyEndpoint(t *testing.T) {
-	router := newRemedyRouter(&stubRemedyRepo{})
+func TestRemedyHandler_ListPage_Envelope(t *testing.T) {
+	repo := &stubRemedyRepo{page: listing.Page[remedy.Remedy]{
+		Items: []remedy.Remedy{{ID: 1, Name: "ยาแก้ไข้"}}, Total: 1,
+	}}
+	router := newRemedyRouter(repo)
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/remedies?limit=5", nil)
-	router.ServeHTTP(rec, req)
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/remedies?page=1&pageSize=12", nil))
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
+	var body struct {
+		Items      []map[string]any `json:"items"`
+		Total      int              `json:"total"`
+		TotalPages int              `json:"totalPages"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, 1, body.Total)
+	assert.Equal(t, 1, body.TotalPages)
+	assert.Equal(t, 12, repo.gotParams.Limit)
 }
 
 func TestListRemedyByHealerEndpoint(t *testing.T) {
@@ -129,8 +144,12 @@ func TestListRemedyByHealerEndpoint(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/healers/3/remedies", nil)
 	router.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
-	assert.Equal(t, float64(3), got[0]["healerId"])
+	var body struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, float64(3), body.Items[0]["healerId"])
+	assert.Equal(t, 1, body.Total)
 }

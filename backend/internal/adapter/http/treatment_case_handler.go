@@ -27,7 +27,7 @@ func NewTreatmentCaseHandler(service *usecase.TreatmentCaseService) *TreatmentCa
 // RegisterRoutes mounts the treatment-case routes: reads public, writes JWT-guarded.
 func (h *TreatmentCaseHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/remedies/:remedyId/treatment-cases", h.ListByRemedy)
-	public.GET("/treatment-cases", h.ListRecent)
+	public.GET("/treatment-cases", h.ListPage)
 	public.GET("/treatment-cases/:treatmentCaseId", h.Get)
 	protected.POST("/treatment-cases", h.Create)
 	protected.PUT("/treatment-cases/:treatmentCaseId", h.Update)
@@ -75,38 +75,39 @@ type treatmentCaseRequest struct {
 	TreatedOn  string `json:"treatedOn"`
 }
 
-// ListByRemedy handles GET /api/v1/remedies/:remedyId/treatment-cases.
+// ListByRemedy handles GET /api/v1/remedies/:remedyId/treatment-cases?page&pageSize.
 func (h *TreatmentCaseHandler) ListByRemedy(c *gin.Context) {
 	remedyID, err := strconv.ParseInt(c.Param("remedyId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "remedy id must be a number"})
 		return
 	}
-	list, err := h.service.ListByRemedy(c.Request.Context(), remedyID)
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListByRemedyPage(c.Request.Context(), remedyID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list treatment cases"})
 		return
 	}
-	out := make([]treatmentCaseDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]treatmentCaseDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toTreatmentCaseDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
-// ListRecent handles GET /api/v1/treatment-cases?limit=N (default 12).
-func (h *TreatmentCaseHandler) ListRecent(c *gin.Context) {
-	limit := parseLimit(c.Query("limit"), 12)
-	list, err := h.service.ListRecent(c.Request.Context(), limit)
+// ListPage handles GET /api/v1/treatment-cases?page&pageSize.
+func (h *TreatmentCaseHandler) ListPage(c *gin.Context) {
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListPage(c.Request.Context(), params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list treatment cases"})
 		return
 	}
-	out := make([]treatmentCaseDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]treatmentCaseDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toTreatmentCaseDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Get handles GET /api/v1/treatment-cases/:treatmentCaseId.

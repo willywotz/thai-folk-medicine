@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 type fakeHerbRepo struct {
@@ -19,7 +20,9 @@ func (f *fakeHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb
 	return f.created, nil
 }
 func (f *fakeHerbRepo) GetByID(context.Context, int64) (herb.Herb, error) { return f.created, nil }
-func (f *fakeHerbRepo) List(context.Context) ([]herb.Herb, error)         { return nil, nil }
+func (f *fakeHerbRepo) ListPage(context.Context, listing.Params) (listing.Page[herb.Herb], error) {
+	return listing.Page[herb.Herb]{Items: []herb.Herb{{ID: 1}}, Total: 1}, nil
+}
 func (f *fakeHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb, error) {
 	return herb.Herb{ID: p.ID, NameThai: p.NameThai}, nil
 }
@@ -37,6 +40,14 @@ func TestHerbService_CreateValidatesAndPublishes(t *testing.T) {
 	assert.Equal(t, int64(1), created.ID)
 	require.Len(t, pub.events, 1)
 	assert.Equal(t, "herb.created", pub.events[0].EventName())
+}
+
+func TestListPageHerb(t *testing.T) {
+	page, err := NewHerbService(&fakeHerbRepo{}, &recordingPublisher{}).
+		ListPage(context.Background(), listing.Params{Limit: 5})
+	require.NoError(t, err)
+	assert.Equal(t, 1, page.Total)
+	assert.Len(t, page.Items, 1)
 }
 
 func TestHerbService_UpdateAndDeletePublish(t *testing.T) {

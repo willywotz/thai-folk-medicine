@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 )
 
@@ -105,43 +106,62 @@ func (r *Remedy) GetByID(ctx context.Context, id int64) (remedy.Remedy, error) {
 	return out, nil
 }
 
-// ListByHealer returns a healer's remedies (without herb links, for list views).
-func (r *Remedy) ListByHealer(ctx context.Context, healerID int64) ([]remedy.Remedy, error) {
-	rows, err := r.q.ListRemedyByHealer(ctx, healerID)
+// ListByHealerPage returns one page of a healer's remedies (without herb
+// links, for list views).
+func (r *Remedy) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	rows, err := r.q.ListRemedyByHealerPage(ctx, db.ListRemedyByHealerPageParams{
+		HealerID: healerID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[remedy.Remedy]{}, err
 	}
-	result := make([]remedy.Remedy, 0, len(rows))
+	total, err := r.q.CountRemedyByHealer(ctx, healerID)
+	if err != nil {
+		return listing.Page[remedy.Remedy]{}, err
+	}
+	items := make([]remedy.Remedy, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toRemedy(row))
+		items = append(items, toRemedy(row))
 	}
-	return result, nil
+	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
-// ListByHerb returns the remedies that use a herb.
-func (r *Remedy) ListByHerb(ctx context.Context, herbID int64) ([]remedy.Remedy, error) {
-	rows, err := r.q.ListRemedyByHerb(ctx, herbID)
+// ListByHerbPage returns one page of the remedies that use a herb.
+func (r *Remedy) ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	rows, err := r.q.ListRemedyByHerbPage(ctx, db.ListRemedyByHerbPageParams{
+		HerbID: herbID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[remedy.Remedy]{}, err
 	}
-	result := make([]remedy.Remedy, 0, len(rows))
+	total, err := r.q.CountRemedyByHerb(ctx, herbID)
+	if err != nil {
+		return listing.Page[remedy.Remedy]{}, err
+	}
+	items := make([]remedy.Remedy, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toRemedy(row))
+		items = append(items, toRemedy(row))
 	}
-	return result, nil
+	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
-// ListRecent returns the most recently created remedies.
-func (r *Remedy) ListRecent(ctx context.Context, limit int32) ([]remedy.Remedy, error) {
-	rows, err := r.q.ListRecentRemedy(ctx, limit)
+// ListPage returns one page of remedies, most recent first.
+func (r *Remedy) ListPage(ctx context.Context, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	rows, err := r.q.ListRemedyPage(ctx, db.ListRemedyPageParams{
+		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[remedy.Remedy]{}, err
 	}
-	result := make([]remedy.Remedy, 0, len(rows))
+	total, err := r.q.CountRemedyPage(ctx)
+	if err != nil {
+		return listing.Page[remedy.Remedy]{}, err
+	}
+	items := make([]remedy.Remedy, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toRemedy(row))
+		items = append(items, toRemedy(row))
 	}
-	return result, nil
+	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
 // Update changes a remedy and replaces its herb links in one transaction.
@@ -197,25 +217,6 @@ func (r *Remedy) Delete(ctx context.Context, id int64) error {
 		return remedy.ErrNotFound
 	}
 	return nil
-}
-
-// Search returns remedies whose name, symptoms, or linked herb names match.
-func (r *Remedy) Search(ctx context.Context, term string) ([]remedy.SearchResult, error) {
-	rows, err := r.q.SearchRemedy(ctx, term)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]remedy.SearchResult, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, remedy.SearchResult{
-			ID:             row.ID,
-			Name:           row.Name,
-			Symptoms:       row.Symptoms,
-			HealerID:       row.HealerID,
-			HealerFullName: row.HealerFullName,
-		})
-	}
-	return result, nil
 }
 
 func insertHerbLinks(ctx context.Context, qtx *db.Queries, remedyID int64, refs []remedy.HerbRef) error {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // Herb stores and reads herbs in Postgres.
@@ -60,17 +61,23 @@ func (r *Herb) GetByID(ctx context.Context, id int64) (herb.Herb, error) {
 	return toHerb(row), nil
 }
 
-// List returns every herb ordered by Thai name.
-func (r *Herb) List(ctx context.Context) ([]herb.Herb, error) {
-	rows, err := r.q.ListHerb(ctx)
+// ListPage returns one page of herbs, ordered by Thai name.
+func (r *Herb) ListPage(ctx context.Context, p listing.Params) (listing.Page[herb.Herb], error) {
+	rows, err := r.q.ListHerbPage(ctx, db.ListHerbPageParams{
+		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[herb.Herb]{}, err
 	}
-	result := make([]herb.Herb, 0, len(rows))
+	total, err := r.q.CountHerbPage(ctx)
+	if err != nil {
+		return listing.Page[herb.Herb]{}, err
+	}
+	items := make([]herb.Herb, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toHerb(row))
+		items = append(items, toHerb(row))
 	}
-	return result, nil
+	return listing.Page[herb.Herb]{Items: items, Total: int(total)}, nil
 }
 
 // Update changes a herb or returns herb.ErrNotFound.
@@ -105,17 +112,4 @@ func (r *Herb) Delete(ctx context.Context, id int64) error {
 		return herb.ErrNotFound
 	}
 	return nil
-}
-
-// Search returns herbs whose names or properties match the term.
-func (r *Herb) Search(ctx context.Context, term string) ([]herb.Herb, error) {
-	rows, err := r.q.SearchHerb(ctx, term)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]herb.Herb, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, toHerb(row))
-	}
-	return result, nil
 }

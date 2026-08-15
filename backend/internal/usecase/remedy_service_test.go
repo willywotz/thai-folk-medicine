@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/event"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 )
 
@@ -26,14 +27,14 @@ func (f *fakeRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remed
 func (f *fakeRemedyRepo) GetByID(context.Context, int64) (remedy.Remedy, error) {
 	return remedy.Remedy{ID: 1}, nil
 }
-func (f *fakeRemedyRepo) ListByHealer(context.Context, int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1}}, nil
+func (f *fakeRemedyRepo) ListByHealerPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
-func (f *fakeRemedyRepo) ListByHerb(context.Context, int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1}}, nil
+func (f *fakeRemedyRepo) ListByHerbPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
-func (f *fakeRemedyRepo) ListRecent(context.Context, int32) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1}}, nil
+func (f *fakeRemedyRepo) ListPage(context.Context, listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeRemedyRepo) Update(_ context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
 	return remedy.Remedy{ID: p.ID, Name: p.Name}, nil
@@ -82,10 +83,12 @@ func TestCreateRemedyNoEventOnRepoError(t *testing.T) {
 	assert.Empty(t, pub.events)
 }
 
-func TestListRecentRemedy(t *testing.T) {
-	list, err := NewRemedyService(&fakeRemedyRepo{}, &remedyRecorder{}).ListRecent(context.Background(), 5)
+func TestListPageRemedy(t *testing.T) {
+	page, err := NewRemedyService(&fakeRemedyRepo{}, &remedyRecorder{}).
+		ListPage(context.Background(), listing.Params{Limit: 5})
 	require.NoError(t, err)
-	assert.Len(t, list, 1)
+	assert.Equal(t, 1, page.Total)
+	assert.Len(t, page.Items, 1)
 }
 
 func TestDeleteRemedyPublishesEvent(t *testing.T) {

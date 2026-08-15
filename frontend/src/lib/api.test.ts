@@ -7,6 +7,7 @@ import {
   listCasesByRemedy,
   listDistricts,
   listHealersByDistrict,
+  listRemedies,
   photoUrl,
   search,
 } from "./api";
@@ -69,13 +70,30 @@ describe("getTreatmentCase", () => {
   });
 });
 
-describe("listHealersByDistrict / listCasesByRemedy", () => {
-  it("parse lists", async () => {
-    mockFetchOnce(200, [{ id: 1, districtId: 2, fullName: "หมอ ก" }]);
-    expect(await listHealersByDistrict(2)).toHaveLength(1);
+describe("listRemedies", () => {
+  it("builds a paginated query and returns a Page", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ items: [], page: 2, pageSize: 12, total: 0, totalPages: 1 }), {
+        status: 200,
+      }),
+    );
 
-    mockFetchOnce(200, [{ id: 1, remedyId: 3, patientAge: 40 }]);
-    expect(await listCasesByRemedy(3)).toHaveLength(1);
+    const res = await listRemedies({ page: 2 });
+    const url = spy.mock.calls[0][0] as string;
+
+    expect(url).toContain("/remedies?");
+    expect(url).toContain("page=2");
+    expect(res.totalPages).toBe(1);
+  });
+});
+
+describe("listHealersByDistrict / listCasesByRemedy", () => {
+  it("parse pages", async () => {
+    mockFetchOnce(200, { items: [{ id: 1, districtId: 2, fullName: "หมอ ก" }], page: 1, pageSize: 20, total: 1, totalPages: 1 });
+    expect((await listHealersByDistrict(2)).items).toHaveLength(1);
+
+    mockFetchOnce(200, { items: [{ id: 1, remedyId: 3, patientAge: 40 }], page: 1, pageSize: 20, total: 1, totalPages: 1 });
+    expect((await listCasesByRemedy(3)).items).toHaveLength(1);
   });
 });
 
@@ -86,7 +104,7 @@ describe("photoUrl", () => {
 });
 
 describe("search", () => {
-  it("encodes the term and returns the parsed body", async () => {
+  it("encodes the term, omits undefined params, and returns a Page<SearchHit>", async () => {
     const captured: string[] = [];
     vi.stubGlobal(
       "fetch",
@@ -95,16 +113,24 @@ describe("search", () => {
         return {
           ok: true,
           status: 200,
-          json: async () => ({ remedies: [{ id: 1, name: "ยา" }], healers: [] }),
+          json: async () => ({
+            items: [{ type: "remedy", id: 1, title: "ยา", subtitle: "หมอ ก", score: 1 }],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+            totalPages: 1,
+          }),
         };
       }) as unknown as typeof fetch,
     );
 
     const got = await search("ฟ้า ทะลาย");
 
-    expect(captured[0]).toContain("/search?searchTerm=");
-    expect(captured[0]).toContain(encodeURIComponent("ฟ้า ทะลาย"));
-    expect(got.remedies).toHaveLength(1);
-    expect(got.healers).toHaveLength(0);
+    const url = new URL(captured[0]);
+    expect(url.pathname).toContain("/search");
+    expect(url.searchParams.get("searchTerm")).toBe("ฟ้า ทะลาย");
+    expect(url.searchParams.has("page")).toBe(false);
+    expect(got.items).toHaveLength(1);
+    expect(got.items[0].type).toBe("remedy");
   });
 });

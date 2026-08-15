@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const countHealerByDistrict = `-- name: CountHealerByDistrict :one
+SELECT COUNT(*) FROM healer WHERE district_id = $1
+`
+
+func (q *Queries) CountHealerByDistrict(ctx context.Context, districtID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countHealerByDistrict, districtID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createHealer = `-- name: CreateHealer :one
 INSERT INTO healer (district_id, full_name, sub_district, specialty, biography)
 VALUES ($1, $2, $3, $4, $5)
@@ -79,59 +90,22 @@ func (q *Queries) GetHealer(ctx context.Context, id int64) (Healer, error) {
 	return i, err
 }
 
-const listHealerByDistrict = `-- name: ListHealerByDistrict :many
+const listHealerByDistrictPage = `-- name: ListHealerByDistrictPage :many
 SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
 FROM healer
 WHERE district_id = $1
 ORDER BY full_name
+LIMIT $3 OFFSET $2
 `
 
-func (q *Queries) ListHealerByDistrict(ctx context.Context, districtID int64) ([]Healer, error) {
-	rows, err := q.db.Query(ctx, listHealerByDistrict, districtID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Healer{}
-	for rows.Next() {
-		var i Healer
-		if err := rows.Scan(
-			&i.ID,
-			&i.DistrictID,
-			&i.FullName,
-			&i.SubDistrict,
-			&i.Specialty,
-			&i.Biography,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type ListHealerByDistrictPageParams struct {
+	DistrictID int64
+	PageOffset int32
+	PageLimit  int32
 }
 
-const searchHealer = `-- name: SearchHealer :many
-SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
-FROM healer
-WHERE full_name ILIKE '%' || $1::text || '%'
-   OR specialty ILIKE '%' || $1::text || '%'
-   OR biography ILIKE '%' || $1::text || '%'
-   OR sub_district ILIKE '%' || $1::text || '%'
-ORDER BY GREATEST(
-    similarity(full_name, $1::text),
-    similarity(specialty, $1::text),
-    similarity(biography, $1::text),
-    similarity(sub_district, $1::text)
-) DESC, full_name
-`
-
-func (q *Queries) SearchHealer(ctx context.Context, searchTerm string) ([]Healer, error) {
-	rows, err := q.db.Query(ctx, searchHealer, searchTerm)
+func (q *Queries) ListHealerByDistrictPage(ctx context.Context, arg ListHealerByDistrictPageParams) ([]Healer, error) {
+	rows, err := q.db.Query(ctx, listHealerByDistrictPage, arg.DistrictID, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

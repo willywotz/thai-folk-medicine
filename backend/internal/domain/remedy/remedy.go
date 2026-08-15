@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrNotFound means no remedy has the given id.
@@ -42,15 +44,6 @@ type Remedy struct {
 	UpdatedAt         time.Time
 }
 
-// SearchResult is a remedy match with its healer's name, for search listings.
-type SearchResult struct {
-	ID             int64
-	Name           string
-	Symptoms       string
-	HealerID       int64
-	HealerFullName string
-}
-
 // CreateParams holds the fields to create a remedy.
 type CreateParams struct {
 	HealerID          int64
@@ -77,9 +70,9 @@ type UpdateParams struct {
 type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Remedy, error)
 	GetByID(ctx context.Context, id int64) (Remedy, error)
-	ListByHealer(ctx context.Context, healerID int64) ([]Remedy, error)
-	ListByHerb(ctx context.Context, herbID int64) ([]Remedy, error)
-	ListRecent(ctx context.Context, limit int32) ([]Remedy, error)
+	ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[Remedy], error)
+	ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[Remedy], error)
+	ListPage(ctx context.Context, p listing.Params) (listing.Page[Remedy], error)
 	Update(ctx context.Context, p UpdateParams) (Remedy, error)
 	Delete(ctx context.Context, id int64) error
 }

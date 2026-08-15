@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const countHerbPage = `-- name: CountHerbPage :one
+SELECT COUNT(*) FROM herb
+`
+
+func (q *Queries) CountHerbPage(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countHerbPage)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createHerb = `-- name: CreateHerb :one
 INSERT INTO herb (name_thai, name_english, scientific_name, properties, description)
 VALUES ($1, $2, $3, $4, $5)
@@ -79,56 +90,20 @@ func (q *Queries) GetHerb(ctx context.Context, id int64) (Herb, error) {
 	return i, err
 }
 
-const listHerb = `-- name: ListHerb :many
+const listHerbPage = `-- name: ListHerbPage :many
 SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
 FROM herb
 ORDER BY name_thai
+LIMIT $2 OFFSET $1
 `
 
-func (q *Queries) ListHerb(ctx context.Context) ([]Herb, error) {
-	rows, err := q.db.Query(ctx, listHerb)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Herb{}
-	for rows.Next() {
-		var i Herb
-		if err := rows.Scan(
-			&i.ID,
-			&i.NameThai,
-			&i.NameEnglish,
-			&i.ScientificName,
-			&i.Properties,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type ListHerbPageParams struct {
+	PageOffset int32
+	PageLimit  int32
 }
 
-const searchHerb = `-- name: SearchHerb :many
-SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
-FROM herb
-WHERE name_thai ILIKE '%' || $1::text || '%'
-   OR name_english ILIKE '%' || $1::text || '%'
-   OR scientific_name ILIKE '%' || $1::text || '%'
-   OR properties ILIKE '%' || $1::text || '%'
-ORDER BY GREATEST(
-    similarity(name_thai, $1::text),
-    similarity(name_english, $1::text)
-) DESC, name_thai
-`
-
-func (q *Queries) SearchHerb(ctx context.Context, searchTerm string) ([]Herb, error) {
-	rows, err := q.db.Query(ctx, searchHerb, searchTerm)
+func (q *Queries) ListHerbPage(ctx context.Context, arg ListHerbPageParams) ([]Herb, error) {
+	rows, err := q.db.Query(ctx, listHerbPage, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

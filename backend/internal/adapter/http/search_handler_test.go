@@ -11,76 +11,55 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
-	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
-	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase/search"
 )
 
-type stubRemedyReader struct{ out []remedy.SearchResult }
+type stubSearchReader struct{ out listing.Page[search.Hit] }
 
-func (s stubRemedyReader) Search(context.Context, string) ([]remedy.SearchResult, error) {
+func (s stubSearchReader) SearchAll(context.Context, string, listing.Params) (listing.Page[search.Hit], error) {
 	return s.out, nil
 }
 
-type stubHealerReader struct{ out []healer.Healer }
-
-func (s stubHealerReader) Search(context.Context, string) ([]healer.Healer, error) {
-	return s.out, nil
-}
-
-type stubHerbReader struct{ out []herb.Herb }
-
-func (s stubHerbReader) Search(context.Context, string) ([]herb.Herb, error) {
-	return s.out, nil
-}
-
-func newSearchRouter(rr search.RemedyReader, hr search.HealerReader, hbr search.HerbReader) *gin.Engine {
+func newSearchRouter(reader search.Reader) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	public := r.Group("/api/v1")
 	protected := r.Group("/api/v1")
-	NewSearchHandler(search.NewService(rr, hr, hbr)).RegisterRoutes(public, protected)
+	NewSearchHandler(search.NewService(reader)).RegisterRoutes(public, protected)
 	return r
 }
 
-func TestSearchEndpointReturnsMatches(t *testing.T) {
-	r := newSearchRouter(
-		stubRemedyReader{out: []remedy.SearchResult{{ID: 1, Name: "ยาแก้ไข้", HealerID: 2, HealerFullName: "หมอ"}}},
-		stubHealerReader{out: []healer.Healer{{ID: 2, FullName: "หมอ", DistrictID: 3}}},
-		stubHerbReader{out: []herb.Herb{{ID: 4, NameThai: "ขิง"}}},
-	)
+func TestSearchEndpointReturnsMergedMatches(t *testing.T) {
+	r := newSearchRouter(stubSearchReader{out: listing.Page[search.Hit]{
+		Items: []search.Hit{
+			{Type: "remedy", ID: 1, Title: "ยาแก้ไข้", Subtitle: "ไข้", Score: 0.9},
+			{Type: "herb", ID: 4, Title: "ขิง", Subtitle: "Ginger", Score: 0.5},
+		},
+		Total: 2,
+	}})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?searchTerm=ยา", nil)
 	r.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusOK, w.Code)
 	var body struct {
-		Remedies []struct {
-			ID             int64  `json:"id"`
-			Name           string `json:"name"`
-			HealerFullName string `json:"healerFullName"`
-		} `json:"remedies"`
-		Healers []struct {
-			ID         int64 `json:"id"`
-			DistrictID int64 `json:"districtId"`
-		} `json:"healers"`
-		Herbs []struct {
-			ID       int64  `json:"id"`
-			NameThai string `json:"nameThai"`
-		} `json:"herbs"`
+		Items []struct {
+			Type  string `json:"type"`
+			ID    int64  `json:"id"`
+			Title string `json:"title"`
+		} `json:"items"`
+		Total int `json:"total"`
 	}
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
-	require.Len(t, body.Remedies, 1)
-	assert.Equal(t, "หมอ", body.Remedies[0].HealerFullName)
-	require.Len(t, body.Healers, 1)
-	assert.Equal(t, int64(3), body.Healers[0].DistrictID)
-	require.Len(t, body.Herbs, 1)
-	assert.Equal(t, "ขิง", body.Herbs[0].NameThai)
+	require.Len(t, body.Items, 2)
+	assert.Equal(t, "remedy", body.Items[0].Type)
+	assert.Equal(t, "herb", body.Items[1].Type)
+	assert.Equal(t, 2, body.Total)
 }
 
 func TestSearchEndpointRejectsShortTerm(t *testing.T) {
-	r := newSearchRouter(stubRemedyReader{}, stubHealerReader{}, stubHerbReader{})
+	r := newSearchRouter(stubSearchReader{})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/search?searchTerm=ก", nil)
 	r.ServeHTTP(w, req)

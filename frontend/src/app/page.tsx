@@ -5,16 +5,18 @@ import { RecordCard } from "@/components/RecordCard";
 import { SearchBox } from "@/components/SearchBox";
 import { SectionHead } from "@/components/SectionHead";
 import { formatThaiDate } from "@/lib/format";
-import { firstPhotoUrl, listHerbs, listProvinces, listRecentCases, listRecentRemedies } from "@/lib/api";
+import { firstPhotoUrl, listHerbs, listProvinces, listRemedies, listTreatmentCases } from "@/lib/api";
 
 export default async function HomePage() {
-  const [herbs, remedies, cases, provinces] = await Promise.all([
-    listHerbs(),
-    listRecentRemedies(6),
-    listRecentCases(6),
+  const [herbPage, remedyPage, casePage, provinces] = await Promise.all([
+    listHerbs({ pageSize: 4 }),
+    listRemedies({ pageSize: 6 }),
+    listTreatmentCases({ pageSize: 6 }),
     listProvinces(),
   ]);
-  const shownHerbs = herbs.slice(0, 4);
+  const shownHerbs = herbPage.items;
+  const remedies = remedyPage.items;
+  const cases = casePage.items;
   const [herbCovers, remedyCovers, caseCovers] = await Promise.all([
     Promise.all(shownHerbs.map((h) => firstPhotoUrl("herb", h.id).catch(() => undefined))),
     Promise.all(remedies.map((r) => firstPhotoUrl("remedy", r.id).catch(() => undefined))),
@@ -32,7 +34,7 @@ export default async function HomePage() {
       </div>
 
       <SectionHead titleThai="สมุนไพร" titleEnglish="Herbs" href="/herbs" />
-      {herbs.length === 0 ? (
+      {shownHerbs.length === 0 ? (
         <EmptyState message="No herbs yet." />
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">

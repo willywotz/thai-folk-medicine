@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/treatmentcase"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
@@ -27,11 +28,11 @@ func (s *stubCaseRepo) GetByID(_ context.Context, id int64) (treatmentcase.Treat
 	}
 	return treatmentcase.TreatmentCase{ID: id}, nil
 }
-func (s *stubCaseRepo) ListByRemedy(_ context.Context, remedyID int64) ([]treatmentcase.TreatmentCase, error) {
-	return []treatmentcase.TreatmentCase{{ID: 1, RemedyID: remedyID}}, nil
+func (s *stubCaseRepo) ListByRemedyPage(_ context.Context, remedyID int64, _ listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	return listing.Page[treatmentcase.TreatmentCase]{Items: []treatmentcase.TreatmentCase{{ID: 1, RemedyID: remedyID}}, Total: 1}, nil
 }
-func (s *stubCaseRepo) ListRecent(context.Context, int32) ([]treatmentcase.TreatmentCase, error) {
-	return []treatmentcase.TreatmentCase{{ID: 1}}, nil
+func (s *stubCaseRepo) ListPage(context.Context, listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	return listing.Page[treatmentcase.TreatmentCase]{Items: []treatmentcase.TreatmentCase{{ID: 1}}, Total: 1}, nil
 }
 func (s *stubCaseRepo) Update(_ context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	return treatmentcase.TreatmentCase{ID: p.ID}, nil
@@ -84,12 +85,16 @@ func TestGetCaseNotFound(t *testing.T) {
 func TestListRecentCaseEndpoint(t *testing.T) {
 	router := newCaseRouter(&stubCaseRepo{})
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/treatment-cases?limit=5", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/treatment-cases?page=1&pageSize=5", nil)
 	router.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
+	var body struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, 1, body.Total)
 }
 
 func TestListCaseByRemedyEndpoint(t *testing.T) {
@@ -98,8 +103,12 @@ func TestListCaseByRemedyEndpoint(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/remedies/2/treatment-cases", nil)
 	router.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
-	assert.Equal(t, float64(2), got[0]["remedyId"])
+	var body struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, float64(2), body.Items[0]["remedyId"])
+	assert.Equal(t, 1, body.Total)
 }

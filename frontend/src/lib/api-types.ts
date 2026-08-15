@@ -74,31 +74,18 @@ export interface Photo {
   caption: string;
 }
 
-export interface RemedySearchResult {
-  id: number;
-  name: string;
-  symptoms: string;
-  healerId: number;
-  healerFullName: string;
+export interface Page<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
-export interface HealerSearchResult {
+export interface SearchHit {
+  type: "remedy" | "healer" | "herb";
   id: number;
-  fullName: string;
-  specialty: string;
-  subDistrict: string;
-  districtId: number;
-}
-
-export interface HerbSearchResult {
-  id: number;
-  nameThai: string;
-  nameEnglish: string;
-  scientificName: string;
-}
-
-export interface SearchResponse {
-  remedies: RemedySearchResult[];
-  healers: HealerSearchResult[];
-  herbs: HerbSearchResult[];
+  title: string;
+  subtitle: string;
+  score: number;
 }

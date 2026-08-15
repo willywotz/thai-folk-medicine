@@ -10,13 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
 // RemedyReader lists remedies that use a herb (for the herb profile page).
 type RemedyReader interface {
-	ListByHerb(ctx context.Context, herbID int64) ([]remedy.Remedy, error)
+	ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[remedy.Remedy], error)
 }
 
 // HerbHandler serves the herb read and write endpoints.
@@ -72,18 +73,19 @@ type herbRequest struct {
 	Description    string `json:"description"`
 }
 
-// List handles GET /api/v1/herbs.
+// List handles GET /api/v1/herbs?page&pageSize.
 func (h *HerbHandler) List(c *gin.Context) {
-	list, err := h.service.List(c.Request.Context())
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListPage(c.Request.Context(), params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list herbs"})
 		return
 	}
-	out := make([]herbDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]herbDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toHerbDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Get handles GET /api/v1/herbs/:herbId.
@@ -105,23 +107,24 @@ func (h *HerbHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, toHerbDTO(found))
 }
 
-// ListRemedies handles GET /api/v1/herbs/:herbId/remedies.
+// ListRemedies handles GET /api/v1/herbs/:herbId/remedies?page&pageSize.
 func (h *HerbHandler) ListRemedies(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("herbId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "herb id must be a number"})
 		return
 	}
-	list, err := h.remedyReader.ListByHerb(c.Request.Context(), id)
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.remedyReader.ListByHerbPage(c.Request.Context(), id, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies for herb"})
 		return
 	}
-	out := make([]remedyDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]remedyDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toRemedyDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Create handles POST /api/v1/herbs.

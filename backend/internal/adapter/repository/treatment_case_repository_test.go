@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/treatmentcase"
 )
@@ -45,9 +46,9 @@ func TestTreatmentCaseCreateGetListUpdateDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "female", got.PatientSex)
 
-	list, err := repo.ListByRemedy(ctx, remedyID)
+	page, err := repo.ListByRemedyPage(ctx, remedyID, listing.Params{Limit: 10})
 	require.NoError(t, err)
-	assert.Len(t, list, 1)
+	assert.Len(t, page.Items, 1)
 
 	updated, err := repo.Update(ctx, treatmentcase.UpdateParams{
 		ID: created.ID, PatientAge: 46, PatientSex: "female", Result: "ดีขึ้น", TreatedOn: day,
@@ -61,24 +62,40 @@ func TestTreatmentCaseCreateGetListUpdateDelete(t *testing.T) {
 	assert.True(t, errors.Is(err, treatmentcase.ErrNotFound))
 }
 
-func TestTreatmentCaseRepository_ListRecent(t *testing.T) {
+func TestTreatmentCaseRepository_ListPage_OffsetWindow(t *testing.T) {
 	ctx, pool := newTestPoolConn(t)
 	healerID, remedyID := makeRemedy(t, ctx, pool)
 	repo := NewTreatmentCase(db.New(pool))
+	for i := range 3 {
+		_, err := repo.Create(ctx, treatmentcase.CreateParams{
+			RemedyID: remedyID, HealerID: healerID, PatientSex: "male",
+			TreatedOn: time.Date(2026, time.Month(i+1), 1, 0, 0, 0, 0, time.UTC),
+		})
+		require.NoError(t, err)
+	}
 
-	_, err := repo.Create(ctx, treatmentcase.CreateParams{
-		RemedyID: remedyID, HealerID: healerID, PatientSex: "male", TreatedOn: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
-	})
+	page2, err := repo.ListPage(ctx, listing.Params{Limit: 2, Offset: 2})
 	require.NoError(t, err)
-	_, err = repo.Create(ctx, treatmentcase.CreateParams{
-		RemedyID: remedyID, HealerID: healerID, PatientSex: "female", TreatedOn: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
-	})
-	require.NoError(t, err)
+	assert.Equal(t, 3, page2.Total)
+	assert.Len(t, page2.Items, 1)
+}
 
-	list, err := repo.ListRecent(ctx, 1)
+func TestTreatmentCaseRepository_ListByRemedyPage_OffsetWindow(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	healerID, remedyID := makeRemedy(t, ctx, pool)
+	repo := NewTreatmentCase(db.New(pool))
+	for i := range 3 {
+		_, err := repo.Create(ctx, treatmentcase.CreateParams{
+			RemedyID: remedyID, HealerID: healerID, PatientSex: "male",
+			TreatedOn: time.Date(2026, time.Month(i+1), 1, 0, 0, 0, 0, time.UTC),
+		})
+		require.NoError(t, err)
+	}
+
+	page2, err := repo.ListByRemedyPage(ctx, remedyID, listing.Params{Limit: 2, Offset: 2})
 	require.NoError(t, err)
-	require.Len(t, list, 1)
-	assert.Equal(t, "female", list[0].PatientSex)
+	assert.Equal(t, 3, page2.Total)
+	assert.Len(t, page2.Items, 1)
 }
 
 func TestDeleteRemedyWithCaseReturnsReferenced(t *testing.T) {

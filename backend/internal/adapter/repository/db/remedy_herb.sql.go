@@ -9,6 +9,20 @@ import (
 	"context"
 )
 
+const countRemedyByHerb = `-- name: CountRemedyByHerb :one
+SELECT COUNT(*)
+FROM remedy r
+JOIN remedy_herb rh ON rh.remedy_id = r.id
+WHERE rh.herb_id = $1
+`
+
+func (q *Queries) CountRemedyByHerb(ctx context.Context, herbID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyByHerb, herbID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteRemedyHerbByRemedy = `-- name: DeleteRemedyHerbByRemedy :exec
 DELETE FROM remedy_herb WHERE remedy_id = $1
 `
@@ -80,16 +94,23 @@ func (q *Queries) ListHerbByRemedy(ctx context.Context, remedyID int64) ([]ListH
 	return items, nil
 }
 
-const listRemedyByHerb = `-- name: ListRemedyByHerb :many
+const listRemedyByHerbPage = `-- name: ListRemedyByHerbPage :many
 SELECT r.id, r.healer_id, r.name, r.symptoms, r.preparation_method, r.usage, r.note, r.created_at, r.updated_at
 FROM remedy r
 JOIN remedy_herb rh ON rh.remedy_id = r.id
 WHERE rh.herb_id = $1
 ORDER BY r.name
+LIMIT $3 OFFSET $2
 `
 
-func (q *Queries) ListRemedyByHerb(ctx context.Context, herbID int64) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyByHerb, herbID)
+type ListRemedyByHerbPageParams struct {
+	HerbID     int64
+	PageOffset int32
+	PageLimit  int32
+}
+
+func (q *Queries) ListRemedyByHerbPage(ctx context.Context, arg ListRemedyByHerbPageParams) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRemedyByHerbPage, arg.HerbID, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

@@ -2,10 +2,11 @@ import type {
   District,
   Healer,
   Herb,
+  Page,
   Photo,
   Province,
   Remedy,
-  SearchResponse,
+  SearchHit,
   TreatmentCase,
 } from "./api-types";
 
@@ -41,6 +42,16 @@ async function getOrNull<T>(path: string): Promise<T | null> {
   }
 }
 
+/** buildQuery renders a `?a=1&b=2` string, skipping any undefined value. */
+function buildQuery(opts: object): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(opts) as [string, string | number | undefined][]) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 export async function listProvinces(): Promise<Province[]> {
   return getJson<Province[]>("/provinces");
 }
@@ -54,48 +65,65 @@ export async function listDistricts(provinceId: number): Promise<District[]> {
   return getJson<District[]>(`/provinces/${provinceId}/districts`);
 }
 
-export async function listHealersByDistrict(districtId: number): Promise<Healer[]> {
-  return getJson<Healer[]>(`/districts/${districtId}/healers`);
+interface PageOptions {
+  page?: number;
+  pageSize?: number;
+}
+
+export async function listHealersByDistrict(
+  districtId: number,
+  opts: PageOptions = {},
+): Promise<Page<Healer>> {
+  return getJson<Page<Healer>>(`/districts/${districtId}/healers${buildQuery(opts)}`);
 }
 
 export async function getHealer(id: number): Promise<Healer | null> {
   return getOrNull<Healer>(`/healers/${id}`);
 }
 
-export async function listRemediesByHealer(healerId: number): Promise<Remedy[]> {
-  return getJson<Remedy[]>(`/healers/${healerId}/remedies`);
+export async function listRemediesByHealer(
+  healerId: number,
+  opts: PageOptions = {},
+): Promise<Page<Remedy>> {
+  return getJson<Page<Remedy>>(`/healers/${healerId}/remedies${buildQuery(opts)}`);
 }
 
 export async function getRemedy(id: number): Promise<Remedy | null> {
   return getOrNull<Remedy>(`/remedies/${id}`);
 }
 
-export async function listCasesByRemedy(remedyId: number): Promise<TreatmentCase[]> {
-  return getJson<TreatmentCase[]>(`/remedies/${remedyId}/treatment-cases`);
+export async function listCasesByRemedy(
+  remedyId: number,
+  opts: PageOptions = {},
+): Promise<Page<TreatmentCase>> {
+  return getJson<Page<TreatmentCase>>(`/remedies/${remedyId}/treatment-cases${buildQuery(opts)}`);
 }
 
 export async function getTreatmentCase(id: number): Promise<TreatmentCase | null> {
   return getOrNull<TreatmentCase>(`/treatment-cases/${id}`);
 }
 
-export async function listHerbs(): Promise<Herb[]> {
-  return getJson<Herb[]>("/herbs");
+export async function listHerbs(opts: PageOptions = {}): Promise<Page<Herb>> {
+  return getJson<Page<Herb>>(`/herbs${buildQuery(opts)}`);
 }
 
 export async function getHerb(id: number): Promise<Herb | null> {
   return getOrNull<Herb>(`/herbs/${id}`);
 }
 
-export async function listRemediesByHerb(herbId: number): Promise<Remedy[]> {
-  return getJson<Remedy[]>(`/herbs/${herbId}/remedies`);
+export async function listRemediesByHerb(
+  herbId: number,
+  opts: PageOptions = {},
+): Promise<Page<Remedy>> {
+  return getJson<Page<Remedy>>(`/herbs/${herbId}/remedies${buildQuery(opts)}`);
 }
 
-export async function listRecentRemedies(limit = 6): Promise<Remedy[]> {
-  return getJson<Remedy[]>(`/remedies?limit=${limit}`);
+export async function listRemedies(opts: PageOptions = {}): Promise<Page<Remedy>> {
+  return getJson<Page<Remedy>>(`/remedies${buildQuery(opts)}`);
 }
 
-export async function listRecentCases(limit = 6): Promise<TreatmentCase[]> {
-  return getJson<TreatmentCase[]>(`/treatment-cases?limit=${limit}`);
+export async function listTreatmentCases(opts: PageOptions = {}): Promise<Page<TreatmentCase>> {
+  return getJson<Page<TreatmentCase>>(`/treatment-cases${buildQuery(opts)}`);
 }
 
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */
@@ -118,6 +146,6 @@ export async function firstPhotoUrl(ownerType: string, ownerId: number): Promise
   return photos[0] ? photoUrl(photos[0].id) : undefined;
 }
 
-export async function search(term: string): Promise<SearchResponse> {
-  return getJson<SearchResponse>(`/search?searchTerm=${encodeURIComponent(term)}`);
+export async function search(term: string, opts: PageOptions = {}): Promise<Page<SearchHit>> {
+  return getJson<Page<SearchHit>>(`/search${buildQuery({ searchTerm: term, ...opts })}`);
 }

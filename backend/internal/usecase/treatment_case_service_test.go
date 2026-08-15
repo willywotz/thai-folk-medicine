@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/event"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/treatmentcase"
 )
 
@@ -24,11 +25,11 @@ func (f *fakeCaseRepo) Create(_ context.Context, p treatmentcase.CreateParams) (
 func (f *fakeCaseRepo) GetByID(context.Context, int64) (treatmentcase.TreatmentCase, error) {
 	return treatmentcase.TreatmentCase{ID: 1}, nil
 }
-func (f *fakeCaseRepo) ListByRemedy(context.Context, int64) ([]treatmentcase.TreatmentCase, error) {
-	return []treatmentcase.TreatmentCase{{ID: 1}}, nil
+func (f *fakeCaseRepo) ListByRemedyPage(context.Context, int64, listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	return listing.Page[treatmentcase.TreatmentCase]{Items: []treatmentcase.TreatmentCase{{ID: 1}}, Total: 1}, nil
 }
-func (f *fakeCaseRepo) ListRecent(context.Context, int32) ([]treatmentcase.TreatmentCase, error) {
-	return []treatmentcase.TreatmentCase{{ID: 1}}, nil
+func (f *fakeCaseRepo) ListPage(context.Context, listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	return listing.Page[treatmentcase.TreatmentCase]{Items: []treatmentcase.TreatmentCase{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeCaseRepo) Update(_ context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	return treatmentcase.TreatmentCase{ID: p.ID}, nil
@@ -83,9 +84,9 @@ func TestCreateCaseNoEventOnRepoError(t *testing.T) {
 }
 
 func TestListRecentCase(t *testing.T) {
-	list, err := NewTreatmentCaseService(&fakeCaseRepo{}, &caseRecorder{}).ListRecent(context.Background(), 5)
+	page, err := NewTreatmentCaseService(&fakeCaseRepo{}, &caseRecorder{}).ListPage(context.Background(), listing.Params{Limit: 5})
 	require.NoError(t, err)
-	assert.Len(t, list, 1)
+	assert.Len(t, page.Items, 1)
 }
 
 func TestDeleteCasePublishesEvent(t *testing.T) {

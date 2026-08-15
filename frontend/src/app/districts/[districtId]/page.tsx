@@ -3,18 +3,23 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { Pagination } from "@/components/Pagination";
 import { RecordCard } from "@/components/RecordCard";
 import { SectionHead } from "@/components/SectionHead";
 import { listDistricts, listHealersByDistrict, listProvinces } from "@/lib/api";
 
 export default async function DistrictPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ districtId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { districtId } = await params;
+  const { page: pageParam } = await searchParams;
   const id = Number(districtId);
   if (!Number.isInteger(id) || id <= 0) notFound();
+  const page = Number(pageParam) || 1;
 
   const provinces = await listProvinces();
   const districtLists = await Promise.all(provinces.map((p) => listDistricts(p.id)));
@@ -22,7 +27,8 @@ export default async function DistrictPage({
   if (!district) notFound();
   const province = provinces.find((p) => p.id === district.provinceId);
 
-  const healers = await listHealersByDistrict(id);
+  const healerPage = await listHealersByDistrict(id, { page });
+  const healers = healerPage.items;
 
   return (
     <section>
@@ -54,6 +60,14 @@ export default async function DistrictPage({
           ))}
         </div>
       )}
+      <div className="mt-6">
+        <Pagination
+          page={healerPage.page}
+          totalPages={healerPage.totalPages}
+          searchParams={{ page: pageParam }}
+          basePath={`/districts/${id}`}
+        />
+      </div>
     </section>
   );
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/treatmentcase"
 )
 
@@ -40,14 +41,14 @@ func (s *TreatmentCaseService) Get(ctx context.Context, id int64) (treatmentcase
 	return s.repo.GetByID(ctx, id)
 }
 
-// ListByRemedy returns the cases for one remedy.
-func (s *TreatmentCaseService) ListByRemedy(ctx context.Context, remedyID int64) ([]treatmentcase.TreatmentCase, error) {
-	return s.repo.ListByRemedy(ctx, remedyID)
+// ListByRemedyPage returns one page of cases for one remedy.
+func (s *TreatmentCaseService) ListByRemedyPage(ctx context.Context, remedyID int64, p listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	return s.repo.ListByRemedyPage(ctx, remedyID, p)
 }
 
-// ListRecent returns the most recently treated cases.
-func (s *TreatmentCaseService) ListRecent(ctx context.Context, limit int) ([]treatmentcase.TreatmentCase, error) {
-	return s.repo.ListRecent(ctx, int32(limit))
+// ListPage returns one page of the most recently treated cases.
+func (s *TreatmentCaseService) ListPage(ctx context.Context, p listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	return s.repo.ListPage(ctx, p)
 }
 
 // Update validates and changes a case, then publishes UpdatedEvent.

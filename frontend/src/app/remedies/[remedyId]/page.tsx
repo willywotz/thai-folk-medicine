@@ -6,25 +6,31 @@ import { ContentBlock } from "@/components/ContentBlock";
 import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
+import { Pagination } from "@/components/Pagination";
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
 import { firstPhotoUrl, getRemedy, listCasesByRemedy } from "@/lib/api";
 
 export default async function RemedyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ remedyId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { remedyId } = await params;
+  const { page: pageParam } = await searchParams;
   const id = Number(remedyId);
   if (!Number.isInteger(id) || id <= 0) notFound();
+  const page = Number(pageParam) || 1;
 
   const remedy = await getRemedy(id);
   if (!remedy) notFound();
 
-  const [cases, coverUrl] = await Promise.all([
-    listCasesByRemedy(id),
+  const [casePage, coverUrl] = await Promise.all([
+    listCasesByRemedy(id, { page }),
     firstPhotoUrl("remedy", id).catch(() => undefined),
   ]);
+  const cases = casePage.items;
 
   return (
     <section>
@@ -96,6 +102,14 @@ export default async function RemedyPage({
               ))}
             </ul>
           )}
+          <div className="mt-4">
+            <Pagination
+              page={casePage.page}
+              totalPages={casePage.totalPages}
+              searchParams={{ page: pageParam }}
+              basePath={`/remedies/${id}`}
+            />
+          </div>
         </div>
         <aside className="md:sticky md:top-24">
           <FactPanel

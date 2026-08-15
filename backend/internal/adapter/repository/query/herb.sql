@@ -8,10 +8,14 @@ SELECT id, name_thai, name_english, scientific_name, properties, description, cr
 FROM herb
 WHERE id = $1;
 
--- name: ListHerb :many
+-- name: ListHerbPage :many
 SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
 FROM herb
-ORDER BY name_thai;
+ORDER BY name_thai
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountHerbPage :one
+SELECT COUNT(*) FROM herb;
 
 -- name: UpdateHerb :one
 UPDATE herb
@@ -21,15 +25,3 @@ RETURNING id, name_thai, name_english, scientific_name, properties, description,
 
 -- name: DeleteHerb :execrows
 DELETE FROM herb WHERE id = $1;
-
--- name: SearchHerb :many
-SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
-FROM herb
-WHERE name_thai ILIKE '%' || @search_term::text || '%'
-   OR name_english ILIKE '%' || @search_term::text || '%'
-   OR scientific_name ILIKE '%' || @search_term::text || '%'
-   OR properties ILIKE '%' || @search_term::text || '%'
-ORDER BY GREATEST(
-    similarity(name_thai, @search_term::text),
-    similarity(name_english, @search_term::text)
-) DESC, name_thai;

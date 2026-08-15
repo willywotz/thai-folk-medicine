@@ -2,11 +2,20 @@ import Link from "next/link";
 
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
+import { Pagination } from "@/components/Pagination";
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
-import { listRecentCases } from "@/lib/api";
+import { listTreatmentCases } from "@/lib/api";
 
-export default async function TreatmentCasesPage() {
-  const cases = await listRecentCases(50);
+export default async function TreatmentCasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Number(pageParam) || 1;
+
+  const casePage = await listTreatmentCases({ page });
+  const cases = casePage.items;
   return (
     <section>
       <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "เคสการรักษา" }]} />
@@ -28,6 +37,14 @@ export default async function TreatmentCasesPage() {
           ))}
         </ul>
       )}
+      <div className="mt-6">
+        <Pagination
+          page={casePage.page}
+          totalPages={casePage.totalPages}
+          searchParams={{ page: pageParam }}
+          basePath="/treatment-cases"
+        />
+      </div>
     </section>
   );
 }

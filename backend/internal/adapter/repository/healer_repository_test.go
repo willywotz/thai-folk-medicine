@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // firstDistrictID returns a seeded Yasothon district id for foreign keys.
@@ -64,9 +65,25 @@ func TestHealerListByDistrict(t *testing.T) {
 	_, err = repo.Create(ctx, healer.CreateParams{DistrictID: districtID, FullName: "หมอ ข"})
 	require.NoError(t, err)
 
-	list, err := repo.ListByDistrict(ctx, districtID)
+	page, err := repo.ListByDistrictPage(ctx, districtID, listing.Params{Limit: 10})
 	require.NoError(t, err)
-	assert.Len(t, list, 2)
+	assert.Len(t, page.Items, 2)
+}
+
+func TestHealerRepository_ListByDistrictPage_OffsetWindow(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	districtID := firstDistrictID(t, ctx, NewLocation(queries))
+	repo := NewHealer(queries)
+
+	for _, name := range []string{"หมอ ก", "หมอ ข", "หมอ ค"} {
+		_, err := repo.Create(ctx, healer.CreateParams{DistrictID: districtID, FullName: name})
+		require.NoError(t, err)
+	}
+
+	page2, err := repo.ListByDistrictPage(ctx, districtID, listing.Params{Limit: 2, Offset: 2})
+	require.NoError(t, err)
+	assert.Equal(t, 3, page2.Total)
+	assert.Len(t, page2.Items, 1)
 }
 
 func TestHealerUpdateAndDelete(t *testing.T) {

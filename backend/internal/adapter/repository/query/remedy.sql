@@ -8,17 +8,24 @@ SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_a
 FROM remedy
 WHERE id = $1;
 
--- name: ListRemedyByHealer :many
+-- name: ListRemedyByHealerPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
-WHERE healer_id = $1
-ORDER BY name;
+WHERE healer_id = sqlc.arg('healer_id')
+ORDER BY name
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
--- name: ListRecentRemedy :many
+-- name: CountRemedyByHealer :one
+SELECT COUNT(*) FROM remedy WHERE healer_id = sqlc.arg('healer_id');
+
+-- name: ListRemedyPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 ORDER BY created_at DESC, id DESC
-LIMIT $1;
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountRemedyPage :one
+SELECT COUNT(*) FROM remedy;
 
 -- name: UpdateRemedy :one
 UPDATE remedy
@@ -28,21 +35,3 @@ RETURNING id, healer_id, name, symptoms, preparation_method, usage, note, create
 
 -- name: DeleteRemedy :execrows
 DELETE FROM remedy WHERE id = $1;
-
--- name: SearchRemedy :many
-SELECT r.id, r.name, r.symptoms, r.healer_id, h.full_name AS healer_full_name
-FROM remedy r
-JOIN healer h ON h.id = r.healer_id
-LEFT JOIN remedy_herb rh ON rh.remedy_id = r.id
-LEFT JOIN herb hb ON hb.id = rh.herb_id
-WHERE r.name ILIKE '%' || @search_term::text || '%'
-   OR r.symptoms ILIKE '%' || @search_term::text || '%'
-   OR hb.name_thai ILIKE '%' || @search_term::text || '%'
-   OR hb.name_english ILIKE '%' || @search_term::text || '%'
-GROUP BY r.id, r.name, r.symptoms, r.healer_id, h.full_name
-ORDER BY GREATEST(
-    similarity(r.name, @search_term::text),
-    similarity(r.symptoms, @search_term::text),
-    max(similarity(hb.name_thai, @search_term::text)),
-    max(similarity(hb.name_english, @search_term::text))
-) DESC, r.name;

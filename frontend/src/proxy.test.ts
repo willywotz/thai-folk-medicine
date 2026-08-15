@@ -62,4 +62,12 @@ describe("proxy locale", () => {
     const res = proxy(request("/en/login", "session=token"));
     expect(res.headers.get("location")).toBe("http://localhost:3000/en/staff");
   });
+  it("passes through a locale-prefix trap that only starts with staff", () => {
+    const res = proxy(request("/th/staffing"));
+    expect(res.headers.get("location")).toBeNull();
+  });
+  it("redirects localed /staff to login without a session", () => {
+    const res = proxy(request("/en/staff"));
+    expect(res.headers.get("location")).toBe("http://localhost:3000/en/login");
+  });
 });

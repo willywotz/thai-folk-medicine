@@ -4,6 +4,9 @@ export const th = {
     home: "หน้าแรก",
     edit: "✎ แก้ไข",
     search: "ค้นหา",
+    previous: "ก่อนหน้า",
+    next: "ถัดไป",
+    pageXofY: (x: number, y: number) => `หน้า ${x} จาก ${y}`,
   },
   nav: {
     // brand mark stays Thai in both locales (site name)
@@ -29,6 +32,7 @@ export const th = {
     usedIn: "ตำรับยาที่ใช้สมุนไพรนี้",
     quickFacts: "ข้อมูลสมุนไพร · Quick facts",
     scientificName: "ชื่อวิทยาศาสตร์",
+    noRemedies: "ยังไม่มีตำรับยาที่ใช้สมุนไพรนี้",
   },
   remedy: {
     title: "ตำรับยา",
@@ -40,17 +44,21 @@ export const th = {
     result: (v: string) => `ผลการรักษา: ${v}`,
     noteLine: (v: string) => `หมายเหตุ: ${v}`,
     quickFacts: "ข้อมูลตำรับยา · Quick facts",
+    noCases: "ยังไม่มีเคสการรักษาสำหรับตำรับยานี้",
   },
   healer: {
     crumb: "หมอพื้นบ้าน",
     biography: "ประวัติ",
     remedies: "ตำรับยาของหมอ",
+    noRemedies: "ยังไม่มีตำรับยาของหมอท่านนี้",
   },
   district: {
     crumbList: "พื้นที่",
     intro: "เลือกอำเภอเพื่อดูหมอพื้นบ้านในพื้นที่",
     provincePrefix: (name: string) => `จังหวัด${name}`,
     healers: "หมอพื้นบ้านในพื้นที่นี้",
+    noData: "ยังไม่มีข้อมูลจังหวัด",
+    noHealers: "ยังไม่มีหมอพื้นบ้านในอำเภอนี้",
   },
   search: {
     title: "ค้นหา (Search)",
@@ -162,6 +170,20 @@ export const th = {
     removePending: "นำออก",
     logout: "ออกจากระบบ",
     herbsSharedNote: "สมุนไพรใช้ร่วมกันในทุกตำรับยา การแก้ไขจะมีผลกับทุกตำรับยาที่ใช้สมุนไพรนี้",
+    link: {
+      remedies: "ตำรับยา",
+      cases: "เคส",
+      usedIn: "ใช้ในตำรับ",
+      districts: "อำเภอ",
+    },
+    count: {
+      healers: (n: number) => `${n} คน`,
+      districts: (n: number) => `${n} อำเภอ`,
+      provinces: (n: number) => `${n} จังหวัด`,
+      remedies: (n: number) => `${n} ตำรับ`,
+      herbs: (n: number) => `${n} ชนิด`,
+      cases: (n: number) => `${n} เคส`,
+    },
     form: {
       remedy: "ตำรับยา", searchRemedy: "ค้นหาตำรับยา",
       patientSex: "เพศ", patientAge: "อายุ", dateTreated: "วันที่รักษา",
@@ -172,6 +194,7 @@ export const th = {
       healer: "หมอพื้นบ้าน", searchHealer: "ค้นหาหมอ", remedyName: "ชื่อตำรับยา",
       symptomsTreated: "สรรพคุณ", preparation: "วิธีปรุง", usage: "วิธีใช้",
       herbs: "ตัวยา", searchHerb: "ค้นหาสมุนไพร", noHerbsFound: "ไม่พบสมุนไพร", amount: "ปริมาณ",
+      addHerb: "+ เพิ่มสมุนไพร",
     },
   },
   login: {

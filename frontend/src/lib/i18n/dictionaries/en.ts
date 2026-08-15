@@ -5,6 +5,9 @@ export const en: Dictionary = {
     home: "Home",
     edit: "✎ Edit",
     search: "Search",
+    previous: "Previous",
+    next: "Next",
+    pageXofY: (x: number, y: number) => `Page ${x} of ${y}`,
   },
   nav: {
     forStaff: "For staff",
@@ -29,6 +32,7 @@ export const en: Dictionary = {
     usedIn: "Remedies that use this herb",
     quickFacts: "Herb info · Quick facts",
     scientificName: "Scientific name",
+    noRemedies: "No remedies use this herb yet.",
   },
   remedy: {
     title: "Remedies",
@@ -40,13 +44,21 @@ export const en: Dictionary = {
     result: (v: string) => `Result: ${v}`,
     noteLine: (v: string) => `Note: ${v}`,
     quickFacts: "Remedy info · Quick facts",
+    noCases: "No treatment cases recorded for this remedy yet.",
   },
-  healer: { crumb: "Healer", biography: "Biography", remedies: "Remedies" },
+  healer: {
+    crumb: "Healer",
+    biography: "Biography",
+    remedies: "Remedies",
+    noRemedies: "No remedies recorded for this healer yet.",
+  },
   district: {
     crumbList: "Areas",
     intro: "Choose a district to see its local healers",
     provincePrefix: (name: string) => `${name} Province`,
     healers: "Healers in this area",
+    noData: "No province data yet.",
+    noHealers: "No healers recorded in this district yet.",
   },
   search: {
     title: "Search",
@@ -153,6 +165,20 @@ export const en: Dictionary = {
     removePending: "Remove",
     logout: "Log out",
     herbsSharedNote: "Herbs are shared across all remedies. Editing one updates every remedy that uses it.",
+    link: {
+      remedies: "Remedies",
+      cases: "Cases",
+      usedIn: "Used in",
+      districts: "Districts",
+    },
+    count: {
+      healers: (n: number) => `${n} ${n === 1 ? "healer" : "healers"}`,
+      districts: (n: number) => `${n} ${n === 1 ? "district" : "districts"}`,
+      provinces: (n: number) => `${n} ${n === 1 ? "province" : "provinces"}`,
+      remedies: (n: number) => `${n} ${n === 1 ? "remedy" : "remedies"}`,
+      herbs: (n: number) => `${n} ${n === 1 ? "herb" : "herbs"}`,
+      cases: (n: number) => `${n} ${n === 1 ? "case" : "cases"}`,
+    },
     form: {
       remedy: "Remedy", searchRemedy: "Search remedy",
       patientSex: "Patient sex", patientAge: "Patient age", dateTreated: "Date treated",
@@ -163,6 +189,7 @@ export const en: Dictionary = {
       healer: "Healer", searchHealer: "Search healer", remedyName: "Remedy name",
       symptomsTreated: "Symptoms treated", preparation: "Preparation", usage: "Usage",
       herbs: "Herbs", searchHerb: "Search herb", noHerbsFound: "No herbs found", amount: "Amount",
+      addHerb: "+ add herb",
     },
   },
   login: {

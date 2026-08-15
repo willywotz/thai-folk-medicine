@@ -1,4 +1,15 @@
-import type { Activity, Healer, Herb, Page, Photo, Remedy, Stats, TreatmentCase } from "@/lib/api-types";
+import type {
+  Activity,
+  District,
+  Healer,
+  Herb,
+  Page,
+  Photo,
+  Province,
+  Remedy,
+  Stats,
+  TreatmentCase,
+} from "@/lib/api-types";
 import type { HealerInput } from "@/lib/healer-schema";
 import type { HerbInput } from "@/lib/herb-schema";
 import type { RemedyInput } from "@/lib/remedy-schema";
@@ -220,6 +231,13 @@ export async function fetchStats(): Promise<Stats> {
 
 export const provinceListKey = ["provinces"] as const;
 
+/** fetchProvinces reads the province list through the same-origin /api proxy. */
+export async function fetchProvinces(): Promise<Province[]> {
+  const res = await fetch("/api/v1/provinces", { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load provinces");
+  return (await res.json()) as Province[];
+}
+
 interface ProvinceInput {
   nameThai: string;
   nameEnglish: string;
@@ -253,6 +271,13 @@ export async function deleteProvince(id: number): Promise<void> {
 
 export function districtListKey(provinceId: number) {
   return ["districts", provinceId] as const;
+}
+
+/** fetchDistricts reads a province's district list through the same-origin /api proxy. */
+export async function fetchDistricts(provinceId: number): Promise<District[]> {
+  const res = await fetch(`/api/v1/provinces/${provinceId}/districts`, { cache: "no-store" });
+  if (!res.ok) throw new Error("cannot load districts");
+  return (await res.json()) as District[];
 }
 
 interface DistrictInput {

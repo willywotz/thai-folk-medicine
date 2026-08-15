@@ -62,13 +62,15 @@ export async function updateHealer(id: number, input: HealerInput & { districtId
   if (!res.ok) throw new Error("cannot update healer");
 }
 
-export function remedyListKey(healerId: number) {
+export function remedyListKey(healerId?: number) {
   return ["remedies", healerId] as const;
 }
 
-/** fetchRemedies reads a healer's remedies through the same-origin /api proxy. */
-export async function fetchRemedies(healerId: number): Promise<Remedy[]> {
-  return fetchList<Remedy>(`/healers/${healerId}/remedies`, "cannot load remedies");
+/** fetchRemedies reads the flat remedy list, optionally filtered by healer. */
+export async function fetchRemedies(healerId?: number): Promise<Remedy[]> {
+  return healerId !== undefined
+    ? fetchList<Remedy>(`/healers/${healerId}/remedies`, "cannot load remedies")
+    : fetchList<Remedy>(`/remedies`, "cannot load remedies");
 }
 
 /** createRemedy posts a new remedy (with its healerId) through the BFF. */
@@ -81,8 +83,8 @@ export async function createRemedy(input: RemedyInput & { healerId: number }): P
   if (!res.ok) throw new Error("cannot create remedy");
 }
 
-/** updateRemedy PUTs changes to a remedy through the BFF (no healer change). */
-export async function updateRemedy(id: number, input: RemedyInput): Promise<void> {
+/** updateRemedy PUTs changes to a remedy (including its healer) through the BFF. */
+export async function updateRemedy(id: number, input: RemedyInput & { healerId: number }): Promise<void> {
   const res = await fetch(`/bff/remedies/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

@@ -2,12 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
-import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
+import type { Healer } from "@/lib/api-types";
 import { deleteRemedy, fetchRemedies, remedyListKey } from "@/lib/staff-queries";
 
-export function RemedyAdminList({ healerId }: { healerId: number }) {
+export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "fullName">[] }) {
+  const [healerId, setHealerId] = useState<number | undefined>(undefined);
   const queryClient = useQueryClient();
   const { data: remedies, isLoading, isError } = useQuery({
     queryKey: remedyListKey(healerId),
@@ -19,16 +22,36 @@ export function RemedyAdminList({ healerId }: { healerId: number }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) }),
   });
 
+  const healerName = (id: number) => healers.find((h) => h.id === id)?.fullName ?? "—";
+
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load remedies.</p>;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <label htmlFor="healerFilter" className={staffLabel}>
+            Healer
+          </label>
+          <select
+            id="healerFilter"
+            className={staffField}
+            value={healerId ?? ""}
+            onChange={(e) => setHealerId(e.target.value ? Number(e.target.value) : undefined)}
+          >
+            <option value="">All healers</option>
+            {healers.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.fullName}
+              </option>
+            ))}
+          </select>
+        </div>
         <span className="text-sm text-ink-faint">
           {remedies?.length ?? 0} {remedies?.length === 1 ? "remedy" : "remedies"}
         </span>
-        <Link href={`/staff/healers/${healerId}/remedies/new`} className={btnPrimary}>
+        <Link href="/staff/remedies/new" className={btnPrimary}>
           <span aria-hidden>+</span> New remedy
         </Link>
       </div>
@@ -38,17 +61,17 @@ export function RemedyAdminList({ healerId }: { healerId: number }) {
         </p>
       ) : null}
       {!remedies || remedies.length === 0 ? (
-        <EmptyState message="No remedies for this healer yet." />
+        <EmptyState message="No remedies yet." />
       ) : (
         <ul className={staffCard}>
           {remedies.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
-              <p className="min-w-0 flex-1 truncate font-medium text-ink">{r.name}</p>
-              <Link href={`/staff/remedies/${r.id}/treatment-cases`} className={linkAction}>
-                Cases
-              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-ink">{r.name}</p>
+                <p className="truncate text-sm text-ink-soft">{healerName(r.healerId)}</p>
+              </div>
               <Link
-                href={`/staff/healers/${healerId}/remedies/${r.id}/edit`}
+                href={`/staff/remedies/${r.id}/edit`}
                 aria-label={`Edit ${r.name}`}
                 className={iconBtn}
               >

@@ -8,13 +8,20 @@ import { useForm } from "react-hook-form";
 
 import { HerbPicker } from "@/components/HerbPicker";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
-import type { Remedy } from "@/lib/api-types";
+import type { Healer, Remedy } from "@/lib/api-types";
 import { remedySchema, type RemedyInput } from "@/lib/remedy-schema";
 import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
 
-export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Remedy }) {
+export function RemedyForm({
+  remedy,
+  healers,
+}: {
+  remedy?: Remedy;
+  healers: Pick<Healer, "id" | "fullName">[];
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [healerId, setHealerId] = useState(remedy?.healerId ?? healers[0]?.id ?? 0);
   const [herbs, setHerbs] = useState(
     remedy?.herbs?.map((h) => ({ herbId: h.herbId, amount: h.amount })) ?? [],
   );
@@ -36,12 +43,12 @@ export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Re
 
   const save = useMutation({
     mutationFn: (values: RemedyInput) => {
-      const payload = { ...values, herbs };
-      return remedy ? updateRemedy(remedy.id, payload) : createRemedy({ ...payload, healerId });
+      const payload = { ...values, herbs, healerId };
+      return remedy ? updateRemedy(remedy.id, payload) : createRemedy(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) });
-      router.push(`/staff/healers/${healerId}/remedies`);
+      queryClient.invalidateQueries({ queryKey: remedyListKey() });
+      router.push("/staff/remedies");
       router.refresh();
     },
   });
@@ -50,6 +57,24 @@ export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Re
 
   return (
     <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} max-w-xl space-y-4 p-6`} noValidate>
+      <div className="space-y-1">
+        <label htmlFor="healerId" className={staffLabel}>
+          Healer (หมอพื้นบ้าน)
+        </label>
+        <select
+          id="healerId"
+          required
+          className={field}
+          value={healerId}
+          onChange={(e) => setHealerId(Number(e.target.value))}
+        >
+          {healers.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.fullName}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="space-y-1">
         <label htmlFor="name" className={staffLabel}>
           Name (ชื่อตำรับยา)
@@ -93,7 +118,7 @@ export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Re
         </button>
         <button
           type="button"
-          onClick={() => router.push(`/staff/healers/${healerId}/remedies`)}
+          onClick={() => router.push("/staff/remedies")}
           className={btnGhost}
         >
           Cancel

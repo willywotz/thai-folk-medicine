@@ -9,9 +9,34 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { RemedyForm } from "./RemedyForm";
 
+const healers = [
+  { id: 2, fullName: "หมอสมชาย" },
+  { id: 3, fullName: "หมอสมหญิง" },
+];
+
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
+// stubFetch serves the HerbPicker's own herb list plus a generic save response.
+function stubFetch() {
+  return vi.fn(async (url: string, opts?: { method?: string; body?: string }) => {
+    void opts;
+    if (typeof url === "string" && url.startsWith("/api/v1/herbs")) {
+      return {
+        ok: true,
+        json: async () => ({
+          items: [{ id: 7, nameThai: "ขิง" }],
+          page: 1,
+          pageSize: 48,
+          total: 1,
+          totalPages: 1,
+        }),
+      };
+    }
+    return { ok: true, status: 201, json: async () => ({ id: 9 }) };
+  });
 }
 
 afterEach(() => {
@@ -21,20 +46,61 @@ afterEach(() => {
 
 describe("RemedyForm (create)", () => {
   it("validates the required name", async () => {
-    renderWithClient(<RemedyForm healerId={2} />);
+    vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
+    renderWithClient(<RemedyForm healers={healers} />);
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
   });
 
-  it("posts a new remedy and navigates back", async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 9 }) }));
+  it("requires a healer and defaults to the first option", () => {
+    vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
+    renderWithClient(<RemedyForm healers={healers} />);
+    const select = screen.getByLabelText(/healer/i);
+    expect(select).toHaveAttribute("required");
+    expect(select).toHaveValue("2");
+  });
+
+  it("adds a herb via the picker and posts a new remedy with the selected healer", async () => {
+    const fetchMock = stubFetch();
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    renderWithClient(<RemedyForm healerId={2} />);
-    await userEvent.type(screen.getByLabelText(/name/i), "ยาต้ม");
+    renderWithClient(<RemedyForm healers={healers} />);
+    await userEvent.type(screen.getByLabelText(/^name/i), "ยาต้ม");
+    await userEvent.selectOptions(screen.getByLabelText(/healer/i), "3");
+    await waitFor(() => expect(screen.getByRole("button", { name: /add herb/i })).not.toBeDisabled());
+    await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
+    await screen.findByRole("combobox", { name: /herb/i });
     await userEvent.click(screen.getByRole("button", { name: /save/i }));
+
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith("/bff/remedies", expect.objectContaining({ method: "POST" })),
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/bff/remedies",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining('"healerId":3'),
+        }),
+      ),
     );
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/healers/2/remedies"));
+    const call = fetchMock.mock.calls.find(([url]) => url === "/bff/remedies")!;
+    const body = JSON.parse(call[1]!.body as string);
+    expect(body.herbs).toEqual([{ herbId: 7, amount: "" }]);
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/remedies"));
+  });
+
+  it("defaults the healer select to the remedy's current healer when editing", () => {
+    vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
+    const remedy = {
+      id: 5,
+      healerId: 3,
+      name: "ยาต้ม",
+      symptoms: "",
+      herbs: [],
+      preparationMethod: "",
+      usage: "",
+      note: "",
+      createdAt: "",
+      updatedAt: "",
+    };
+    renderWithClient(<RemedyForm remedy={remedy} healers={healers} />);
+    expect(screen.getByLabelText(/healer/i)).toHaveValue("3");
   });
 });

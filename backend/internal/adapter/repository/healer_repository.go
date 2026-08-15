@@ -101,6 +101,12 @@ func (r *Healer) ListPage(ctx context.Context, p listing.Params, districtID *int
 	return listing.Page[healer.Healer]{Items: items, Total: int(total)}, nil
 }
 
+// Count counts every healer.
+func (r *Healer) Count(ctx context.Context) (int, error) {
+	count, err := r.q.CountHealer(ctx, districtFilter(nil))
+	return int(count), err
+}
+
 func districtFilter(districtID *int64) pgtype.Int8 {
 	if districtID == nil {
 		return pgtype.Int8{}

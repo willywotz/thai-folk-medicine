@@ -186,3 +186,15 @@ func (r *Location) CountHealerByDistrict(ctx context.Context, districtID int64) 
 	count, err := r.q.CountHealerByDistrict(ctx, districtID)
 	return int(count), err
 }
+
+// CountProvince counts every province.
+func (r *Location) CountProvince(ctx context.Context) (int, error) {
+	count, err := r.q.CountProvince(ctx)
+	return int(count), err
+}
+
+// CountDistrict counts every district.
+func (r *Location) CountDistrict(ctx context.Context) (int, error) {
+	count, err := r.q.CountDistrict(ctx)
+	return int(count), err
+}

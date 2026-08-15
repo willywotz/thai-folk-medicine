@@ -3,6 +3,12 @@ SELECT id, name_thai, name_english
 FROM province
 ORDER BY name_english;
 
+-- name: CountProvince :one
+SELECT COUNT(*) FROM province;
+
+-- name: CountDistrict :one
+SELECT COUNT(*) FROM district;
+
 -- name: ListDistrictByProvince :many
 SELECT id, province_id, name_thai, name_english
 FROM district

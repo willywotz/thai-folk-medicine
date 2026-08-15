@@ -117,6 +117,21 @@ func TestHealerRepository_ListPage_DistrictFilter(t *testing.T) {
 	}
 }
 
+func TestHealerCountCountsAllHealers(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	districtID := firstDistrictID(t, ctx, NewLocation(queries))
+	repo := NewHealer(queries)
+	_, err := repo.Create(ctx, healer.CreateParams{DistrictID: districtID, FullName: "หมอ ก"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, healer.CreateParams{DistrictID: districtID, FullName: "หมอ ข"})
+	require.NoError(t, err)
+
+	count, err := repo.Count(ctx)
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, count)
+}
+
 func TestHealerUpdateAndDelete(t *testing.T) {
 	ctx, queries := newTestPool(t)
 	districtID := firstDistrictID(t, ctx, NewLocation(queries))

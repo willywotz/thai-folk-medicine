@@ -111,6 +111,12 @@ func (r *TreatmentCase) ListPage(ctx context.Context, p listing.Params) (listing
 	return listing.Page[treatmentcase.TreatmentCase]{Items: items, Total: int(total)}, nil
 }
 
+// Count counts every treatment case.
+func (r *TreatmentCase) Count(ctx context.Context) (int, error) {
+	count, err := r.q.CountCasePage(ctx)
+	return int(count), err
+}
+
 // Update changes a case or returns treatmentcase.ErrNotFound.
 func (r *TreatmentCase) Update(ctx context.Context, p treatmentcase.UpdateParams) (treatmentcase.TreatmentCase, error) {
 	row, err := r.q.UpdateTreatmentCase(ctx, db.UpdateTreatmentCaseParams{

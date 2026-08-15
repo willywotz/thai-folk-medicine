@@ -80,6 +80,12 @@ func (r *Herb) ListPage(ctx context.Context, p listing.Params) (listing.Page[her
 	return listing.Page[herb.Herb]{Items: items, Total: int(total)}, nil
 }
 
+// Count counts every herb.
+func (r *Herb) Count(ctx context.Context) (int, error) {
+	count, err := r.q.CountHerbPage(ctx)
+	return int(count), err
+}
+
 // Update changes a herb or returns herb.ErrNotFound.
 func (r *Herb) Update(ctx context.Context, p herb.UpdateParams) (herb.Herb, error) {
 	row, err := r.q.UpdateHerb(ctx, db.UpdateHerbParams{

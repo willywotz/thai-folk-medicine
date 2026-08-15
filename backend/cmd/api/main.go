@@ -105,12 +105,18 @@ func main() {
 		remedyRepo,
 	)
 	activityHandler := httpapi.NewActivityHandler(audit.NewReader(eventLogRepo))
+	statsHandler := httpapi.NewStatsHandler(
+		usecase.NewStatsService(
+			repository.NewLocation(queries), repository.NewHealer(queries), remedyRepo,
+			repository.NewTreatmentCase(queries), repository.NewHerb(queries),
+		),
+	)
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
 	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
 
-	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler, activityHandler)
+	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler, activityHandler, statsHandler)
 
 	logger.Info("starting server", "port", cfg.HTTPPort)
 	if err := router.Run(":" + cfg.HTTPPort); err != nil {

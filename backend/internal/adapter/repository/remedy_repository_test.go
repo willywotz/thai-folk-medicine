@@ -131,6 +131,17 @@ func seedRemedyFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	}
 }
 
+func TestRemedyCountCountsAllRemedies(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewRemedy(pool)
+	seedRemedyFixtures(t, ctx, pool)
+
+	count, err := repo.Count(ctx)
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, count)
+}
+
 func TestRemedyRepository_ListPage_OffsetWindow(t *testing.T) {
 	ctx, pool := newTestPoolConn(t)
 	repo := NewRemedy(pool)

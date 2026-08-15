@@ -9,12 +9,34 @@ import (
 	"context"
 )
 
+const countDistrict = `-- name: CountDistrict :one
+SELECT COUNT(*) FROM district
+`
+
+func (q *Queries) CountDistrict(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countDistrict)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countDistrictByProvince = `-- name: CountDistrictByProvince :one
 SELECT COUNT(*) FROM district WHERE province_id = $1
 `
 
 func (q *Queries) CountDistrictByProvince(ctx context.Context, provinceID int64) (int64, error) {
 	row := q.db.QueryRow(ctx, countDistrictByProvince, provinceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countProvince = `-- name: CountProvince :one
+SELECT COUNT(*) FROM province
+`
+
+func (q *Queries) CountProvince(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countProvince)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

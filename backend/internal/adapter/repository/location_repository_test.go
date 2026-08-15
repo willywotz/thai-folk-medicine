@@ -153,6 +153,19 @@ func TestLocationCountDistrictByProvinceCountsSeededDistricts(t *testing.T) {
 	assert.Equal(t, 9, count)
 }
 
+func TestLocationCountProvinceAndDistrictCountAllRows(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	provinces, err := repo.CountProvince(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, provinces)
+
+	districts, err := repo.CountDistrict(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 9, districts)
+}
+
 func TestLocationCreateUpdateDeleteDistrict(t *testing.T) {
 	ctx, queries := newTestPool(t)
 	repo := NewLocation(queries)

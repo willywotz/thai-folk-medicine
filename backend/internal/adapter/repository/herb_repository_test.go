@@ -57,6 +57,17 @@ func seedHerbFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	require.NoError(t, err)
 }
 
+func TestHerbCountCountsAllHerbs(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewHerb(db.New(pool))
+	seedHerbFixtures(t, ctx, pool)
+
+	count, err := repo.Count(ctx)
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, count)
+}
+
 func TestHerbRepository_ListPage_OffsetWindow(t *testing.T) {
 	ctx, pool := newTestPoolConn(t)
 	repo := NewHerb(db.New(pool))

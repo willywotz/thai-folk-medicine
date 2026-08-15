@@ -164,6 +164,12 @@ func (r *Remedy) ListPage(ctx context.Context, p listing.Params) (listing.Page[r
 	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
+// Count counts every remedy.
+func (r *Remedy) Count(ctx context.Context) (int, error) {
+	count, err := r.q.CountRemedyPage(ctx)
+	return int(count), err
+}
+
 // Update changes a remedy and replaces its herb links in one transaction.
 func (r *Remedy) Update(ctx context.Context, p remedy.UpdateParams) (remedy.Remedy, error) {
 	tx, err := r.pool.Begin(ctx)

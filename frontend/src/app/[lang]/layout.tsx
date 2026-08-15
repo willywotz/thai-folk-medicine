@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import { Noto_Sans_Thai, Noto_Serif_Thai } from "next/font/google";
 import type { ReactNode } from "react";
 
-import "./globals.css";
+import "../globals.css";
 
+import { I18nProvider } from "@/components/I18nProvider";
 import { SiteHeader } from "@/components/SiteHeader";
+import { locales } from "@/lib/i18n/config";
+import { getDictionary, getLocale } from "@/lib/i18n/getDictionary";
 
 import { Providers } from "./providers";
 
@@ -24,14 +27,22 @@ export const metadata: Metadata = {
   description: "Folk-medicine records of local healers.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export function generateStaticParams() {
+  return locales.map((lang) => ({ lang }));
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
+  const dict = await getDictionary();
   return (
-    <html lang="th">
+    <html lang={locale}>
       <body className={`${notoThai.variable} ${notoSerifThai.variable} ${notoThai.className} bg-bg text-ink`}>
-        <Providers>
-          <SiteHeader />
-          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-        </Providers>
+        <I18nProvider locale={locale} dict={dict}>
+          <Providers>
+            <SiteHeader />
+            <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+          </Providers>
+        </I18nProvider>
       </body>
     </html>
   );

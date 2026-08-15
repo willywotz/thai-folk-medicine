@@ -1,32 +1,41 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-/**
- * Auth routing for the staff area:
- * - /staff/* without a session cookie redirects to /login.
- * - /login with a session cookie redirects to /staff (already logged in).
- */
-export function proxy(request: NextRequest) {
-  const hasSession = request.cookies.has("session");
-  const { pathname } = request.nextUrl;
+import { defaultLocale, hasLocale, locales } from "@/lib/i18n/config";
 
-  if (pathname === "/login") {
-    if (!hasSession) {
-      return NextResponse.next();
-    }
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const segments = pathname.split("/"); // ["", "en", "staff", ...]
+  const first = segments[1] ?? "";
+
+  // 1) No locale prefix -> redirect to the default locale.
+  if (!hasLocale(first)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/staff";
+    url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
     return NextResponse.redirect(url);
   }
 
-  if (hasSession) {
-    return NextResponse.next();
+  // 2) Auth guard on the locale-stripped path, keeping the locale prefix.
+  const locale = first;
+  const rest = "/" + segments.slice(2).join("/"); // "/staff/healers" or "/"
+  const hasSession = request.cookies.has("session");
+
+  const redirectTo = (path: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}${path}`;
+    return NextResponse.redirect(url);
+  };
+
+  if (rest === "/login") {
+    return hasSession ? redirectTo("/staff") : NextResponse.next();
   }
-  const url = request.nextUrl.clone();
-  url.pathname = "/login";
-  return NextResponse.redirect(url);
+  if (rest === "/staff" || rest.startsWith("/staff/")) {
+    return hasSession ? NextResponse.next() : redirectTo("/login");
+  }
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/staff/:path*", "/login"],
+  // Run on everything except Next internals, the API, and static files.
+  matcher: ["/((?!_next|bff|.*\\..*).*)"],
 };

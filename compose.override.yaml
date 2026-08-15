@@ -1,4 +1,16 @@
 services:
+  backend:
+    build: { target: development }
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend
+          target: /src
+          ignore:
+            - .git/
+        - action: rebuild
+          path: ./backend/go.mod
+
   frontend:
     build: { target: development }
     develop:
@@ -10,6 +22,6 @@ services:
             - node_modules/
             - .next/
         - action: rebuild
-          path: ./frontend/bun.lock
+          path: ./frontend/pnpm-lock.yaml
         - action: rebuild
           path: ./frontend/package.json

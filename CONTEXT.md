@@ -263,6 +263,21 @@ work end to end. Public search is one merged, ranked, paginated result list.
 docker compose up --build          # then open http://localhost:3000
 ```
 
+`compose.yaml` is the **production** layer (`backend`/`frontend` build their Dockerfile
+`production` target). `compose.override.yaml` (auto-merged by plain `docker compose`) is the
+**development** layer: both services build their `development` target and declare
+`develop.watch` rules. For hot reload while coding, use:
+
+```bash
+docker compose watch               # syncs source into the containers on change
+```
+
+The backend `development` stage runs `go run ./cmd/api`; a source change under `./backend`
+triggers `sync+restart` (recompile on restart), and a `go.mod` change triggers a rebuild.
+The frontend `development` stage runs `pnpm dev` (Next fast refresh via `sync`; lockfile /
+`package.json` changes rebuild). `docker compose up` (no `watch`) still runs the dev images
+but without file-watching; add `-f compose.yaml` to run the pure production images.
+
 The root `docker-compose.yml` builds `backend/Dockerfile` (static Go binary) and
 `frontend/Dockerfile` (Next.js standalone), starts Postgres, runs the migrations +
 Yasothon seed, and bootstraps the admin from `STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD`

@@ -32,7 +32,12 @@ describe("DistrictAdminList", () => {
     );
     renderWithClient(<DistrictAdminList provinceId={3} />);
     expect(await screen.findByText("อำเภอเมือง")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "แก้ไข อำเภอเมือง" })).toBeInTheDocument();
+    const edit = screen.getByRole("link", { name: "แก้ไข อำเภอเมือง" });
+    expect(edit).toHaveAttribute("href", "/staff/provinces/3/districts/1/edit");
+    expect(screen.getByRole("link", { name: /เพิ่มอำเภอ/ })).toHaveAttribute(
+      "href",
+      "/staff/provinces/3/districts/new",
+    );
     expect(screen.getByRole("button", { name: "ลบ อำเภอเมือง" })).toBeInTheDocument();
   });
 

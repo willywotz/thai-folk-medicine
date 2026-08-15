@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
+import { RowAvatar } from "@/components/RowAvatar";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { staffCard } from "@/components/staff-ui";
 import { getFirstProvince, getHerb, listDistricts, listHealers, listRemediesByHerb } from "@/lib/api";
@@ -50,6 +51,7 @@ export default async function StaffHerbUsagePage({
         <ul className={staffCard}>
           {remedies.items.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
+              <RowAvatar ownerType="remedy" ownerId={r.id} fallback={r.name.trim().charAt(0)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{r.name}</p>
                 <p className="truncate text-sm text-ink-soft">{ancestry(r.healerId)}</p>

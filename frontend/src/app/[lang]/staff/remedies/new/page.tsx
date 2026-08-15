@@ -1,5 +1,6 @@
 import { RemedyForm } from "@/components/RemedyForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getFirstProvince, listDistricts, listHealers } from "@/lib/api";
 
 export default async function NewRemedyPage({
@@ -7,6 +8,7 @@ export default async function NewRemedyPage({
 }: {
   searchParams: Promise<{ healerId?: string }>;
 }) {
+  const t = await getDictionary();
   const { healerId } = await searchParams;
   const defaultHealerId = healerId && Number.isInteger(Number(healerId)) ? Number(healerId) : undefined;
   // withinlazy: pageSize 48 caps the healer picker; add real staff pagination
@@ -23,9 +25,9 @@ export default async function NewRemedyPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Remedies", href: "/staff/remedies" }, { label: "New remedy" }]}
-        eyebrow="new record"
-        title="Add a remedy"
+        crumbs={[{ label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: t.staff.newRemedyCrumb }]}
+        eyebrow={t.staff.newRecord}
+        title={t.staff.addRemedyTitle}
       />
       <RemedyForm healerOptions={healerOptions} defaultHealerId={defaultHealerId} />
     </section>

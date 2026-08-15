@@ -3,12 +3,13 @@ import type { ReactNode } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { StaffNavLink } from "@/components/StaffNavLink";
 import { getDictionary } from "@/lib/i18n/getDictionary";
+import type { Dictionary } from "@/lib/i18n/dictionaries/th";
 
 const NAV_ITEMS = [
   {
     href: "/staff",
     match: [],
-    label: "Dashboard",
+    label: (t: Dictionary) => t.staff.nav.dashboard,
     icon: (
       <path d="M4 13h6V4H4v9zm0 7h6v-5H4v5zm10 0h6V11h-6v9zm0-16v5h6V4h-6z" />
     ),
@@ -16,13 +17,13 @@ const NAV_ITEMS = [
   {
     href: "/staff/provinces",
     match: ["/staff/provinces"],
-    label: "Province",
+    label: (t: Dictionary) => t.staff.nav.province,
     icon: <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21zM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />,
   },
   {
     href: "/staff/healers",
     match: ["/staff/healers"],
-    label: "Healer",
+    label: (t: Dictionary) => t.staff.nav.healer,
     icon: (
       <>
         <circle cx="12" cy="8" r="3.5" />
@@ -33,7 +34,7 @@ const NAV_ITEMS = [
   {
     href: "/staff/remedies",
     match: ["/staff/remedies"],
-    label: "Remedy",
+    label: (t: Dictionary) => t.staff.nav.remedy,
     icon: (
       <>
         <path d="M8 3v4M16 3v4" />
@@ -45,7 +46,7 @@ const NAV_ITEMS = [
   {
     href: "/staff/cases",
     match: ["/staff/cases"],
-    label: "Case",
+    label: (t: Dictionary) => t.staff.nav.case,
     icon: (
       <>
         <path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z" />
@@ -57,7 +58,7 @@ const NAV_ITEMS = [
   {
     href: "/staff/herbs",
     match: ["/staff/herbs"],
-    label: "Herb",
+    label: (t: Dictionary) => t.staff.nav.herb,
     icon: (
       <path d="M12 21c0-6 4-9 8-10-1 6-4 10-8 10zm0 0c0-6-4-9-8-10 1 6 4 10 8 10zm0-14v3" />
     ),
@@ -76,13 +77,13 @@ export default async function StaffLayout({ children }: { children: ReactNode })
           <span className="text-sm font-semibold text-ink">
             {t.staff.brand}
             <span className="block text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-              Staff workspace
+              {t.staff.workspace}
             </span>
           </span>
         </div>
 
         <p className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-          Records
+          {t.staff.nav.records}
         </p>
         {NAV_ITEMS.map(({ href, match, label, icon }) => (
           <StaffNavLink key={href} href={href} match={match}>
@@ -97,7 +98,7 @@ export default async function StaffLayout({ children }: { children: ReactNode })
             >
               {icon}
             </svg>
-            {label}
+            {label(t)}
           </StaffNavLink>
         ))}
 

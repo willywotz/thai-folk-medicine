@@ -1,8 +1,10 @@
 import { HealerForm } from "@/components/HealerForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getFirstProvince, listDistricts } from "@/lib/api";
 
 export default async function NewHealerPage() {
+  const t = await getDictionary();
   const province = await getFirstProvince();
   const districts = province ? await listDistricts(province.id) : [];
   const districtOptions = districts.map((d) => ({
@@ -13,9 +15,9 @@ export default async function NewHealerPage() {
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Healers", href: "/staff/healers" }, { label: "New healer" }]}
-        eyebrow="new record"
-        title="Add a folk healer"
+        crumbs={[{ label: t.staff.headers.healers, href: "/staff/healers" }, { label: t.staff.newHealerCrumb }]}
+        eyebrow={t.staff.newRecord}
+        title={t.staff.addHealerTitle}
       />
       <HealerForm districtOptions={districtOptions} />
     </section>

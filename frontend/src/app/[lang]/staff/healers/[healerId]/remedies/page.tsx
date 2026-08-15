@@ -24,7 +24,7 @@ export default async function HealerRemediesPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Healers", href: "/staff/healers" }, { label: healer.fullName }]}
+        crumbs={[{ label: t.staff.headers.healers, href: "/staff/healers" }, { label: healer.fullName }]}
         title={t.staff.headers.healerRemedies}
       />
       <RemedyAdminList healers={healers} healerId={id} />

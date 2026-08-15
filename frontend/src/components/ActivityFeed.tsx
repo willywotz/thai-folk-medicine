@@ -4,22 +4,24 @@ import { useQuery } from "@tanstack/react-query";
 
 import { staffCard } from "@/components/staff-ui";
 import { formatActivity } from "@/lib/activity-format";
+import { useT } from "@/lib/i18n/useT";
 import { activityKey, fetchActivity } from "@/lib/staff-queries";
 
 export function ActivityFeed() {
+  const t = useT();
   const { data: activity, isLoading, isError } = useQuery({
     queryKey: activityKey,
     queryFn: fetchActivity,
   });
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
-  if (isError) return <p className="text-destructive">Could not load activity.</p>;
+  if (isError) return <p className="text-destructive">{t.staff.dashboard.activityLoadError}</p>;
 
   return (
     <div>
-      <h2 className="mb-3 text-sm font-semibold text-ink">Recent activity</h2>
+      <h2 className="mb-3 text-sm font-semibold text-ink">{t.staff.dashboard.activityHeading}</h2>
       {!activity || activity.length === 0 ? (
-        <p className="text-sm text-ink-faint">No activity yet.</p>
+        <p className="text-sm text-ink-faint">{t.staff.dashboard.noActivity}</p>
       ) : (
         <ul className={staffCard}>
           {activity.map((entry) => {

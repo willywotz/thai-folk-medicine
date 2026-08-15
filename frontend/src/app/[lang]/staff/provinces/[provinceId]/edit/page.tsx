@@ -19,9 +19,9 @@ export default async function EditProvincePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Provinces", href: "/staff/provinces" }, { label: province.nameThai }]}
+        crumbs={[{ label: t.staff.headers.provinces, href: "/staff/provinces" }, { label: province.nameThai }]}
         eyebrow={t.staff.headers.provinceEdit}
-        title={`Edit ${province.nameThai}`}
+        title={t.staff.editName(province.nameThai)}
       />
       <ProvinceForm province={province} />
     </section>

@@ -7,9 +7,9 @@ export default async function NewHerbPage() {
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Herbs", href: "/staff/herbs" }, { label: "New herb" }]}
+        crumbs={[{ label: t.staff.crumbHerbs, href: "/staff/herbs" }, { label: t.staff.newHerbCrumb }]}
         eyebrow={t.staff.headers.herbNew}
-        title="Add a herb"
+        title={t.staff.addHerbTitle}
       />
       <HerbForm />
     </section>

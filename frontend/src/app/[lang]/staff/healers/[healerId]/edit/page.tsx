@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { HealerForm } from "@/components/HealerForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getFirstProvince, getHealer, listDistricts } from "@/lib/api";
 
 export default async function EditHealerPage({
@@ -9,6 +10,7 @@ export default async function EditHealerPage({
 }: {
   params: Promise<{ healerId: string }>;
 }) {
+  const t = await getDictionary();
   const { healerId } = await params;
   const id = Number(healerId);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -25,9 +27,9 @@ export default async function EditHealerPage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Healers", href: "/staff/healers" }, { label: healer.fullName }]}
-        eyebrow="edit record"
-        title={`Edit ${healer.fullName}`}
+        crumbs={[{ label: t.staff.headers.healers, href: "/staff/healers" }, { label: healer.fullName }]}
+        eyebrow={t.staff.editRecord}
+        title={t.staff.editName(healer.fullName)}
       />
       <HealerForm healer={healer} districtOptions={districtOptions} />
     </section>

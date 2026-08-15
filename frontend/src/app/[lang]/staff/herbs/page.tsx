@@ -7,9 +7,7 @@ export default async function StaffHerbsPage() {
   return (
     <section>
       <StaffPageHeader eyebrow={t.staff.headers.herbsEyebrow} title={t.staff.headers.herbLibrary} />
-      <p className="-mt-4 mb-6 text-sm text-ink-soft">
-        Herbs are shared across all remedies. Editing one updates every remedy that uses it.
-      </p>
+      <p className="-mt-4 mb-6 text-sm text-ink-soft">{t.staff.herbsSharedNote}</p>
       <HerbAdminList />
     </section>
   );

@@ -43,12 +43,12 @@ export default async function StaffHerbUsagePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Herbs", href: "/staff/herbs" }, { label: herb.nameThai }]}
+        crumbs={[{ label: t.staff.crumbHerbs, href: "/staff/herbs" }, { label: herb.nameThai }]}
         eyebrow={t.staff.headers.herbUsedIn}
-        title={`Remedies using ${herb.nameThai}`}
+        title={t.staff.usedInName(herb.nameThai)}
       />
       {remedies.items.length === 0 ? (
-        <EmptyState message="No remedies use this herb yet." />
+        <EmptyState message={t.staff.emptyRemediesForHerb} />
       ) : (
         <ul className={staffCard}>
           {remedies.items.map((r) => (

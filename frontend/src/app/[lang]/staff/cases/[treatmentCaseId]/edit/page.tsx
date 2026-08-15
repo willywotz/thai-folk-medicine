@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CaseForm } from "@/components/CaseForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getFirstProvince, getTreatmentCase, listDistricts, listHealers, listRemedies } from "@/lib/api";
 
 export default async function EditCasePage({
@@ -9,6 +10,7 @@ export default async function EditCasePage({
 }: {
   params: Promise<{ treatmentCaseId: string }>;
 }) {
+  const t = await getDictionary();
   const { treatmentCaseId } = await params;
   const id = Number(treatmentCaseId);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -37,9 +39,9 @@ export default async function EditCasePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Cases", href: "/staff/cases" }, { label: "Edit case" }]}
-        eyebrow="edit record"
-        title="Edit treatment case"
+        crumbs={[{ label: t.staff.crumbCases, href: "/staff/cases" }, { label: t.staff.editCaseCrumb }]}
+        eyebrow={t.staff.editRecord}
+        title={t.staff.editCaseTitle}
       />
       <CaseForm treatmentCase={treatmentCase} remedyOptions={remedyOptions} />
     </section>

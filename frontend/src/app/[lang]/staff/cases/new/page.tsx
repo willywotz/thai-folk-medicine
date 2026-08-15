@@ -1,5 +1,6 @@
 import { CaseForm } from "@/components/CaseForm";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getFirstProvince, listDistricts, listHealers, listRemedies } from "@/lib/api";
 
 export default async function NewCasePage({
@@ -7,6 +8,7 @@ export default async function NewCasePage({
 }: {
   searchParams: Promise<{ remedyId?: string }>;
 }) {
+  const t = await getDictionary();
   const { remedyId } = await searchParams;
   const defaultRemedyId = remedyId && Number.isInteger(Number(remedyId)) ? Number(remedyId) : undefined;
   // withinlazy: pageSize 48 caps the remedy picker; add real staff pagination
@@ -31,9 +33,9 @@ export default async function NewCasePage({
   return (
     <section>
       <StaffPageHeader
-        crumbs={[{ label: "Cases", href: "/staff/cases" }, { label: "New case" }]}
-        eyebrow="new record"
-        title="Add a treatment case"
+        crumbs={[{ label: t.staff.crumbCases, href: "/staff/cases" }, { label: t.staff.newCaseCrumb }]}
+        eyebrow={t.staff.newRecord}
+        title={t.staff.addCaseTitle}
       />
       <CaseForm remedyOptions={remedyOptions} defaultRemedyId={defaultRemedyId} />
     </section>

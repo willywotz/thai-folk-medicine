@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 )
 
@@ -45,9 +46,9 @@ func (s *RemedyService) ListByHealer(ctx context.Context, healerID int64) ([]rem
 	return s.repo.ListByHealer(ctx, healerID)
 }
 
-// ListRecent returns the most recent remedies.
-func (s *RemedyService) ListRecent(ctx context.Context, limit int) ([]remedy.Remedy, error) {
-	return s.repo.ListRecent(ctx, int32(limit))
+// ListPage returns one paginated, filtered page of remedies.
+func (s *RemedyService) ListPage(ctx context.Context, q remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
+	return s.repo.ListPage(ctx, q)
 }
 
 // Update validates and changes a remedy, then publishes UpdatedEvent.

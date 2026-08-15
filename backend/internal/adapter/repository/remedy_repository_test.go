@@ -5,12 +5,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 )
 
@@ -115,20 +117,93 @@ func TestRemedyRepository_HerbLinks(t *testing.T) {
 	assert.Equal(t, hb2.ID, got.Herbs[0].HerbID)
 }
 
-func TestRemedyRepository_ListRecent(t *testing.T) {
-	ctx, pool := newTestPoolConn(t)
+// remedyFixtures holds the ids a ListPage test needs to exercise each filter
+// branch: a herb linked to one remedy, and the district of the healer whose
+// remedy carries a distinctive symptom substring.
+type remedyFixtures struct {
+	herbID           int64
+	secondDistrictID int64
+}
+
+// seedRemedyFixtures creates two healers in different districts, one herb,
+// and three remedies (one linked to the herb; one, in the second district,
+// with a distinctive symptom). It returns the ids needed to test each filter.
+func seedRemedyFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) remedyFixtures {
+	t.Helper()
 	queries := db.New(pool)
-	districtID := firstDistrictID(t, ctx, NewLocation(queries))
-	healerID := makeHealer(t, ctx, NewHealer(queries), districtID)
+	location := NewLocation(queries)
+	provinces, err := location.ListProvince(ctx)
+	require.NoError(t, err)
+	require.NotEmpty(t, provinces)
+	districts, err := location.ListDistrictByProvince(ctx, provinces[0].ID)
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(districts), 2)
+
+	healerRepo := NewHealer(queries)
+	healer1 := makeHealer(t, ctx, healerRepo, districts[0].ID)
+	healer2 := makeHealer(t, ctx, healerRepo, districts[1].ID)
+
+	hb, err := NewHerb(queries).Create(ctx, herb.CreateParams{NameThai: "ขิง"})
+	require.NoError(t, err)
+
 	repo := NewRemedy(pool)
+	_, err = repo.Create(ctx, remedy.CreateParams{
+		HealerID: healer1, Name: "ยา 1", Herbs: []remedy.HerbRef{{HerbID: hb.ID}},
+	})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, remedy.CreateParams{HealerID: healer1, Name: "ยา 2"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, remedy.CreateParams{HealerID: healer2, Name: "ยา 3", Symptoms: "ปวดหัว"})
+	require.NoError(t, err)
 
-	_, err := repo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยา 1"})
-	require.NoError(t, err)
-	_, err = repo.Create(ctx, remedy.CreateParams{HealerID: healerID, Name: "ยา 2"})
-	require.NoError(t, err)
+	return remedyFixtures{herbID: hb.ID, secondDistrictID: districts[1].ID}
+}
 
-	list, err := repo.ListRecent(ctx, 1)
+func TestRemedyRepository_ListPage_FilterByHerb(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewRemedy(pool)
+	fixtures := seedRemedyFixtures(t, ctx, pool)
+
+	page, err := repo.ListPage(ctx, remedy.ListQuery{Page: listing.Params{Limit: 10, Offset: 0}})
 	require.NoError(t, err)
-	assert.Len(t, list, 1)
-	assert.Equal(t, "ยา 2", list[0].Name)
+	assert.Equal(t, 3, page.Total)
+	assert.Len(t, page.Items, 3)
+
+	filtered, err := repo.ListPage(ctx, remedy.ListQuery{Page: listing.Params{Limit: 10}, HerbID: &fixtures.herbID})
+	require.NoError(t, err)
+	assert.Equal(t, 1, filtered.Total)
+	assert.Len(t, filtered.Items, 1)
+}
+
+func TestRemedyRepository_ListPage_FilterByDistrictAndSymptom(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewRemedy(pool)
+	fixtures := seedRemedyFixtures(t, ctx, pool)
+
+	byDistrict, err := repo.ListPage(ctx, remedy.ListQuery{
+		Page: listing.Params{Limit: 10}, DistrictID: &fixtures.secondDistrictID,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 1, byDistrict.Total)
+	require.Len(t, byDistrict.Items, 1)
+	assert.Equal(t, "ยา 3", byDistrict.Items[0].Name)
+
+	bySymptom, err := repo.ListPage(ctx, remedy.ListQuery{
+		Page: listing.Params{Limit: 10}, Symptom: "ปวด",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 1, bySymptom.Total)
+	require.Len(t, bySymptom.Items, 1)
+	assert.Equal(t, "ยา 3", bySymptom.Items[0].Name)
+}
+
+func TestRemedyRepository_ListPage_OffsetWindow(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewRemedy(pool)
+	seedRemedyFixtures(t, ctx, pool)
+
+	page2, err := repo.ListPage(ctx, remedy.ListQuery{Page: listing.Params{Limit: 2, Offset: 2}})
+	require.NoError(t, err)
+	assert.Equal(t, 3, page2.Total)
+	assert.Len(t, page2.Items, 1)
 }

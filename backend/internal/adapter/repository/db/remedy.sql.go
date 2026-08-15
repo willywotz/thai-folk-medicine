@@ -7,7 +7,33 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const countRemedyPage = `-- name: CountRemedyPage :one
+SELECT COUNT(*)
+FROM remedy r
+JOIN healer h ON h.id = r.healer_id
+WHERE ($1::bigint IS NULL
+       OR EXISTS (SELECT 1 FROM remedy_herb rh
+                  WHERE rh.remedy_id = r.id AND rh.herb_id = $1::bigint))
+  AND ($2::bigint IS NULL OR h.district_id = $2::bigint)
+  AND ($3::text IS NULL OR r.symptoms ILIKE '%' || $3::text || '%')
+`
+
+type CountRemedyPageParams struct {
+	HerbID     pgtype.Int8
+	DistrictID pgtype.Int8
+	Symptom    pgtype.Text
+}
+
+func (q *Queries) CountRemedyPage(ctx context.Context, arg CountRemedyPageParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyPage, arg.HerbID, arg.DistrictID, arg.Symptom)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const createRemedy = `-- name: CreateRemedy :one
 INSERT INTO remedy (healer_id, name, symptoms, preparation_method, usage, note)
@@ -83,15 +109,15 @@ func (q *Queries) GetRemedy(ctx context.Context, id int64) (Remedy, error) {
 	return i, err
 }
 
-const listRecentRemedy = `-- name: ListRecentRemedy :many
+const listRemedyByHealer = `-- name: ListRemedyByHealer :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
-ORDER BY created_at DESC, id DESC
-LIMIT $1
+WHERE healer_id = $1
+ORDER BY name
 `
 
-func (q *Queries) ListRecentRemedy(ctx context.Context, limit int32) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRecentRemedy, limit)
+func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRemedyByHealer, healerID)
 	if err != nil {
 		return nil, err
 	}
@@ -120,15 +146,35 @@ func (q *Queries) ListRecentRemedy(ctx context.Context, limit int32) ([]Remedy, 
 	return items, nil
 }
 
-const listRemedyByHealer = `-- name: ListRemedyByHealer :many
-SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
-FROM remedy
-WHERE healer_id = $1
-ORDER BY name
+const listRemedyPage = `-- name: ListRemedyPage :many
+SELECT r.id, r.healer_id, r.name, r.symptoms, r.preparation_method, r.usage, r.note, r.created_at, r.updated_at
+FROM remedy r
+JOIN healer h ON h.id = r.healer_id
+WHERE ($1::bigint IS NULL
+       OR EXISTS (SELECT 1 FROM remedy_herb rh
+                  WHERE rh.remedy_id = r.id AND rh.herb_id = $1::bigint))
+  AND ($2::bigint IS NULL OR h.district_id = $2::bigint)
+  AND ($3::text IS NULL OR r.symptoms ILIKE '%' || $3::text || '%')
+ORDER BY r.created_at DESC, r.id DESC
+LIMIT $5 OFFSET $4
 `
 
-func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyByHealer, healerID)
+type ListRemedyPageParams struct {
+	HerbID     pgtype.Int8
+	DistrictID pgtype.Int8
+	Symptom    pgtype.Text
+	PageOffset int32
+	PageLimit  int32
+}
+
+func (q *Queries) ListRemedyPage(ctx context.Context, arg ListRemedyPageParams) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRemedyPage,
+		arg.HerbID,
+		arg.DistrictID,
+		arg.Symptom,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -5,9 +5,11 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 )
 
@@ -131,17 +133,41 @@ func (r *Remedy) ListByHerb(ctx context.Context, herbID int64) ([]remedy.Remedy,
 	return result, nil
 }
 
-// ListRecent returns the most recently created remedies.
-func (r *Remedy) ListRecent(ctx context.Context, limit int32) ([]remedy.Remedy, error) {
-	rows, err := r.q.ListRecentRemedy(ctx, limit)
+// ListPage returns one page of remedies matching the optional filters.
+func (r *Remedy) ListPage(ctx context.Context, q remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
+	symptom := pgtype.Text{}
+	if q.Symptom != "" {
+		symptom = pgtype.Text{String: q.Symptom, Valid: true}
+	}
+	rows, err := r.q.ListRemedyPage(ctx, db.ListRemedyPageParams{
+		HerbID:     optInt64(q.HerbID),
+		DistrictID: optInt64(q.DistrictID),
+		Symptom:    symptom,
+		PageLimit:  int32(q.Page.Limit),
+		PageOffset: int32(q.Page.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[remedy.Remedy]{}, err
 	}
-	result := make([]remedy.Remedy, 0, len(rows))
+	total, err := r.q.CountRemedyPage(ctx, db.CountRemedyPageParams{
+		HerbID: optInt64(q.HerbID), DistrictID: optInt64(q.DistrictID), Symptom: symptom,
+	})
+	if err != nil {
+		return listing.Page[remedy.Remedy]{}, err
+	}
+	items := make([]remedy.Remedy, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toRemedy(row))
+		items = append(items, toRemedy(row))
 	}
-	return result, nil
+	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
+}
+
+// optInt64 converts a nullable int64 pointer to its pgtype form.
+func optInt64(p *int64) pgtype.Int8 {
+	if p == nil {
+		return pgtype.Int8{}
+	}
+	return pgtype.Int8{Int64: *p, Valid: true}
 }
 
 // Update changes a remedy and replaces its herb links in one transaction.

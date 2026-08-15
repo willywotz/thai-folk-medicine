@@ -25,7 +25,7 @@ func NewRemedyHandler(service *usecase.RemedyService) *RemedyHandler {
 // RegisterRoutes mounts the remedy routes: reads public, writes JWT-guarded.
 func (h *RemedyHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.GET("/healers/:healerId/remedies", h.ListByHealer)
-	public.GET("/remedies", h.ListRecent)
+	public.GET("/remedies", h.ListPage)
 	public.GET("/remedies/:remedyId", h.Get)
 	protected.POST("/remedies", h.Create)
 	protected.PUT("/remedies/:remedyId", h.Update)
@@ -113,19 +113,24 @@ func (h *RemedyHandler) ListByHealer(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// ListRecent handles GET /api/v1/remedies?limit=N (default 12).
-func (h *RemedyHandler) ListRecent(c *gin.Context) {
-	limit := parseLimit(c.Query("limit"), 12)
-	list, err := h.service.ListRecent(c.Request.Context(), limit)
+// ListPage handles GET /api/v1/remedies?page&pageSize&herbId&districtId&symptom.
+func (h *RemedyHandler) ListPage(c *gin.Context) {
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListPage(c.Request.Context(), remedy.ListQuery{
+		Page:       params,
+		HerbID:     optionalInt64Query(c, "herbId"),
+		DistrictID: optionalInt64Query(c, "districtId"),
+		Symptom:    trimmedQuery(c, "symptom"),
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list remedies"})
 		return
 	}
-	out := make([]remedyDTO, 0, len(list))
-	for _, item := range list {
-		out = append(out, toRemedyDTO(item))
+	out := make([]remedyDTO, 0, len(result.Items))
+	for _, r := range result.Items {
+		out = append(out, toRemedyDTO(r))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Get handles GET /api/v1/remedies/:remedyId.

@@ -7,19 +7,29 @@ import { DetailHeader } from "@/components/DetailHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { FactPanel } from "@/components/FactPanel";
 import { LinkRow } from "@/components/LinkRow";
+import { Pagination } from "@/components/Pagination";
 import { firstPhotoUrl, getHerb, listPhotosByOwner, listRemediesByHerb, photoUrl } from "@/lib/api";
 
-export default async function HerbPage({ params }: { params: Promise<{ herbId: string }> }) {
+export default async function HerbPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ herbId: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { herbId } = await params;
+  const { page: pageParam } = await searchParams;
   const id = Number(herbId);
   if (!Number.isInteger(id) || id <= 0) notFound();
+  const page = Number(pageParam) || 1;
 
   const herb = await getHerb(id);
   if (!herb) notFound();
-  const [remedies, photos] = await Promise.all([
-    listRemediesByHerb(id),
+  const [remedyPage, photos] = await Promise.all([
+    listRemediesByHerb(id, { page }),
     listPhotosByOwner("herb", id),
   ]);
+  const remedies = remedyPage.items;
   const cover = photos[0];
   const remedyCovers = await Promise.all(
     remedies.map((r) => firstPhotoUrl("remedy", r.id).catch(() => undefined)),
@@ -80,6 +90,14 @@ export default async function HerbPage({ params }: { params: Promise<{ herbId: s
               ))}
             </div>
           )}
+          <div className="mt-4">
+            <Pagination
+              page={remedyPage.page}
+              totalPages={remedyPage.totalPages}
+              searchParams={{ page: pageParam }}
+              basePath={`/herbs/${id}`}
+            />
+          </div>
         </div>
         <aside className="md:sticky md:top-24">
           <FactPanel

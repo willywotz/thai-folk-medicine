@@ -1,22 +1,36 @@
 import { EmptyState } from "@/components/EmptyState";
 import { LinkRow } from "@/components/LinkRow";
+import { Pagination } from "@/components/Pagination";
 import { SearchBox } from "@/components/SearchBox";
 import { ApiError, search } from "@/lib/api";
-import type { SearchResponse } from "@/lib/api-types";
+import type { Page, SearchHit } from "@/lib/api-types";
+
+const TYPE_HREF: Record<SearchHit["type"], string> = {
+  remedy: "/remedies",
+  healer: "/healers",
+  herb: "/herbs",
+};
+
+const TYPE_LABEL: Record<SearchHit["type"], string> = {
+  remedy: "ตำรับยา",
+  healer: "หมอ",
+  herb: "สมุนไพร",
+};
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ searchTerm?: string }>;
+  searchParams: Promise<{ searchTerm?: string; page?: string }>;
 }) {
-  const { searchTerm } = await searchParams;
+  const { searchTerm, page: pageParam } = await searchParams;
   const term = (searchTerm ?? "").trim();
+  const page = Number(pageParam) || 1;
 
-  let result: SearchResponse | null = null;
+  let result: Page<SearchHit> | null = null;
   let tooShort = false;
   if (term.length >= 2) {
     try {
-      result = await search(term);
+      result = await search(term, { page });
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         tooShort = true;
@@ -28,11 +42,7 @@ export default async function SearchPage({
     tooShort = true;
   }
 
-  const empty =
-    result !== null &&
-    result.remedies.length === 0 &&
-    result.healers.length === 0 &&
-    result.herbs.length === 0;
+  const empty = result !== null && result.items.length === 0;
 
   return (
     <section>
@@ -57,40 +67,26 @@ export default async function SearchPage({
             <h2 className="font-serif text-xl text-ink">
               ผลการค้นหา &ldquo;<span className="text-brand">{term}</span>&rdquo;
             </h2>
-            <span className="text-sm text-ink-faint">
-              พบ {result.herbs.length + result.remedies.length + result.healers.length} รายการ
-            </span>
+            <span className="text-sm text-ink-faint">พบ {result.total} รายการ</span>
           </div>
           <div className="mt-4 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-            {result.herbs.map((h) => (
+            {result.items.map((hit) => (
               <LinkRow
-                key={`h${h.id}`}
-                href={`/herbs/${h.id}`}
-                icon="🌿"
-                title={h.nameThai}
-                subtitle={`สมุนไพร · ${h.scientificName}`}
-                meta="สมุนไพร"
+                key={`${hit.type}${hit.id}`}
+                href={`${TYPE_HREF[hit.type]}/${hit.id}`}
+                title={hit.title}
+                subtitle={hit.subtitle}
+                meta={TYPE_LABEL[hit.type]}
               />
             ))}
-            {result.remedies.map((r) => (
-              <LinkRow
-                key={`r${r.id}`}
-                href={`/remedies/${r.id}`}
-                title={r.name}
-                subtitle={`ตำรับยา · ${r.symptoms}`}
-                meta="ตำรับยา"
-              />
-            ))}
-            {result.healers.map((h) => (
-              <LinkRow
-                key={`he${h.id}`}
-                href={`/healers/${h.id}`}
-                icon="✚"
-                title={h.fullName}
-                subtitle={`หมอพื้นบ้าน · ${h.specialty}`}
-                meta="หมอ"
-              />
-            ))}
+          </div>
+          <div className="mt-6">
+            <Pagination
+              page={result.page}
+              totalPages={result.totalPages}
+              searchParams={{ searchTerm, page: pageParam }}
+              basePath="/search"
+            />
           </div>
         </>
       ) : null}

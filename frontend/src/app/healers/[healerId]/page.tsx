@@ -4,25 +4,31 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { ContentBlock } from "@/components/ContentBlock";
 import { EmptyState } from "@/components/EmptyState";
 import { LinkRow } from "@/components/LinkRow";
+import { Pagination } from "@/components/Pagination";
 import { SectionHead } from "@/components/SectionHead";
 import { firstPhotoUrl, getHealer, listRemediesByHealer } from "@/lib/api";
 
 export default async function HealerPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ healerId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { healerId } = await params;
+  const { page: pageParam } = await searchParams;
   const id = Number(healerId);
   if (!Number.isInteger(id) || id <= 0) notFound();
+  const page = Number(pageParam) || 1;
 
   const healer = await getHealer(id);
   if (!healer) notFound();
 
-  const [remedies, avatarUrl] = await Promise.all([
-    listRemediesByHealer(id),
+  const [remedyPage, avatarUrl] = await Promise.all([
+    listRemediesByHealer(id, { page }),
     firstPhotoUrl("healer", id).catch(() => undefined),
   ]);
+  const remedies = remedyPage.items;
   const remedyCovers = await Promise.all(
     remedies.map((r) => firstPhotoUrl("remedy", r.id).catch(() => undefined)),
   );
@@ -78,6 +84,14 @@ export default async function HealerPage({
           ))}
         </div>
       )}
+      <div className="mt-6">
+        <Pagination
+          page={remedyPage.page}
+          totalPages={remedyPage.totalPages}
+          searchParams={{ page: pageParam }}
+          basePath={`/healers/${id}`}
+        />
+      </div>
     </section>
   );
 }

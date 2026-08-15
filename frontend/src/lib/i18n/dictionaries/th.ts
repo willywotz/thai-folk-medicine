@@ -61,11 +61,37 @@ export const th = {
     kindRemedy: "ตำรับยา",
     kindHealer: "หมอ",
     kindHerb: "สมุนไพร",
+    noMatches: "ไม่พบผลลัพธ์",
   },
   case: {
     crumb: "เคสการรักษา",
     title: "เคสการรักษา (Cases)",
     viewRemedy: "ดูตำรับยา →",
+  },
+  staff: {
+    brand: "ตำรายา", // logo mark; stays Thai in en too
+    headers: {
+      casesEyebrow: "กรณีการรักษา · cases", cases: "เคสการรักษา",
+      healersEyebrow: "หมอพื้นบ้าน · folk healers", healers: "หมอพื้นบ้าน",
+      remediesEyebrow: "ตำรับยา · folk remedies", remedies: "ตำรับยา",
+      provincesEyebrow: "จังหวัด · locations", provinces: "จังหวัด",
+      provinceNew: "จังหวัด · เพิ่มรายการ", provinceEdit: "จังหวัด · แก้ไขรายการ",
+      herbsEyebrow: "สมุนไพร · คลังกลาง", herbLibrary: "คลังสมุนไพร",
+      herbNew: "สมุนไพร · เพิ่มรายการ", herbEdit: "สมุนไพร · แก้ไขรายการ",
+      herbUsedIn: "สมุนไพร · ใช้ในตำรับ",
+      healerRemedies: "ตำรับยา", remedyCases: "กรณีการรักษา",
+    },
+    form: {
+      remedy: "ตำรับยา", searchRemedy: "ค้นหาตำรับยา",
+      patientSex: "เพศ", patientAge: "อายุ", dateTreated: "วันที่รักษา",
+      symptoms: "อาการ", result: "ผลการรักษา", note: "หมายเหตุ",
+      district: "อำเภอ", searchDistrict: "ค้นหาอำเภอ",
+      fullName: "ชื่อ", subDistrict: "ตำบล/หมู่บ้าน", specialty: "ความชำนาญ", biography: "ประวัติ",
+      thaiName: "ชื่อไทย", scientificName: "ชื่อวิทยาศาสตร์", properties: "สรรพคุณ", description: "รายละเอียด",
+      healer: "หมอพื้นบ้าน", searchHealer: "ค้นหาหมอ", remedyName: "ชื่อตำรับยา",
+      symptomsTreated: "สรรพคุณ", preparation: "วิธีปรุง", usage: "วิธีใช้",
+      herbs: "ตัวยา", searchHerb: "ค้นหาสมุนไพร", noHerbsFound: "ไม่พบสมุนไพร", amount: "ปริมาณ",
+    },
   },
 };
 export type Dictionary = typeof th;

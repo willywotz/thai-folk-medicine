@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
-import { proxy } from "./proxy";
+import { config, proxy } from "./proxy";
 
 function request(path: string, cookie?: string): NextRequest {
   return new NextRequest(new URL(path, "http://localhost:3000"), {
@@ -69,5 +69,20 @@ describe("proxy locale", () => {
   it("redirects localed /staff to login without a session", () => {
     const res = proxy(request("/en/staff"));
     expect(res.headers.get("location")).toBe("http://localhost:3000/en/login");
+  });
+});
+
+describe("proxy matcher", () => {
+  // Mirror Next's matcher semantics for a pattern like "/((?!_next|api|bff|.*\\..*).*)".
+  const matches = (path: string) =>
+    new RegExp(`^${config.matcher[0]}$`).test(path);
+
+  it("does NOT run middleware on /api/* (so the rewrite reaches the Go API)", () => {
+    expect(matches("/api/v1/photos/3")).toBe(false);
+  });
+
+  it("still runs on UI paths", () => {
+    expect(matches("/herbs")).toBe(true);
+    expect(matches("/th/staff")).toBe(true);
   });
 });

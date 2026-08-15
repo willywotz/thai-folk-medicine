@@ -5,6 +5,7 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/components/I18nProvider";
+import { th } from "@/lib/i18n/dictionaries/th";
 
 function herb(id: number, nameThai: string) {
   return {
@@ -44,9 +45,9 @@ afterEach(() => vi.clearAllMocks());
 describe("HerbPicker", () => {
   it("filters herbs by search text and selects a match", async () => {
     renderWithClient(<Wrapper />);
-    await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
+    await userEvent.click(screen.getByRole("button", { name: th.staff.form.addHerb }));
 
-    const input = await screen.findByRole("combobox", { name: /herb/i });
+    const input = await screen.findByRole("combobox", { name: th.staff.form.herbs });
     await userEvent.click(input);
     // All herbs are listed before filtering.
     expect(await screen.findByRole("option", { name: "ขมิ้น" })).toBeInTheDocument();

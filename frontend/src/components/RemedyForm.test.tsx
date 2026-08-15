@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/components/I18nProvider";
+import { th } from "@/lib/i18n/dictionaries/th";
 
 const push = vi.fn();
 const refresh = vi.fn();
@@ -78,9 +79,11 @@ describe("RemedyForm (create)", () => {
     await userEvent.clear(healerInput);
     await userEvent.type(healerInput, "หมอสมหญิง");
     await userEvent.click(await screen.findByRole("option", { name: /หมอสมหญิง/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /add herb/i })).not.toBeDisabled());
-    await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
-    await screen.findByRole("combobox", { name: /herb/i });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: th.staff.form.addHerb })).not.toBeDisabled(),
+    );
+    await userEvent.click(screen.getByRole("button", { name: th.staff.form.addHerb }));
+    await screen.findByRole("combobox", { name: th.staff.form.herbs });
     await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
 
     await waitFor(() =>

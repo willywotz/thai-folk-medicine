@@ -39,7 +39,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
             onValueChange={(next) => next && setRow(i, { herbId: next.value })}
           >
             <Combobox.Input
-              aria-label="herb"
+              aria-label={t.staff.form.herbs}
               placeholder={t.staff.form.searchHerb}
               className="w-48 rounded border border-stone-300 p-2"
             />
@@ -65,7 +65,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
             </Combobox.Portal>
           </Combobox.Root>
           <input
-            aria-label="amount"
+            aria-label={t.staff.form.amount}
             className="flex-1 rounded border border-stone-300 p-2"
             placeholder={t.staff.form.amount}
             value={row.amount}
@@ -82,7 +82,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
         disabled={options.length === 0}
         className="rounded border border-stone-300 px-3 py-1 text-sm disabled:opacity-50"
       >
-        + add herb
+        {t.staff.form.addHerb}
       </button>
     </div>
   );

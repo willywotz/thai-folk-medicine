@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -13,19 +14,17 @@ import { districtSchema, type DistrictInput } from "@/lib/district-schema";
 import { useT } from "@/lib/i18n/useT";
 import { createDistrict, districtListKey, updateDistrict, uploadPhoto } from "@/lib/staff-queries";
 
-// Districts are managed inline on the province detail page (no dedicated
-// route), so this form reports back through onDone instead of navigating.
 export function DistrictForm({
   provinceId,
   district,
-  onDone,
 }: {
   provinceId: number;
   district?: District;
-  onDone: () => void;
 }) {
   const t = useT();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const back = `/staff/provinces/${provinceId}`;
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
@@ -51,7 +50,8 @@ export function DistrictForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: districtListKey(provinceId) });
-      onDone();
+      router.push(back);
+      router.refresh();
     },
   });
 
@@ -78,7 +78,7 @@ export function DistrictForm({
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
             {t.staff.save}
           </button>
-          <button type="button" onClick={onDone} className={btnGhost}>
+          <button type="button" onClick={() => router.push(back)} className={btnGhost}>
             {t.staff.cancel}
           </button>
         </div>

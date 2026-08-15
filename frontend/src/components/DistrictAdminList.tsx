@@ -1,21 +1,17 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import Link from "next/link";
 
-import { DistrictForm } from "@/components/DistrictForm";
 import { EmptyState } from "@/components/EmptyState";
 import { RowAvatar } from "@/components/RowAvatar";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
-import type { District } from "@/lib/api-types";
 import { useT } from "@/lib/i18n/useT";
 import { deleteDistrict, districtListKey, fetchDistricts } from "@/lib/staff-queries";
 
 export function DistrictAdminList({ provinceId }: { provinceId: number }) {
   const t = useT();
   const queryClient = useQueryClient();
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<District | null>(null);
 
   const key = districtListKey(provinceId);
   const { data: districts, isLoading, isError } = useQuery({
@@ -35,21 +31,10 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-ink-faint">{t.staff.count.districts(districts?.length ?? 0)}</span>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(null);
-            setAdding(true);
-          }}
-          className={btnPrimary}
-        >
+        <Link href={`/staff/provinces/${provinceId}/districts/new`} className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newDistrictButton}
-        </button>
+        </Link>
       </div>
-      {adding ? <DistrictForm provinceId={provinceId} onDone={() => setAdding(false)} /> : null}
-      {editing ? (
-        <DistrictForm provinceId={provinceId} district={editing} onDone={() => setEditing(null)} />
-      ) : null}
       {remove.isError ? (
         <p className="text-sm text-destructive">{t.staff.errorDistrictHasHealers}</p>
       ) : null}
@@ -64,19 +49,15 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
                 <p className="truncate font-medium text-ink">{d.nameThai}</p>
                 {d.nameEnglish ? <p className="truncate text-sm text-ink-soft">{d.nameEnglish}</p> : null}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdding(false);
-                  setEditing(d);
-                }}
+              <Link
+                href={`/staff/provinces/${provinceId}/districts/${d.id}/edit`}
                 aria-label={t.staff.editName(d.nameThai)}
                 className={iconBtn}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
                 </svg>
-              </button>
+              </Link>
               <button
                 type="button"
                 onClick={() => remove.mutate(d.id)}

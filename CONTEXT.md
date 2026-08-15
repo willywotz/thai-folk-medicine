@@ -75,7 +75,7 @@ frontend/
 │   │   │   ├── page.tsx                # public home: Yasothon districts
 │   │   │   ├── districts/ healers/ remedies/   # public browse pages
 │   │   │   ├── login/                  # staff login
-│   │   │   ├── staff/                  # guarded: six flat sections — dashboard, provinces (+districts CRUD), healers, remedies, cases, herbs
+│   │   │   ├── staff/                  # guarded: six flat sections — dashboard, provinces (districts CRUD on dedicated provinces/[id]/districts/new + /[districtId]/edit pages), healers, remedies, cases, herbs
 │   │   │   └── layout.tsx              # root layout: <html lang>, fonts, TanStack Query Providers, I18nProvider (locale)
 │   │   ├── bff/session/                # POST login / DELETE logout (sets httpOnly cookie) — stays at root (not under [lang])
 │   │   ├── bff/healers/                # POST / [healerId] PUT·DELETE (cookie → Bearer → Go)

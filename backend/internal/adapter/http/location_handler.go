@@ -31,6 +31,9 @@ func (h *LocationHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	protected.POST("/provinces", h.CreateProvince)
 	protected.PUT("/provinces/:provinceId", h.UpdateProvince)
 	protected.DELETE("/provinces/:provinceId", h.DeleteProvince)
+	protected.POST("/districts", h.CreateDistrict)
+	protected.PUT("/districts/:districtId", h.UpdateDistrict)
+	protected.DELETE("/districts/:districtId", h.DeleteDistrict)
 }
 
 type provinceDTO struct {
@@ -47,6 +50,17 @@ type districtDTO struct {
 }
 
 type provinceRequest struct {
+	NameThai    string `json:"nameThai"`
+	NameEnglish string `json:"nameEnglish"`
+}
+
+type districtCreateRequest struct {
+	ProvinceID  int64  `json:"provinceId"`
+	NameThai    string `json:"nameThai"`
+	NameEnglish string `json:"nameEnglish"`
+}
+
+type districtUpdateRequest struct {
 	NameThai    string `json:"nameThai"`
 	NameEnglish string `json:"nameEnglish"`
 }
@@ -181,6 +195,66 @@ func (h *LocationHandler) DeleteProvince(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "province has districts; delete them first"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot delete province"})
+		}
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// CreateDistrict handles POST /api/v1/districts.
+func (h *LocationHandler) CreateDistrict(c *gin.Context) {
+	var req districtCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	created, err := h.service.CreateDistrict(c.Request.Context(), req.ProvinceID, req.NameThai, req.NameEnglish)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create district"})
+		return
+	}
+	c.JSON(http.StatusCreated, districtDTO(created))
+}
+
+// UpdateDistrict handles PUT /api/v1/districts/:districtId.
+func (h *LocationHandler) UpdateDistrict(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("districtId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "district id must be a number"})
+		return
+	}
+	var req districtUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	updated, err := h.service.UpdateDistrict(c.Request.Context(), id, req.NameThai, req.NameEnglish)
+	if err != nil {
+		if errors.Is(err, location.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "district not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot update district"})
+		return
+	}
+	c.JSON(http.StatusOK, districtDTO(updated))
+}
+
+// DeleteDistrict handles DELETE /api/v1/districts/:districtId.
+func (h *LocationHandler) DeleteDistrict(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("districtId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "district id must be a number"})
+		return
+	}
+	if err := h.service.DeleteDistrict(c.Request.Context(), id); err != nil {
+		switch {
+		case errors.Is(err, location.ErrNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "district not found"})
+		case errors.Is(err, location.ErrDistrictReferenced):
+			c.JSON(http.StatusConflict, gin.H{"error": "district has healers; delete them first"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot delete district"})
 		}
 		return
 	}

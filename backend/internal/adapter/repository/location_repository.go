@@ -133,3 +133,56 @@ func (r *Location) CountDistrictByProvince(ctx context.Context, provinceID int64
 	count, err := r.q.CountDistrictByProvince(ctx, provinceID)
 	return int(count), err
 }
+
+func toDistrict(row db.District) location.District {
+	return location.District{
+		ID:          row.ID,
+		ProvinceID:  row.ProvinceID,
+		NameThai:    row.NameThai,
+		NameEnglish: row.NameEnglish,
+	}
+}
+
+// CreateDistrict inserts a district under a province.
+func (r *Location) CreateDistrict(ctx context.Context, provinceID int64, nameThai, nameEnglish string) (location.District, error) {
+	row, err := r.q.CreateDistrict(ctx, db.CreateDistrictParams{
+		ProvinceID: provinceID, NameThai: nameThai, NameEnglish: nameEnglish,
+	})
+	if err != nil {
+		return location.District{}, err
+	}
+	return toDistrict(row), nil
+}
+
+// UpdateDistrict changes a district or returns location.ErrNotFound.
+func (r *Location) UpdateDistrict(ctx context.Context, id int64, nameThai, nameEnglish string) (location.District, error) {
+	row, err := r.q.UpdateDistrict(ctx, db.UpdateDistrictParams{ID: id, NameThai: nameThai, NameEnglish: nameEnglish})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return location.District{}, location.ErrNotFound
+		}
+		return location.District{}, err
+	}
+	return toDistrict(row), nil
+}
+
+// DeleteDistrict removes a district, or returns location.ErrNotFound / location.ErrDistrictReferenced.
+func (r *Location) DeleteDistrict(ctx context.Context, id int64) error {
+	rows, err := r.q.DeleteDistrict(ctx, id)
+	if err != nil {
+		if isForeignKeyViolation(err) {
+			return location.ErrDistrictReferenced
+		}
+		return err
+	}
+	if rows == 0 {
+		return location.ErrNotFound
+	}
+	return nil
+}
+
+// CountHealerByDistrict counts the healers of one district.
+func (r *Location) CountHealerByDistrict(ctx context.Context, districtID int64) (int, error) {
+	count, err := r.q.CountHealerByDistrict(ctx, districtID)
+	return int(count), err
+}

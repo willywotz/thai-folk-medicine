@@ -152,3 +152,34 @@ func TestLocationCountDistrictByProvinceCountsSeededDistricts(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 9, count)
 }
+
+func TestLocationCreateUpdateDeleteDistrict(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	provinces, err := repo.ListProvince(ctx)
+	require.NoError(t, err)
+	require.Len(t, provinces, 1)
+	provinceID := provinces[0].ID
+
+	created, err := repo.CreateDistrict(ctx, provinceID, "อำเภอใหม่", "New District")
+	require.NoError(t, err)
+	assert.NotZero(t, created.ID)
+	assert.Equal(t, provinceID, created.ProvinceID)
+	assert.Equal(t, "New District", created.NameEnglish)
+
+	count, err := repo.CountHealerByDistrict(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+
+	updated, err := repo.UpdateDistrict(ctx, created.ID, "อำเภอ", "District")
+	require.NoError(t, err)
+	assert.Equal(t, "District", updated.NameEnglish)
+	assert.Equal(t, "อำเภอ", updated.NameThai)
+	assert.Equal(t, provinceID, updated.ProvinceID)
+
+	require.NoError(t, repo.DeleteDistrict(ctx, created.ID))
+
+	_, err = repo.GetDistrict(ctx, created.ID)
+	assert.ErrorIs(t, err, location.ErrNotFound)
+}

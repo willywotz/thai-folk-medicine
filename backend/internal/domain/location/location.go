@@ -16,6 +16,9 @@ var ErrProvinceNotFound = errors.New("province not found")
 // ErrProvinceReferenced means the province still has districts and cannot be deleted.
 var ErrProvinceReferenced = errors.New("province is referenced by other records")
 
+// ErrDistrictReferenced means the district still has healers and cannot be deleted.
+var ErrDistrictReferenced = errors.New("district is referenced by other records")
+
 // Province is one Thai province.
 type Province struct {
 	ID          int64
@@ -41,4 +44,8 @@ type Repository interface {
 	UpdateProvince(ctx context.Context, id int64, nameThai, nameEnglish string) (Province, error)
 	DeleteProvince(ctx context.Context, id int64) error
 	CountDistrictByProvince(ctx context.Context, provinceID int64) (int, error)
+	CreateDistrict(ctx context.Context, provinceID int64, nameThai, nameEnglish string) (District, error)
+	UpdateDistrict(ctx context.Context, id int64, nameThai, nameEnglish string) (District, error)
+	DeleteDistrict(ctx context.Context, id int64) error
+	CountHealerByDistrict(ctx context.Context, districtID int64) (int, error)
 }

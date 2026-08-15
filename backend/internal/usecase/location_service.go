@@ -79,3 +79,44 @@ func (s *LocationService) DeleteProvince(ctx context.Context, id int64) error {
 	s.publisher.Publish(ctx, location.ProvinceDeletedEvent{ProvinceID: id})
 	return nil
 }
+
+// CreateDistrict stores a district, then publishes DistrictCreatedEvent.
+func (s *LocationService) CreateDistrict(ctx context.Context, provinceID int64, nameThai, nameEnglish string) (location.District, error) {
+	created, err := s.repo.CreateDistrict(ctx, provinceID, nameThai, nameEnglish)
+	if err != nil {
+		return location.District{}, err
+	}
+	s.publisher.Publish(ctx, location.DistrictCreatedEvent{
+		DistrictID: created.ID, ProvinceID: created.ProvinceID, NameThai: created.NameThai, NameEnglish: created.NameEnglish,
+	})
+	return created, nil
+}
+
+// UpdateDistrict changes a district, then publishes DistrictUpdatedEvent.
+func (s *LocationService) UpdateDistrict(ctx context.Context, id int64, nameThai, nameEnglish string) (location.District, error) {
+	updated, err := s.repo.UpdateDistrict(ctx, id, nameThai, nameEnglish)
+	if err != nil {
+		return location.District{}, err
+	}
+	s.publisher.Publish(ctx, location.DistrictUpdatedEvent{
+		DistrictID: updated.ID, ProvinceID: updated.ProvinceID, NameThai: updated.NameThai, NameEnglish: updated.NameEnglish,
+	})
+	return updated, nil
+}
+
+// DeleteDistrict removes a district, then publishes DistrictDeletedEvent. It
+// returns location.ErrDistrictReferenced if the district still has healers.
+func (s *LocationService) DeleteDistrict(ctx context.Context, id int64) error {
+	count, err := s.repo.CountHealerByDistrict(ctx, id)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return location.ErrDistrictReferenced
+	}
+	if err := s.repo.DeleteDistrict(ctx, id); err != nil {
+		return err
+	}
+	s.publisher.Publish(ctx, location.DistrictDeletedEvent{DistrictID: id})
+	return nil
+}

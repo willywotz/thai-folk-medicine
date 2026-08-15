@@ -22,6 +22,9 @@ type fakeLocationRepo struct {
 
 	districtCount     int
 	deleteProvinceErr error
+
+	healerCount       int
+	deleteDistrictErr error
 }
 
 func (f *fakeLocationRepo) ListProvince(context.Context) ([]location.Province, error) {
@@ -70,6 +73,22 @@ func (f *fakeLocationRepo) DeleteProvince(context.Context, int64) error {
 
 func (f *fakeLocationRepo) CountDistrictByProvince(context.Context, int64) (int, error) {
 	return f.districtCount, nil
+}
+
+func (f *fakeLocationRepo) CreateDistrict(_ context.Context, provinceID int64, nameThai, nameEnglish string) (location.District, error) {
+	return location.District{ID: 1, ProvinceID: provinceID, NameThai: nameThai, NameEnglish: nameEnglish}, nil
+}
+
+func (f *fakeLocationRepo) UpdateDistrict(_ context.Context, id int64, nameThai, nameEnglish string) (location.District, error) {
+	return location.District{ID: id, NameThai: nameThai, NameEnglish: nameEnglish}, nil
+}
+
+func (f *fakeLocationRepo) DeleteDistrict(context.Context, int64) error {
+	return f.deleteDistrictErr
+}
+
+func (f *fakeLocationRepo) CountHealerByDistrict(context.Context, int64) (int, error) {
+	return f.healerCount, nil
 }
 
 func newTestRouter(repo location.Repository) *gin.Engine {
@@ -266,4 +285,81 @@ func TestCreateProvinceRejectsBadBody(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestCreateDistrictEndpoint(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{})
+
+	body, err := json.Marshal(map[string]any{"provinceId": 1, "nameThai": "กุดชุม", "nameEnglish": "Kut Chum"})
+	require.NoError(t, err)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/districts", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusCreated, rec.Code)
+
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Equal(t, "Kut Chum", got["nameEnglish"])
+	assert.Equal(t, float64(1), got["provinceId"])
+}
+
+func TestCreateDistrictRejectsBadBody(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/districts", bytes.NewReader([]byte("not json")))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateDistrictEndpoint(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{districts: []location.District{{ID: 5, ProvinceID: 1}}})
+
+	body, err := json.Marshal(map[string]string{"nameThai": "กุดชุม", "nameEnglish": "Kut Chum"})
+	require.NoError(t, err)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/districts/5", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Equal(t, "Kut Chum", got["nameEnglish"])
+}
+
+func TestUpdateDistrictRejectsBadID(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/districts/abc", bytes.NewReader([]byte("{}")))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestDeleteDistrictEndpoint(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/districts/5", nil)
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestDeleteDistrictRejectsWhenReferenced(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{healerCount: 1})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/districts/5", nil)
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusConflict, rec.Code)
 }

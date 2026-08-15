@@ -25,3 +25,31 @@ type ProvinceDeletedEvent struct{ ProvinceID int64 }
 
 // EventName identifies the event kind.
 func (ProvinceDeletedEvent) EventName() string { return "province.deleted" }
+
+// DistrictCreatedEvent is published after a district is created.
+type DistrictCreatedEvent struct {
+	DistrictID  int64
+	ProvinceID  int64
+	NameThai    string
+	NameEnglish string
+}
+
+// EventName identifies the event kind.
+func (DistrictCreatedEvent) EventName() string { return "district.created" }
+
+// DistrictUpdatedEvent is published after a district is updated.
+type DistrictUpdatedEvent struct {
+	DistrictID  int64
+	ProvinceID  int64
+	NameThai    string
+	NameEnglish string
+}
+
+// EventName identifies the event kind.
+func (DistrictUpdatedEvent) EventName() string { return "district.updated" }
+
+// DistrictDeletedEvent is published after a district is deleted.
+type DistrictDeletedEvent struct{ DistrictID int64 }
+
+// EventName identifies the event kind.
+func (DistrictDeletedEvent) EventName() string { return "district.deleted" }

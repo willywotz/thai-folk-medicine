@@ -35,3 +35,17 @@ DELETE FROM province WHERE id = $1;
 
 -- name: CountDistrictByProvince :one
 SELECT COUNT(*) FROM district WHERE province_id = sqlc.arg('province_id');
+
+-- name: CreateDistrict :one
+INSERT INTO district (province_id, name_thai, name_english)
+VALUES ($1, $2, $3)
+RETURNING id, province_id, name_thai, name_english;
+
+-- name: UpdateDistrict :one
+UPDATE district
+SET name_thai = $2, name_english = $3
+WHERE id = $1
+RETURNING id, province_id, name_thai, name_english;
+
+-- name: DeleteDistrict :execrows
+DELETE FROM district WHERE id = $1;

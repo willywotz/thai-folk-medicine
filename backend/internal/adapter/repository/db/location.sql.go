@@ -20,6 +20,30 @@ func (q *Queries) CountDistrictByProvince(ctx context.Context, provinceID int64)
 	return count, err
 }
 
+const createDistrict = `-- name: CreateDistrict :one
+INSERT INTO district (province_id, name_thai, name_english)
+VALUES ($1, $2, $3)
+RETURNING id, province_id, name_thai, name_english
+`
+
+type CreateDistrictParams struct {
+	ProvinceID  int64
+	NameThai    string
+	NameEnglish string
+}
+
+func (q *Queries) CreateDistrict(ctx context.Context, arg CreateDistrictParams) (District, error) {
+	row := q.db.QueryRow(ctx, createDistrict, arg.ProvinceID, arg.NameThai, arg.NameEnglish)
+	var i District
+	err := row.Scan(
+		&i.ID,
+		&i.ProvinceID,
+		&i.NameThai,
+		&i.NameEnglish,
+	)
+	return i, err
+}
+
 const createProvince = `-- name: CreateProvince :one
 INSERT INTO province (name_thai, name_english)
 VALUES ($1, $2)
@@ -36,6 +60,18 @@ func (q *Queries) CreateProvince(ctx context.Context, arg CreateProvinceParams) 
 	var i Province
 	err := row.Scan(&i.ID, &i.NameThai, &i.NameEnglish)
 	return i, err
+}
+
+const deleteDistrict = `-- name: DeleteDistrict :execrows
+DELETE FROM district WHERE id = $1
+`
+
+func (q *Queries) DeleteDistrict(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteDistrict, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteProvince = `-- name: DeleteProvince :execrows
@@ -137,6 +173,31 @@ func (q *Queries) ListProvince(ctx context.Context) ([]Province, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateDistrict = `-- name: UpdateDistrict :one
+UPDATE district
+SET name_thai = $2, name_english = $3
+WHERE id = $1
+RETURNING id, province_id, name_thai, name_english
+`
+
+type UpdateDistrictParams struct {
+	ID          int64
+	NameThai    string
+	NameEnglish string
+}
+
+func (q *Queries) UpdateDistrict(ctx context.Context, arg UpdateDistrictParams) (District, error) {
+	row := q.db.QueryRow(ctx, updateDistrict, arg.ID, arg.NameThai, arg.NameEnglish)
+	var i District
+	err := row.Scan(
+		&i.ID,
+		&i.ProvinceID,
+		&i.NameThai,
+		&i.NameEnglish,
+	)
+	return i, err
 }
 
 const updateProvince = `-- name: UpdateProvince :one

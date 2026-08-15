@@ -2,12 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
+import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
 import { deleteProvince, fetchProvinces, provinceListKey } from "@/lib/staff-queries";
 
 export function ProvinceAdminList() {
+  const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: provinces, isLoading, isError } = useQuery({
     queryKey: provinceListKey,
@@ -22,11 +25,14 @@ export function ProvinceAdminList() {
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load provinces.</p>;
 
+  const shown = (provinces ?? []).filter((p) => matchesQuery(query, p.nameThai, p.nameEnglish));
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <StaffSearch value={query} onChange={setQuery} placeholder="Search provinces…" />
         <span className="text-sm text-ink-faint">
-          {provinces?.length ?? 0} {provinces?.length === 1 ? "province" : "provinces"}
+          {shown.length} {shown.length === 1 ? "province" : "provinces"}
         </span>
         <Link href="/staff/provinces/new" className={btnPrimary}>
           <span aria-hidden>+</span> New province
@@ -35,11 +41,11 @@ export function ProvinceAdminList() {
       {remove.isError ? (
         <p className="text-sm text-destructive">This province still has districts. Delete them first.</p>
       ) : null}
-      {!provinces || provinces.length === 0 ? (
+      {shown.length === 0 ? (
         <EmptyState message="No provinces yet." />
       ) : (
         <ul className={staffCard}>
-          {provinces.map((p) => (
+          {shown.map((p) => (
             <li key={p.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
                 {p.nameThai.trim().charAt(0)}

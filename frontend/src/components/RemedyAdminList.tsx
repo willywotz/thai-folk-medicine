@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
+import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { deleteRemedy, fetchRemedies, remedyListKey } from "@/lib/staff-queries";
 
 export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "fullName">[] }) {
   const [healerId, setHealerId] = useState<number | undefined>(undefined);
+  const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: remedies, isLoading, isError } = useQuery({
     queryKey: remedyListKey(healerId),
@@ -27,10 +29,13 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load remedies.</p>;
 
+  const shown = (remedies ?? []).filter((r) => matchesQuery(query, r.name));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <StaffSearch value={query} onChange={setQuery} placeholder="Search remedies…" />
           <label htmlFor="healerFilter" className={staffLabel}>
             Healer
           </label>
@@ -49,7 +54,7 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
           </select>
         </div>
         <span className="text-sm text-ink-faint">
-          {remedies?.length ?? 0} {remedies?.length === 1 ? "remedy" : "remedies"}
+          {shown.length} {shown.length === 1 ? "remedy" : "remedies"}
         </span>
         <Link href="/staff/remedies/new" className={btnPrimary}>
           <span aria-hidden>+</span> New remedy
@@ -60,11 +65,11 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
           Could not delete this remedy. It may still have treatment cases.
         </p>
       ) : null}
-      {!remedies || remedies.length === 0 ? (
+      {shown.length === 0 ? (
         <EmptyState message="No remedies yet." />
       ) : (
         <ul className={staffCard}>
-          {remedies.map((r) => (
+          {shown.map((r) => (
             <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{r.name}</p>

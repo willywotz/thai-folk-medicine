@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
+import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
 
 export function HealerAdminList({ districts }: { districts: District[] }) {
   const [districtId, setDistrictId] = useState<number | undefined>(undefined);
+  const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: healers, isLoading, isError } = useQuery({
     queryKey: healerListKey(districtId),
@@ -30,10 +32,13 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
   if (isError) return <p className="text-destructive">Could not load healers.</p>;
 
+  const shown = (healers ?? []).filter((h) => matchesQuery(query, h.fullName, h.specialty));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <StaffSearch value={query} onChange={setQuery} placeholder="Search healers…" />
           <label htmlFor="districtFilter" className={staffLabel}>
             District
           </label>
@@ -52,7 +57,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
           </select>
         </div>
         <span className="text-sm text-ink-faint">
-          {healers?.length ?? 0} {healers?.length === 1 ? "healer" : "healers"}
+          {shown.length} {shown.length === 1 ? "healer" : "healers"}
         </span>
         <Link href="/staff/healers/new" className={btnPrimary}>
           <span aria-hidden>+</span> New healer
@@ -63,11 +68,11 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
           Could not delete this healer. It may still have remedies or cases.
         </p>
       ) : null}
-      {!healers || healers.length === 0 ? (
+      {shown.length === 0 ? (
         <EmptyState message="No healers yet." />
       ) : (
         <ul className={staffCard}>
-          {healers.map((h) => (
+          {shown.map((h) => (
             <li key={h.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
                 {h.fullName.trim().charAt(0)}

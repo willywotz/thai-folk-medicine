@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
+import { DistrictAdminList } from "@/components/DistrictAdminList";
 import { ProvinceForm } from "@/components/ProvinceForm";
+import { SectionHead } from "@/components/SectionHead";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getProvince } from "@/lib/api";
 
@@ -22,6 +24,8 @@ export default async function EditProvincePage({
         title={`Edit ${province.nameThai}`}
       />
       <ProvinceForm province={province} />
+      <SectionHead titleThai="อำเภอ" titleEnglish="Districts" />
+      <DistrictAdminList provinceId={id} />
     </section>
   );
 }

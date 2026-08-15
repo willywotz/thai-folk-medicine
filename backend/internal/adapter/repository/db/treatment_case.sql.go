@@ -11,6 +11,28 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countCaseByRemedy = `-- name: CountCaseByRemedy :one
+SELECT COUNT(*) FROM treatment_case WHERE remedy_id = $1
+`
+
+func (q *Queries) CountCaseByRemedy(ctx context.Context, remedyID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countCaseByRemedy, remedyID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countCasePage = `-- name: CountCasePage :one
+SELECT COUNT(*) FROM treatment_case
+`
+
+func (q *Queries) CountCasePage(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countCasePage)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTreatmentCase = `-- name: CreateTreatmentCase :one
 INSERT INTO treatment_case (remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -93,15 +115,22 @@ func (q *Queries) GetTreatmentCase(ctx context.Context, id int64) (TreatmentCase
 	return i, err
 }
 
-const listRecentTreatmentCase = `-- name: ListRecentTreatmentCase :many
+const listCaseByRemedyPage = `-- name: ListCaseByRemedyPage :many
 SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
 FROM treatment_case
+WHERE remedy_id = $1
 ORDER BY treated_on DESC, id DESC
-LIMIT $1
+LIMIT $3 OFFSET $2
 `
 
-func (q *Queries) ListRecentTreatmentCase(ctx context.Context, limit int32) ([]TreatmentCase, error) {
-	rows, err := q.db.Query(ctx, listRecentTreatmentCase, limit)
+type ListCaseByRemedyPageParams struct {
+	RemedyID   int64
+	PageOffset int32
+	PageLimit  int32
+}
+
+func (q *Queries) ListCaseByRemedyPage(ctx context.Context, arg ListCaseByRemedyPageParams) ([]TreatmentCase, error) {
+	rows, err := q.db.Query(ctx, listCaseByRemedyPage, arg.RemedyID, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -132,15 +161,20 @@ func (q *Queries) ListRecentTreatmentCase(ctx context.Context, limit int32) ([]T
 	return items, nil
 }
 
-const listTreatmentCaseByRemedy = `-- name: ListTreatmentCaseByRemedy :many
+const listRecentCasePage = `-- name: ListRecentCasePage :many
 SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
 FROM treatment_case
-WHERE remedy_id = $1
 ORDER BY treated_on DESC, id DESC
+LIMIT $2 OFFSET $1
 `
 
-func (q *Queries) ListTreatmentCaseByRemedy(ctx context.Context, remedyID int64) ([]TreatmentCase, error) {
-	rows, err := q.db.Query(ctx, listTreatmentCaseByRemedy, remedyID)
+type ListRecentCasePageParams struct {
+	PageOffset int32
+	PageLimit  int32
+}
+
+func (q *Queries) ListRecentCasePage(ctx context.Context, arg ListRecentCasePageParams) ([]TreatmentCase, error) {
+	rows, err := q.db.Query(ctx, listRecentCasePage, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

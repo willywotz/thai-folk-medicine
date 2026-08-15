@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrNotFound means no treatment case has the given id.
@@ -54,8 +56,8 @@ type UpdateParams struct {
 type Repository interface {
 	Create(ctx context.Context, p CreateParams) (TreatmentCase, error)
 	GetByID(ctx context.Context, id int64) (TreatmentCase, error)
-	ListByRemedy(ctx context.Context, remedyID int64) ([]TreatmentCase, error)
-	ListRecent(ctx context.Context, limit int32) ([]TreatmentCase, error)
+	ListByRemedyPage(ctx context.Context, remedyID int64, p listing.Params) (listing.Page[TreatmentCase], error)
+	ListPage(ctx context.Context, p listing.Params) (listing.Page[TreatmentCase], error)
 	Update(ctx context.Context, p UpdateParams) (TreatmentCase, error)
 	Delete(ctx context.Context, id int64) error
 }

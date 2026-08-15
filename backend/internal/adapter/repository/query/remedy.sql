@@ -8,11 +8,15 @@ SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_a
 FROM remedy
 WHERE id = $1;
 
--- name: ListRemedyByHealer :many
+-- name: ListRemedyByHealerPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
-WHERE healer_id = $1
-ORDER BY name;
+WHERE healer_id = sqlc.arg('healer_id')
+ORDER BY name
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountRemedyByHealer :one
+SELECT COUNT(*) FROM remedy WHERE healer_id = sqlc.arg('healer_id');
 
 -- name: ListRemedyPage :many
 SELECT r.id, r.healer_id, r.name, r.symptoms, r.preparation_method, r.usage, r.note, r.created_at, r.updated_at

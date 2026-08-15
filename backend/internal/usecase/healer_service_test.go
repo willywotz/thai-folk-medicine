@@ -10,6 +10,7 @@ import (
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/event"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 type fakeHealerRepo struct {
@@ -31,8 +32,8 @@ func (f *fakeHealerRepo) Create(_ context.Context, p healer.CreateParams) (heale
 func (f *fakeHealerRepo) GetByID(context.Context, int64) (healer.Healer, error) {
 	return f.created, nil
 }
-func (f *fakeHealerRepo) ListByDistrict(context.Context, int64) ([]healer.Healer, error) {
-	return []healer.Healer{f.created}, nil
+func (f *fakeHealerRepo) ListByDistrictPage(context.Context, int64, listing.Params) (listing.Page[healer.Healer], error) {
+	return listing.Page[healer.Healer]{Items: []healer.Healer{f.created}, Total: 1}, nil
 }
 func (f *fakeHealerRepo) Update(_ context.Context, p healer.UpdateParams) (healer.Healer, error) {
 	if f.updateErr != nil {

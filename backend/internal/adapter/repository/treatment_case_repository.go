@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/treatmentcase"
 )
 
@@ -72,30 +73,42 @@ func (r *TreatmentCase) GetByID(ctx context.Context, id int64) (treatmentcase.Tr
 	return toTreatmentCase(row), nil
 }
 
-// ListByRemedy returns the cases for one remedy.
-func (r *TreatmentCase) ListByRemedy(ctx context.Context, remedyID int64) ([]treatmentcase.TreatmentCase, error) {
-	rows, err := r.q.ListTreatmentCaseByRemedy(ctx, remedyID)
+// ListByRemedyPage returns one page of cases for one remedy.
+func (r *TreatmentCase) ListByRemedyPage(ctx context.Context, remedyID int64, p listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	rows, err := r.q.ListCaseByRemedyPage(ctx, db.ListCaseByRemedyPageParams{
+		RemedyID: remedyID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[treatmentcase.TreatmentCase]{}, err
 	}
-	result := make([]treatmentcase.TreatmentCase, 0, len(rows))
+	total, err := r.q.CountCaseByRemedy(ctx, remedyID)
+	if err != nil {
+		return listing.Page[treatmentcase.TreatmentCase]{}, err
+	}
+	items := make([]treatmentcase.TreatmentCase, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toTreatmentCase(row))
+		items = append(items, toTreatmentCase(row))
 	}
-	return result, nil
+	return listing.Page[treatmentcase.TreatmentCase]{Items: items, Total: int(total)}, nil
 }
 
-// ListRecent returns the most recently treated cases.
-func (r *TreatmentCase) ListRecent(ctx context.Context, limit int32) ([]treatmentcase.TreatmentCase, error) {
-	rows, err := r.q.ListRecentTreatmentCase(ctx, limit)
+// ListPage returns one page of the most recently treated cases.
+func (r *TreatmentCase) ListPage(ctx context.Context, p listing.Params) (listing.Page[treatmentcase.TreatmentCase], error) {
+	rows, err := r.q.ListRecentCasePage(ctx, db.ListRecentCasePageParams{
+		PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[treatmentcase.TreatmentCase]{}, err
 	}
-	result := make([]treatmentcase.TreatmentCase, 0, len(rows))
+	total, err := r.q.CountCasePage(ctx)
+	if err != nil {
+		return listing.Page[treatmentcase.TreatmentCase]{}, err
+	}
+	items := make([]treatmentcase.TreatmentCase, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toTreatmentCase(row))
+		items = append(items, toTreatmentCase(row))
 	}
-	return result, nil
+	return listing.Page[treatmentcase.TreatmentCase]{Items: items, Total: int(total)}, nil
 }
 
 // Update changes a case or returns treatmentcase.ErrNotFound.

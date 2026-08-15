@@ -8,11 +8,15 @@ SELECT id, district_id, full_name, sub_district, specialty, biography, created_a
 FROM healer
 WHERE id = $1;
 
--- name: ListHealerByDistrict :many
+-- name: ListHealerByDistrictPage :many
 SELECT id, district_id, full_name, sub_district, specialty, biography, created_at, updated_at
 FROM healer
-WHERE district_id = $1
-ORDER BY full_name;
+WHERE district_id = sqlc.arg('district_id')
+ORDER BY full_name
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountHealerByDistrict :one
+SELECT COUNT(*) FROM healer WHERE district_id = sqlc.arg('district_id');
 
 -- name: UpdateHealer :one
 UPDATE healer

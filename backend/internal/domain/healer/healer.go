@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrNotFound means no healer has the given id.
@@ -49,7 +51,7 @@ type UpdateParams struct {
 type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Healer, error)
 	GetByID(ctx context.Context, id int64) (Healer, error)
-	ListByDistrict(ctx context.Context, districtID int64) ([]Healer, error)
+	ListByDistrictPage(ctx context.Context, districtID int64, p listing.Params) (listing.Page[Healer], error)
 	Update(ctx context.Context, p UpdateParams) (Healer, error)
 	Delete(ctx context.Context, id int64) error
 }

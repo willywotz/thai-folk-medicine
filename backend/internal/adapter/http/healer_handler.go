@@ -63,23 +63,24 @@ type healerRequest struct {
 	Biography   string `json:"biography"`
 }
 
-// ListByDistrict handles GET /api/v1/districts/:districtId/healers.
+// ListByDistrict handles GET /api/v1/districts/:districtId/healers?page&pageSize.
 func (h *HealerHandler) ListByDistrict(c *gin.Context) {
 	districtID, err := strconv.ParseInt(c.Param("districtId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "district id must be a number"})
 		return
 	}
-	list, err := h.service.ListByDistrict(c.Request.Context(), districtID)
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListByDistrictPage(c.Request.Context(), districtID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list healers"})
 		return
 	}
-	out := make([]healerDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]healerDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toHealerDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Get handles GET /api/v1/healers/:healerId.

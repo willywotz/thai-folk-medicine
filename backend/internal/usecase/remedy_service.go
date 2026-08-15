@@ -41,9 +41,9 @@ func (s *RemedyService) Get(ctx context.Context, id int64) (remedy.Remedy, error
 	return s.repo.GetByID(ctx, id)
 }
 
-// ListByHealer returns the remedies of one healer.
-func (s *RemedyService) ListByHealer(ctx context.Context, healerID int64) ([]remedy.Remedy, error) {
-	return s.repo.ListByHealer(ctx, healerID)
+// ListByHealerPage returns one page of the remedies of one healer.
+func (s *RemedyService) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	return s.repo.ListByHealerPage(ctx, healerID, p)
 }
 
 // ListPage returns one paginated, filtered page of remedies.

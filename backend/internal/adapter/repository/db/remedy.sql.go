@@ -11,6 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countRemedyByHealer = `-- name: CountRemedyByHealer :one
+SELECT COUNT(*) FROM remedy WHERE healer_id = $1
+`
+
+func (q *Queries) CountRemedyByHealer(ctx context.Context, healerID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countRemedyByHealer, healerID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countRemedyPage = `-- name: CountRemedyPage :one
 SELECT COUNT(*)
 FROM remedy r
@@ -109,15 +120,22 @@ func (q *Queries) GetRemedy(ctx context.Context, id int64) (Remedy, error) {
 	return i, err
 }
 
-const listRemedyByHealer = `-- name: ListRemedyByHealer :many
+const listRemedyByHealerPage = `-- name: ListRemedyByHealerPage :many
 SELECT id, healer_id, name, symptoms, preparation_method, usage, note, created_at, updated_at
 FROM remedy
 WHERE healer_id = $1
 ORDER BY name
+LIMIT $3 OFFSET $2
 `
 
-func (q *Queries) ListRemedyByHealer(ctx context.Context, healerID int64) ([]Remedy, error) {
-	rows, err := q.db.Query(ctx, listRemedyByHealer, healerID)
+type ListRemedyByHealerPageParams struct {
+	HealerID   int64
+	PageOffset int32
+	PageLimit  int32
+}
+
+func (q *Queries) ListRemedyByHealerPage(ctx context.Context, arg ListRemedyByHealerPageParams) ([]Remedy, error) {
+	rows, err := q.db.Query(ctx, listRemedyByHealerPage, arg.HealerID, arg.PageOffset, arg.PageLimit)
 	if err != nil {
 		return nil, err
 	}

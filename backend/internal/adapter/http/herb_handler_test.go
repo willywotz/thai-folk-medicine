@@ -44,8 +44,8 @@ func (s *stubHerbRepo) Delete(context.Context, int64) error { return nil }
 
 type stubHerbRemedyReader struct{}
 
-func (stubHerbRemedyReader) ListByHerb(_ context.Context, herbID int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1, Name: "ยาต้ม", HealerID: herbID}}, nil
+func (stubHerbRemedyReader) ListByHerbPage(_ context.Context, herbID int64, _ listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1, Name: "ยาต้ม", HealerID: herbID}}, Total: 1}, nil
 }
 
 func newHerbRouter(repo herb.Repository) *gin.Engine {
@@ -123,8 +123,12 @@ func TestHerbHandler_ListRemediesEndpoint(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
-	assert.Equal(t, "ยาต้ม", got[0]["name"])
+	var body struct {
+		Items []map[string]any `json:"items"`
+		Total int              `json:"total"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, "ยาต้ม", body.Items[0]["name"])
+	assert.Equal(t, 1, body.Total)
 }

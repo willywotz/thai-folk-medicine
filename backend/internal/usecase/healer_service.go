@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrInvalidHealer means the healer input failed validation.
@@ -40,9 +41,9 @@ func (s *HealerService) Get(ctx context.Context, id int64) (healer.Healer, error
 	return s.repo.GetByID(ctx, id)
 }
 
-// ListByDistrict returns the healers in one district.
-func (s *HealerService) ListByDistrict(ctx context.Context, districtID int64) ([]healer.Healer, error) {
-	return s.repo.ListByDistrict(ctx, districtID)
+// ListByDistrictPage returns one page of the healers in one district.
+func (s *HealerService) ListByDistrictPage(ctx context.Context, districtID int64, p listing.Params) (listing.Page[healer.Healer], error) {
+	return s.repo.ListByDistrictPage(ctx, districtID, p)
 }
 
 // Update validates and changes a healer, then publishes UpdatedEvent.

@@ -8,6 +8,7 @@ import (
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/healer"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // Healer stores and reads healers in Postgres.
@@ -60,17 +61,23 @@ func (r *Healer) GetByID(ctx context.Context, id int64) (healer.Healer, error) {
 	return toHealer(row), nil
 }
 
-// ListByDistrict returns the healers in one district.
-func (r *Healer) ListByDistrict(ctx context.Context, districtID int64) ([]healer.Healer, error) {
-	rows, err := r.q.ListHealerByDistrict(ctx, districtID)
+// ListByDistrictPage returns one page of the healers in one district.
+func (r *Healer) ListByDistrictPage(ctx context.Context, districtID int64, p listing.Params) (listing.Page[healer.Healer], error) {
+	rows, err := r.q.ListHealerByDistrictPage(ctx, db.ListHealerByDistrictPageParams{
+		DistrictID: districtID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[healer.Healer]{}, err
 	}
-	result := make([]healer.Healer, 0, len(rows))
+	total, err := r.q.CountHealerByDistrict(ctx, districtID)
+	if err != nil {
+		return listing.Page[healer.Healer]{}, err
+	}
+	items := make([]healer.Healer, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toHealer(row))
+		items = append(items, toHealer(row))
 	}
-	return result, nil
+	return listing.Page[healer.Healer]{Items: items, Total: int(total)}, nil
 }
 
 // Update changes a healer or returns healer.ErrNotFound.

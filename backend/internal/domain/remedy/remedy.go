@@ -87,8 +87,8 @@ type UpdateParams struct {
 type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Remedy, error)
 	GetByID(ctx context.Context, id int64) (Remedy, error)
-	ListByHealer(ctx context.Context, healerID int64) ([]Remedy, error)
-	ListByHerb(ctx context.Context, herbID int64) ([]Remedy, error)
+	ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[Remedy], error)
+	ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[Remedy], error)
 	ListPage(ctx context.Context, q ListQuery) (listing.Page[Remedy], error)
 	Update(ctx context.Context, p UpdateParams) (Remedy, error)
 	Delete(ctx context.Context, id int64) error

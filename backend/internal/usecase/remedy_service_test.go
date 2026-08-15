@@ -27,11 +27,11 @@ func (f *fakeRemedyRepo) Create(_ context.Context, p remedy.CreateParams) (remed
 func (f *fakeRemedyRepo) GetByID(context.Context, int64) (remedy.Remedy, error) {
 	return remedy.Remedy{ID: 1}, nil
 }
-func (f *fakeRemedyRepo) ListByHealer(context.Context, int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1}}, nil
+func (f *fakeRemedyRepo) ListByHealerPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
-func (f *fakeRemedyRepo) ListByHerb(context.Context, int64) ([]remedy.Remedy, error) {
-	return []remedy.Remedy{{ID: 1}}, nil
+func (f *fakeRemedyRepo) ListByHerbPage(context.Context, int64, listing.Params) (listing.Page[remedy.Remedy], error) {
+	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil
 }
 func (f *fakeRemedyRepo) ListPage(context.Context, remedy.ListQuery) (listing.Page[remedy.Remedy], error) {
 	return listing.Page[remedy.Remedy]{Items: []remedy.Remedy{{ID: 1}}, Total: 1}, nil

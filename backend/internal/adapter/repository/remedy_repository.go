@@ -107,30 +107,43 @@ func (r *Remedy) GetByID(ctx context.Context, id int64) (remedy.Remedy, error) {
 	return out, nil
 }
 
-// ListByHealer returns a healer's remedies (without herb links, for list views).
-func (r *Remedy) ListByHealer(ctx context.Context, healerID int64) ([]remedy.Remedy, error) {
-	rows, err := r.q.ListRemedyByHealer(ctx, healerID)
+// ListByHealerPage returns one page of a healer's remedies (without herb
+// links, for list views).
+func (r *Remedy) ListByHealerPage(ctx context.Context, healerID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	rows, err := r.q.ListRemedyByHealerPage(ctx, db.ListRemedyByHealerPageParams{
+		HealerID: healerID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[remedy.Remedy]{}, err
 	}
-	result := make([]remedy.Remedy, 0, len(rows))
+	total, err := r.q.CountRemedyByHealer(ctx, healerID)
+	if err != nil {
+		return listing.Page[remedy.Remedy]{}, err
+	}
+	items := make([]remedy.Remedy, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toRemedy(row))
+		items = append(items, toRemedy(row))
 	}
-	return result, nil
+	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
-// ListByHerb returns the remedies that use a herb.
-func (r *Remedy) ListByHerb(ctx context.Context, herbID int64) ([]remedy.Remedy, error) {
-	rows, err := r.q.ListRemedyByHerb(ctx, herbID)
+// ListByHerbPage returns one page of the remedies that use a herb.
+func (r *Remedy) ListByHerbPage(ctx context.Context, herbID int64, p listing.Params) (listing.Page[remedy.Remedy], error) {
+	rows, err := r.q.ListRemedyByHerbPage(ctx, db.ListRemedyByHerbPageParams{
+		HerbID: herbID, PageLimit: int32(p.Limit), PageOffset: int32(p.Offset),
+	})
 	if err != nil {
-		return nil, err
+		return listing.Page[remedy.Remedy]{}, err
 	}
-	result := make([]remedy.Remedy, 0, len(rows))
+	total, err := r.q.CountRemedyByHerb(ctx, herbID)
+	if err != nil {
+		return listing.Page[remedy.Remedy]{}, err
+	}
+	items := make([]remedy.Remedy, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, toRemedy(row))
+		items = append(items, toRemedy(row))
 	}
-	return result, nil
+	return listing.Page[remedy.Remedy]{Items: items, Total: int(total)}, nil
 }
 
 // ListPage returns one page of remedies matching the optional filters.

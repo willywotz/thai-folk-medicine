@@ -8,17 +8,24 @@ SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, not
 FROM treatment_case
 WHERE id = $1;
 
--- name: ListTreatmentCaseByRemedy :many
+-- name: ListCaseByRemedyPage :many
 SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
 FROM treatment_case
-WHERE remedy_id = $1
-ORDER BY treated_on DESC, id DESC;
+WHERE remedy_id = sqlc.arg('remedy_id')
+ORDER BY treated_on DESC, id DESC
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
 
--- name: ListRecentTreatmentCase :many
+-- name: CountCaseByRemedy :one
+SELECT COUNT(*) FROM treatment_case WHERE remedy_id = sqlc.arg('remedy_id');
+
+-- name: ListRecentCasePage :many
 SELECT id, remedy_id, healer_id, patient_age, patient_sex, symptoms, result, note, treated_on, created_at, updated_at
 FROM treatment_case
 ORDER BY treated_on DESC, id DESC
-LIMIT $1;
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountCasePage :one
+SELECT COUNT(*) FROM treatment_case;
 
 -- name: UpdateTreatmentCase :one
 UPDATE treatment_case

@@ -75,8 +75,9 @@ ansible-playbook -i inventory.ini playbook.yml \
 - The deploy installs an nginx reverse proxy at
   `/etc/nginx/conf.d/{{ nginx_conf_name }}` (default
   `thai-folk-medicine.conf`) that proxies `:80` to the frontend's published
-  port, then runs `nginx -t && systemctl reload nginx`. Requires sudo on the
-  deploy user and nginx already installed on the server. Set
+  port, then runs `nginx -t && systemctl reload nginx`. The playbook connects
+  as `ansible_user` (set to `root` for a root-only server) with no privilege
+  escalation, so nginx must already be installed on the server. Set
   `nginx_server_name` in `vars.yml` to your domain (default `_` catch-all).
   This is HTTP only — terminate TLS in front (external LB / CDN) or extend the
   template with a `:443` server block.

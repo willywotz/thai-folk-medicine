@@ -1,7 +1,7 @@
 # Copy this file to group_vars/prod/vault.yml, fill in real values, then encrypt:
 #   ansible-vault encrypt deploy/group_vars/prod/vault.yml
 ansible_host: 203.0.113.10
-ansible_user: deploy
+ansible_user: root
 jwt_secret: CHANGE_ME_64_HEX
 postgres_password: CHANGE_ME
 staff_admin_username: admin

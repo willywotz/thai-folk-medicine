@@ -8,9 +8,11 @@ import { EmptyState } from "@/components/EmptyState";
 import { RowAvatar } from "@/components/RowAvatar";
 import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
+import { useT } from "@/lib/i18n/useT";
 import { deleteProvince, fetchProvinces, provinceListKey } from "@/lib/staff-queries";
 
 export function ProvinceAdminList() {
+  const t = useT();
   const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: provinces, isLoading, isError } = useQuery({
@@ -24,26 +26,26 @@ export function ProvinceAdminList() {
   });
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
-  if (isError) return <p className="text-destructive">Could not load provinces.</p>;
+  if (isError) return <p className="text-destructive">{t.staff.errorLoadProvinces}</p>;
 
   const shown = (provinces ?? []).filter((p) => matchesQuery(query, p.nameThai, p.nameEnglish));
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <StaffSearch value={query} onChange={setQuery} placeholder="Search provinces…" />
+        <StaffSearch value={query} onChange={setQuery} placeholder={t.staff.searchProvinces} />
         <span className="text-sm text-ink-faint">
           {shown.length} {shown.length === 1 ? "province" : "provinces"}
         </span>
         <Link href="/staff/provinces/new" className={btnPrimary}>
-          <span aria-hidden>+</span> New province
+          <span aria-hidden>+</span> {t.staff.newProvinceCrumb}
         </Link>
       </div>
       {remove.isError ? (
-        <p className="text-sm text-destructive">This province still has districts. Delete them first.</p>
+        <p className="text-sm text-destructive">{t.staff.errorProvinceHasDistricts}</p>
       ) : null}
       {shown.length === 0 ? (
-        <EmptyState message="No provinces yet." />
+        <EmptyState message={t.staff.emptyProvinces} />
       ) : (
         <ul className={staffCard}>
           {shown.map((p) => (
@@ -56,7 +58,7 @@ export function ProvinceAdminList() {
               <Link href={`/staff/provinces/${p.id}`} className={linkAction}>
                 Districts
               </Link>
-              <Link href={`/staff/provinces/${p.id}/edit`} aria-label={`Edit ${p.nameThai}`} className={iconBtn}>
+              <Link href={`/staff/provinces/${p.id}/edit`} aria-label={t.staff.editName(p.nameThai)} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
                 </svg>
@@ -65,7 +67,7 @@ export function ProvinceAdminList() {
                 type="button"
                 onClick={() => remove.mutate(p.id)}
                 disabled={remove.isPending}
-                aria-label={`Delete ${p.nameThai}`}
+                aria-label={t.staff.deleteName(p.nameThai)}
                 className={iconBtnDanger}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

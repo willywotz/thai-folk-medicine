@@ -3,11 +3,17 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 import { HerbAdminList } from "./HerbAdminList";
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -34,8 +40,8 @@ describe("HerbAdminList", () => {
     const row = (await screen.findByText("ขิง")).closest("li")!;
     expect(within(row).getByText("Ginger")).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: /used in/i })).toHaveAttribute("href", "/staff/herbs/9");
-    expect(screen.getByRole("link", { name: /edit/i })).toHaveAttribute("href", "/staff/herbs/9/edit");
-    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "แก้ไข ขิง" })).toHaveAttribute("href", "/staff/herbs/9/edit");
+    expect(screen.getByRole("button", { name: "ลบ ขิง" })).toBeInTheDocument();
   });
 
   it("fetches page 1 without a search term", async () => {
@@ -57,7 +63,7 @@ describe("HerbAdminList", () => {
       vi.fn(async () => ({ ok: true, json: async () => ({ items: [], page: 1, pageSize: 20, total: 0, totalPages: 1 }) })) as unknown as typeof fetch,
     );
     renderWithClient(<HerbAdminList />);
-    expect(await screen.findByText(/no herbs/i)).toBeInTheDocument();
+    expect(await screen.findByText("ยังไม่มีสมุนไพร")).toBeInTheDocument();
   });
 
   it("shows an error and keeps the row when delete fails", async () => {
@@ -79,8 +85,8 @@ describe("HerbAdminList", () => {
     );
     renderWithClient(<HerbAdminList />);
     await screen.findByText("ขิง");
-    await userEvent.click(screen.getByRole("button", { name: /delete/i }));
-    expect(await screen.findByText(/could not delete/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "ลบ ขิง" }));
+    expect(await screen.findByText("ลบไม่สำเร็จ สมุนไพรนี้อาจยังถูกใช้ในตำรับยา")).toBeInTheDocument();
     expect(screen.getByText("ขิง")).toBeInTheDocument();
   });
 
@@ -94,7 +100,7 @@ describe("HerbAdminList", () => {
       }) as unknown as typeof fetch,
     );
     renderWithClient(<HerbAdminList />);
-    const input = await screen.findByPlaceholderText("Search herbs…");
+    const input = await screen.findByPlaceholderText("ค้นหาสมุนไพร…");
     await waitFor(() => expect(calls).toContain("/api/v1/herbs?page=1&pageSize=20"));
     await userEvent.type(input, "ขิง");
     await waitFor(

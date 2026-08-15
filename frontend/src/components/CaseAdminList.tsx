@@ -9,6 +9,7 @@ import { RowAvatar } from "@/components/RowAvatar";
 import { StaffPagination } from "@/components/StaffPagination";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
 import { formatThaiDate, patientSexLabel } from "@/lib/format";
+import { useT } from "@/lib/i18n/useT";
 import { caseListKey, deleteCase, fetchCases } from "@/lib/staff-queries";
 
 export function CaseAdminList({
@@ -18,6 +19,7 @@ export function CaseAdminList({
   remedies: { id: number; name: string; healerId: number }[];
   remedyId?: number;
 }) {
+  const t = useT();
   const [filterRemedyId, setFilterRemedyId] = useState<number | undefined>(undefined);
   const scopedRemedyId = remedyId ?? filterRemedyId;
   const [page, setPage] = useState(1);
@@ -42,7 +44,7 @@ export function CaseAdminList({
   const remedyName = (id: number) => remedies.find((r) => r.id === id)?.name ?? "—";
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
-  if (isError) return <p className="text-destructive">Could not load treatment cases.</p>;
+  if (isError) return <p className="text-destructive">{t.staff.errorLoadCases}</p>;
 
   const cases = data?.items ?? [];
 
@@ -52,7 +54,7 @@ export function CaseAdminList({
         {remedyId === undefined ? (
           <div className="flex items-center gap-2">
             <label htmlFor="remedyFilter" className={staffLabel}>
-              Remedy
+              {t.staff.form.remedy}
             </label>
             <select
               id="remedyFilter"
@@ -60,7 +62,7 @@ export function CaseAdminList({
               value={filterRemedyId ?? ""}
               onChange={(e) => setFilterRemedyId(e.target.value ? Number(e.target.value) : undefined)}
             >
-              <option value="">All remedies</option>
+              <option value="">{t.staff.allRemedies}</option>
               {remedies.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
@@ -76,12 +78,12 @@ export function CaseAdminList({
           href={remedyId !== undefined ? `/staff/cases/new?remedyId=${remedyId}` : "/staff/cases/new"}
           className={btnPrimary}
         >
-          <span aria-hidden>+</span> New treatment case
+          <span aria-hidden>+</span> {t.staff.newTreatmentCaseButton}
         </Link>
       </div>
-      {remove.isError ? <p className="text-sm text-destructive">Could not delete this case.</p> : null}
+      {remove.isError ? <p className="text-sm text-destructive">{t.staff.errorDeleteCase}</p> : null}
       {cases.length === 0 ? (
-        <EmptyState message="No treatment cases yet." />
+        <EmptyState message={t.staff.emptyCases} />
       ) : (
         <ul className={staffCard}>
           {cases.map((c) => (
@@ -98,7 +100,7 @@ export function CaseAdminList({
               </div>
               <Link
                 href={`/staff/cases/${c.id}/edit`}
-                aria-label="Edit case"
+                aria-label={t.staff.editCaseCrumb}
                 className={iconBtn}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -109,7 +111,7 @@ export function CaseAdminList({
                 type="button"
                 onClick={() => remove.mutate(c.id)}
                 disabled={remove.isPending}
-                aria-label="Delete case"
+                aria-label={t.staff.deleteCaseAria}
                 className={iconBtnDanger}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

@@ -3,6 +3,8 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 import { CaseAdminList } from "./CaseAdminList";
 
 const remedies = [
@@ -12,7 +14,11 @@ const remedies = [
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -37,7 +43,7 @@ describe("CaseAdminList", () => {
     renderWithClient(<CaseAdminList remedies={remedies} />);
     const row = (await screen.findByText(/1 March 2026/i)).closest("li")!;
     expect(within(row).getByText("ยาต้ม")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /edit/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "แก้ไขเคส" })).toHaveAttribute(
       "href",
       "/staff/cases/8/edit",
     );
@@ -54,7 +60,7 @@ describe("CaseAdminList", () => {
     );
     renderWithClient(<CaseAdminList remedies={remedies} />);
     await waitFor(() => expect(calls).toContain("/api/v1/treatment-cases?page=1&pageSize=20"));
-    await userEvent.selectOptions(await screen.findByLabelText(/^remedy/i), "5");
+    await userEvent.selectOptions(await screen.findByLabelText("ตำรับยา"), "5");
     await waitFor(() => expect(calls.at(-1)).toBe("/api/v1/remedies/5/treatment-cases?page=1&pageSize=20"));
   });
 
@@ -76,8 +82,8 @@ describe("CaseAdminList", () => {
     );
     renderWithClient(<CaseAdminList remedies={remedies} />);
     await screen.findByText(/1 March 2026/i);
-    await userEvent.click(screen.getByRole("button", { name: /delete/i }));
-    expect(await screen.findByText(/could not delete/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "ลบเคส" }));
+    expect(await screen.findByText("ลบเคสการรักษาไม่สำเร็จ")).toBeInTheDocument();
     expect(screen.getByText(/1 March 2026/i)).toBeInTheDocument();
   });
 
@@ -87,7 +93,7 @@ describe("CaseAdminList", () => {
       vi.fn(async () => ({ ok: true, json: async () => ({ items: [], page: 1, pageSize: 20, total: 0, totalPages: 1 }) })) as unknown as typeof fetch,
     );
     renderWithClient(<CaseAdminList remedies={remedies} />);
-    expect(await screen.findByText(/no treatment cases/i)).toBeInTheDocument();
+    expect(await screen.findByText("ยังไม่มีเคสการรักษา")).toBeInTheDocument();
   });
 
   it("scoped to a remedy: fetches that remedy's cases, hides the remedy column, and links + New to the remedy", async () => {
@@ -111,7 +117,7 @@ describe("CaseAdminList", () => {
     const row = (await screen.findByText(/1 March 2026/i)).closest("li")!;
     expect(within(row).queryByText("ยาต้ม")).not.toBeInTheDocument();
     expect(calls).toContain("/api/v1/remedies/5/treatment-cases?page=1&pageSize=20");
-    expect(screen.getByRole("link", { name: /new treatment case/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "เพิ่มเคสการรักษา" })).toHaveAttribute(
       "href",
       "/staff/cases/new?remedyId=5",
     );

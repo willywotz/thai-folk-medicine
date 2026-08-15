@@ -10,12 +10,14 @@ import { StaffPagination } from "@/components/StaffPagination";
 import { StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
+import { useT } from "@/lib/i18n/useT";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function HealerAdminList({ districts }: { districts: District[] }) {
+  const t = useT();
   const [input, setInput] = useState("");
   const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
   const [page, setPage] = useState(1);
@@ -43,7 +45,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
   };
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
-  if (isError) return <p className="text-destructive">Could not load healers.</p>;
+  if (isError) return <p className="text-destructive">{t.staff.errorLoadHealers}</p>;
 
   const healers = data?.items ?? [];
 
@@ -51,22 +53,20 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <StaffSearch value={input} onChange={setInput} placeholder="Search healers…" />
+          <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchHealersList} />
         </div>
         <span className="text-sm text-ink-faint">
           {data?.total ?? 0} {data?.total === 1 ? "healer" : "healers"}
         </span>
         <Link href="/staff/healers/new" className={btnPrimary}>
-          <span aria-hidden>+</span> New healer
+          <span aria-hidden>+</span> {t.staff.newHealerCrumb}
         </Link>
       </div>
       {remove.isError ? (
-        <p className="text-sm text-destructive">
-          Could not delete this healer. It may still have remedies or cases.
-        </p>
+        <p className="text-sm text-destructive">{t.staff.errorDeleteHealer}</p>
       ) : null}
       {healers.length === 0 ? (
-        <EmptyState message="No healers yet." />
+        <EmptyState message={t.staff.emptyHealers} />
       ) : (
         <ul className={staffCard}>
           {healers.map((h) => (
@@ -84,7 +84,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
               </Link>
               <Link
                 href={`/staff/healers/${h.id}/edit`}
-                aria-label={`Edit ${h.fullName}`}
+                aria-label={t.staff.editName(h.fullName)}
                 className={iconBtn}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -95,7 +95,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
                 type="button"
                 onClick={() => remove.mutate(h.id)}
                 disabled={remove.isPending}
-                aria-label={`Delete ${h.fullName}`}
+                aria-label={t.staff.deleteName(h.fullName)}
                 className={iconBtnDanger}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

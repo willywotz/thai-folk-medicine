@@ -9,12 +9,14 @@ import { RowAvatar } from "@/components/RowAvatar";
 import { StaffPagination } from "@/components/StaffPagination";
 import { StaffSearch } from "@/components/StaffSearch";
 import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
+import { useT } from "@/lib/i18n/useT";
 import { deleteHerb, fetchHerbs, herbListKey } from "@/lib/staff-queries";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function HerbAdminList() {
+  const t = useT();
   const [input, setInput] = useState("");
   const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
   const [page, setPage] = useState(1);
@@ -37,26 +39,26 @@ export function HerbAdminList() {
   });
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
-  if (isError) return <p className="text-destructive">Could not load herbs.</p>;
+  if (isError) return <p className="text-destructive">{t.staff.errorLoadHerbs}</p>;
 
   const herbs = data?.items ?? [];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <StaffSearch value={input} onChange={setInput} placeholder="Search herbs…" />
+        <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchHerbsList} />
         <span className="text-sm text-ink-faint">
           {data?.total ?? 0} {data?.total === 1 ? "herb" : "herbs"}
         </span>
         <Link href="/staff/herbs/new" className={btnPrimary}>
-          <span aria-hidden>+</span> New herb
+          <span aria-hidden>+</span> {t.staff.newHerbCrumb}
         </Link>
       </div>
       {remove.isError ? (
-        <p className="text-sm text-destructive">Could not delete. This herb may still be used by remedies.</p>
+        <p className="text-sm text-destructive">{t.staff.errorDeleteHerb}</p>
       ) : null}
       {herbs.length === 0 ? (
-        <EmptyState message="No herbs yet." />
+        <EmptyState message={t.staff.emptyHerbs} />
       ) : (
         <ul className={staffCard}>
           {herbs.map((h) => (
@@ -69,7 +71,7 @@ export function HerbAdminList() {
               <Link href={`/staff/herbs/${h.id}`} className={linkAction}>
                 Used in
               </Link>
-              <Link href={`/staff/herbs/${h.id}/edit`} aria-label={`Edit ${h.nameThai}`} className={iconBtn}>
+              <Link href={`/staff/herbs/${h.id}/edit`} aria-label={t.staff.editName(h.nameThai)} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
                 </svg>
@@ -78,7 +80,7 @@ export function HerbAdminList() {
                 type="button"
                 onClick={() => remove.mutate(h.id)}
                 disabled={remove.isPending}
-                aria-label={`Delete ${h.nameThai}`}
+                aria-label={t.staff.deleteName(h.nameThai)}
                 className={iconBtnDanger}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

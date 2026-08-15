@@ -69,7 +69,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      <SectionHead title={t.home.recentCases} />
+      <SectionHead title={t.home.recentCases} href="/treatment-cases" />
       {cases.length === 0 ? (
         <EmptyState message={t.home.noCases} />
       ) : (

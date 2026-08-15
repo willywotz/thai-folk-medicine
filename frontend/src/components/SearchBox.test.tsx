@@ -17,4 +17,10 @@ describe("SearchBox", () => {
     render(<SearchBox defaultValue="ไข้" />);
     expect(screen.getByRole("searchbox")).toHaveValue("ไข้");
   });
+
+  it("keeps the input and button", () => {
+    render(<SearchBox size="sm" />);
+    expect(screen.getByRole("searchbox")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ค้นหา" })).toBeInTheDocument();
+  });
 });

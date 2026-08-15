@@ -2,6 +2,7 @@ import type {
   District,
   Healer,
   Herb,
+  Photo,
   Province,
   Remedy,
   SearchResponse,
@@ -100,6 +101,21 @@ export async function listRecentCases(limit = 6): Promise<TreatmentCase[]> {
 /** photoUrl returns a same-origin path so the browser fetches through the proxy. */
 export function photoUrl(photoId: number): string {
   return `/api/v1/photos/${photoId}`;
+}
+
+/** listPhotosByOwner returns the photos attached to one owner (herb, remedy, healer, or case). */
+export async function listPhotosByOwner(ownerType: string, ownerId: number): Promise<Photo[]> {
+  return getJson<Photo[]>(`/photos?ownerType=${ownerType}&ownerId=${ownerId}`);
+}
+
+/**
+ * firstPhotoUrl returns the same-origin URL of an owner's first photo, or undefined.
+ * withinlazy: one request per owner (N+1 over a list); add a batch endpoint if a
+ * large grid needs covers.
+ */
+export async function firstPhotoUrl(ownerType: string, ownerId: number): Promise<string | undefined> {
+  const photos = await listPhotosByOwner(ownerType, ownerId);
+  return photos[0] ? photoUrl(photos[0].id) : undefined;
 }
 
 export async function search(term: string): Promise<SearchResponse> {

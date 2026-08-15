@@ -93,7 +93,7 @@ export default async function HomePage() {
           <SectionHead title={t.home.byArea} href="/districts" />
           <div className="flex flex-wrap gap-2">
             {provinces.map((p) => (
-              <Chip key={p.id} href="/districts">
+              <Chip key={p.id} href={`/districts?provinceId=${p.id}`}>
                 {p.nameThai}
               </Chip>
             ))}

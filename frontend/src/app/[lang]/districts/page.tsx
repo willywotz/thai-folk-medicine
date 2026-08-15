@@ -1,13 +1,25 @@
+import { notFound } from "next/navigation";
+
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
 import { RecordCard } from "@/components/RecordCard";
 import { getDictionary } from "@/lib/i18n/getDictionary";
-import { getFirstProvince, listDistricts } from "@/lib/api";
+import { getFirstProvince, getProvince, listDistricts } from "@/lib/api";
 
-export default async function DistrictsPage() {
+export default async function DistrictsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ provinceId?: string }>;
+}) {
   const t = await getDictionary();
-  const province = await getFirstProvince();
-  if (!province) return <EmptyState message={t.district.noData} />;
+  const { provinceId } = await searchParams;
+  const id = Number(provinceId);
+  const hasId = Number.isInteger(id) && id > 0;
+  const province = hasId ? await getProvince(id) : await getFirstProvince();
+  if (!province) {
+    if (hasId) notFound();
+    return <EmptyState message={t.district.noData} />;
+  }
   const districts = await listDistricts(province.id);
   return (
     <section>

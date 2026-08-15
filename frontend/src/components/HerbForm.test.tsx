@@ -26,6 +26,11 @@ describe("HerbForm (create)", () => {
     expect(await screen.findByText(/thai name is required/i)).toBeInTheDocument();
   });
 
+  it("shows the pending-photo picker (no PhotoManager, no id yet)", () => {
+    renderWithClient(<HerbForm />);
+    expect(screen.getByText(/no photos added yet/i)).toBeInTheDocument();
+  });
+
   it("posts a new herb and navigates back", async () => {
     const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 9 }) }));
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
@@ -36,5 +41,22 @@ describe("HerbForm (create)", () => {
       expect(fetchMock).toHaveBeenCalledWith("/bff/herbs", expect.objectContaining({ method: "POST" })),
     );
     await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/herbs"));
+  });
+
+  it("shows PhotoManager (not the pending-photo picker) when editing", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch);
+    const herb = {
+      id: 1,
+      nameThai: "ขิง",
+      nameEnglish: "",
+      scientificName: "",
+      properties: "",
+      description: "",
+      createdAt: "",
+      updatedAt: "",
+    };
+    renderWithClient(<HerbForm herb={herb} />);
+    expect(await screen.findByText(/no photos yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no photos added yet/i)).toBeNull();
   });
 });

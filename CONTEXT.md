@@ -340,6 +340,11 @@ District 1:n Healer stays.)
   unchanged. Search is debounced (`useDebouncedValue`) and resets to page 1. Cases paginate but
   have no search. Province/District lists stay client-side (tiny reference data). `HerbPicker`
   uses `fetchAllHerbs` (pages through at 48) so the remedy form can reach every herb.
+- **Photos on create + province/district photos.** `photo.ValidOwnerType` now also accepts
+  `province`/`district` (generic owner store, no schema change). A new `PhotoInput` (pending-file
+  collector) renders on every create form; on save the record is created, then its photos upload
+  to the new id (the `create*` mutations now return the created entity). Edit forms keep
+  `PhotoManager`. Province/District forms gained a photo section (district's is inline).
 
 ## How to run
 

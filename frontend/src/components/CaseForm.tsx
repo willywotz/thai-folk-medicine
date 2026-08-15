@@ -8,10 +8,11 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { EntityCombobox } from "@/components/EntityCombobox";
+import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { TreatmentCase } from "@/lib/api-types";
-import { caseListKey, createCase, updateCase } from "@/lib/staff-queries";
+import { caseListKey, createCase, updateCase, uploadPhoto } from "@/lib/staff-queries";
 import { treatmentCaseSchema, type TreatmentCaseInput } from "@/lib/treatment-case-schema";
 
 // z.coerce.number() makes the schema's input type diverge from its output type
@@ -33,6 +34,7 @@ export function CaseForm({
   const [remedyId, setRemedyId] = useState(
     treatmentCase?.remedyId ?? defaultRemedyId ?? remedyOptions[0]?.value ?? 0,
   );
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
     handleSubmit,
@@ -50,10 +52,16 @@ export function CaseForm({
   });
 
   const save = useMutation({
-    mutationFn: (values: TreatmentCaseInput) => {
+    mutationFn: async (values: TreatmentCaseInput) => {
       const healerId = remedyOptions.find((r) => r.value === remedyId)?.healerId ?? 0;
       const payload = { ...values, remedyId, healerId };
-      return treatmentCase ? updateCase(treatmentCase.id, payload) : createCase(payload);
+      if (treatmentCase) return updateCase(treatmentCase.id, payload);
+      const created = await createCase(payload);
+      await Promise.all(
+        pendingPhotos.map((p) =>
+          uploadPhoto({ ownerType: "case", ownerId: created.id, file: p.file, caption: p.caption }),
+        ),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: caseListKey() });
@@ -128,11 +136,13 @@ export function CaseForm({
           </button>
         </div>
       </form>
-      {treatmentCase ? (
-        <div className={`${staffCard} p-6`}>
+      <div className={`${staffCard} p-6`}>
+        {treatmentCase ? (
           <PhotoManager ownerType="case" ownerId={treatmentCase.id} />
-        </div>
-      ) : null}
+        ) : (
+          <PhotoInput value={pendingPhotos} onChange={setPendingPhotos} />
+        )}
+      </div>
     </div>
   );
 }

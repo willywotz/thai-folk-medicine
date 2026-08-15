@@ -53,13 +53,14 @@ export async function deleteHealer(id: number): Promise<void> {
 }
 
 /** createHealer posts a new healer (with its districtId) through the BFF. */
-export async function createHealer(input: HealerInput & { districtId: number }): Promise<void> {
+export async function createHealer(input: HealerInput & { districtId: number }): Promise<Healer> {
   const res = await fetch("/bff/healers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot create healer");
+  return (await res.json()) as Healer;
 }
 
 /** updateHealer PUTs changes to a healer through the BFF. */
@@ -89,13 +90,14 @@ export async function fetchRemedies(
 }
 
 /** createRemedy posts a new remedy (with its healerId) through the BFF. */
-export async function createRemedy(input: RemedyInput & { healerId: number }): Promise<void> {
+export async function createRemedy(input: RemedyInput & { healerId: number }): Promise<Remedy> {
   const res = await fetch("/bff/remedies", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot create remedy");
+  return (await res.json()) as Remedy;
 }
 
 /** updateRemedy PUTs changes to a remedy (including its healer) through the BFF. */
@@ -130,13 +132,14 @@ export async function fetchCases(opts: { page?: number; remedyId?: number } = {}
 /** createCase posts a new case (with remedyId + healerId) through the BFF. */
 export async function createCase(
   input: TreatmentCaseInput & { remedyId: number; healerId: number },
-): Promise<void> {
+): Promise<TreatmentCase> {
   const res = await fetch("/bff/treatment-cases", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot create treatment case");
+  return (await res.json()) as TreatmentCase;
 }
 
 /** updateCase PUTs changes to a case through the BFF (the API ignores remedy/healer on update). */
@@ -219,13 +222,14 @@ export async function fetchAllHerbs(): Promise<Herb[]> {
 }
 
 /** createHerb posts a new herb through the BFF. */
-export async function createHerb(input: HerbInput): Promise<void> {
+export async function createHerb(input: HerbInput): Promise<Herb> {
   const res = await fetch("/bff/herbs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot create herb");
+  return (await res.json()) as Herb;
 }
 
 /** updateHerb PUTs changes to a herb through the BFF. */
@@ -285,13 +289,14 @@ interface ProvinceInput {
 }
 
 /** createProvince posts a new province through the BFF. */
-export async function createProvince(input: ProvinceInput): Promise<void> {
+export async function createProvince(input: ProvinceInput): Promise<Province> {
   const res = await fetch("/bff/provinces", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot create province");
+  return (await res.json()) as Province;
 }
 
 /** updateProvince PUTs changes to a province through the BFF. */
@@ -327,13 +332,14 @@ interface DistrictInput {
 }
 
 /** createDistrict posts a new district (with its provinceId) through the BFF. */
-export async function createDistrict(input: DistrictInput & { provinceId: number }): Promise<void> {
+export async function createDistrict(input: DistrictInput & { provinceId: number }): Promise<District> {
   const res = await fetch("/bff/districts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error("cannot create district");
+  return (await res.json()) as District;
 }
 
 /** updateDistrict PUTs changes to a district through the BFF (no province change). */

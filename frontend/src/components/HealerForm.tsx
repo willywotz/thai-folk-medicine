@@ -7,11 +7,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { EntityCombobox } from "@/components/EntityCombobox";
+import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { healerSchema, type HealerInput } from "@/lib/healer-schema";
-import { createHealer, healerListKey, updateHealer } from "@/lib/staff-queries";
+import { createHealer, healerListKey, updateHealer, uploadPhoto } from "@/lib/staff-queries";
 
 export function HealerForm({
   healer,
@@ -23,6 +24,7 @@ export function HealerForm({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [districtId, setDistrictId] = useState(healer?.districtId ?? districtOptions[0]?.value ?? 0);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
     handleSubmit,
@@ -38,10 +40,15 @@ export function HealerForm({
   });
 
   const save = useMutation({
-    mutationFn: (values: HealerInput) =>
-      healer
-        ? updateHealer(healer.id, { ...values, districtId })
-        : createHealer({ ...values, districtId }),
+    mutationFn: async (values: HealerInput) => {
+      if (healer) return updateHealer(healer.id, { ...values, districtId });
+      const created = await createHealer({ ...values, districtId });
+      await Promise.all(
+        pendingPhotos.map((p) =>
+          uploadPhoto({ ownerType: "healer", ownerId: created.id, file: p.file, caption: p.caption }),
+        ),
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: healerListKey() });
       router.push("/staff/healers");
@@ -101,11 +108,13 @@ export function HealerForm({
           </button>
         </div>
       </form>
-      {healer ? (
-        <div className={`${staffCard} p-6`}>
+      <div className={`${staffCard} p-6`}>
+        {healer ? (
           <PhotoManager ownerType="healer" ownerId={healer.id} />
-        </div>
-      ) : null}
+        ) : (
+          <PhotoInput value={pendingPhotos} onChange={setPendingPhotos} />
+        )}
+      </div>
     </div>
   );
 }

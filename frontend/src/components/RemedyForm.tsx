@@ -8,11 +8,12 @@ import { useForm } from "react-hook-form";
 
 import { EntityCombobox } from "@/components/EntityCombobox";
 import { HerbPicker } from "@/components/HerbPicker";
+import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Remedy } from "@/lib/api-types";
 import { remedySchema, type RemedyInput } from "@/lib/remedy-schema";
-import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
+import { createRemedy, remedyListKey, updateRemedy, uploadPhoto } from "@/lib/staff-queries";
 
 export function RemedyForm({
   remedy,
@@ -31,6 +32,7 @@ export function RemedyForm({
   const [herbs, setHerbs] = useState(
     remedy?.herbs?.map((h) => ({ herbId: h.herbId, amount: h.amount })) ?? [],
   );
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
     handleSubmit,
@@ -48,9 +50,15 @@ export function RemedyForm({
   });
 
   const save = useMutation({
-    mutationFn: (values: RemedyInput) => {
+    mutationFn: async (values: RemedyInput) => {
       const payload = { ...values, herbs, healerId };
-      return remedy ? updateRemedy(remedy.id, payload) : createRemedy(payload);
+      if (remedy) return updateRemedy(remedy.id, payload);
+      const created = await createRemedy(payload);
+      await Promise.all(
+        pendingPhotos.map((p) =>
+          uploadPhoto({ ownerType: "remedy", ownerId: created.id, file: p.file, caption: p.caption }),
+        ),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: remedyListKey() });
@@ -118,11 +126,13 @@ export function RemedyForm({
           </button>
         </div>
       </form>
-      {remedy ? (
-        <div className={`${staffCard} p-6`}>
+      <div className={`${staffCard} p-6`}>
+        {remedy ? (
           <PhotoManager ownerType="remedy" ownerId={remedy.id} />
-        </div>
-      ) : null}
+        ) : (
+          <PhotoInput value={pendingPhotos} onChange={setPendingPhotos} />
+        )}
+      </div>
     </div>
   );
 }

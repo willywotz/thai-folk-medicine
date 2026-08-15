@@ -3,17 +3,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Herb } from "@/lib/api-types";
 import { herbSchema, type HerbInput } from "@/lib/herb-schema";
-import { createHerb, herbListKey, updateHerb } from "@/lib/staff-queries";
+import { createHerb, herbListKey, updateHerb, uploadPhoto } from "@/lib/staff-queries";
 
 export function HerbForm({ herb }: { herb?: Herb }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
     handleSubmit,
@@ -30,7 +33,15 @@ export function HerbForm({ herb }: { herb?: Herb }) {
   });
 
   const save = useMutation({
-    mutationFn: (values: HerbInput) => (herb ? updateHerb(herb.id, values) : createHerb(values)),
+    mutationFn: async (values: HerbInput) => {
+      if (herb) return updateHerb(herb.id, values);
+      const created = await createHerb(values);
+      await Promise.all(
+        pendingPhotos.map((p) =>
+          uploadPhoto({ ownerType: "herb", ownerId: created.id, file: p.file, caption: p.caption }),
+        ),
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: herbListKey() });
       router.push("/staff/herbs");
@@ -84,11 +95,13 @@ export function HerbForm({ herb }: { herb?: Herb }) {
           </button>
         </div>
       </form>
-      {herb ? (
-        <div className={`${staffCard} p-6`}>
+      <div className={`${staffCard} p-6`}>
+        {herb ? (
           <PhotoManager ownerType="herb" ownerId={herb.id} />
-        </div>
-      ) : null}
+        ) : (
+          <PhotoInput value={pendingPhotos} onChange={setPendingPhotos} />
+        )}
+      </div>
     </div>
   );
 }

@@ -2,8 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   activityKey,
+  createCase,
   createDistrict,
+  createHealer,
+  createHerb,
   createProvince,
+  createRemedy,
   deleteDistrict,
   deleteHealer,
   deletePhoto,
@@ -103,6 +107,71 @@ describe("fetchHerbs", () => {
   });
 });
 
+describe("createHealer", () => {
+  it("POSTs a new healer and resolves to the created entity", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 9, fullName: "หมอสมชาย" }) }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    const got = await createHealer({
+      districtId: 4,
+      fullName: "หมอสมชาย",
+      subDistrict: "",
+      specialty: "",
+      biography: "",
+    });
+    expect(got).toEqual({ id: 9, fullName: "หมอสมชาย" });
+  });
+});
+
+describe("createRemedy", () => {
+  it("POSTs a new remedy and resolves to the created entity", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 10, name: "ยาต้ม" }) }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    const got = await createRemedy({
+      healerId: 2,
+      name: "ยาต้ม",
+      symptoms: "",
+      preparationMethod: "",
+      usage: "",
+      note: "",
+      herbs: [],
+    });
+    expect(got).toEqual({ id: 10, name: "ยาต้ม" });
+  });
+});
+
+describe("createCase", () => {
+  it("POSTs a new case and resolves to the created entity", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 11, patientSex: "female" }) }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    const got = await createCase({
+      remedyId: 5,
+      healerId: 2,
+      patientAge: 40,
+      patientSex: "female",
+      symptoms: "",
+      result: "",
+      note: "",
+      treatedOn: "2026-03-01",
+    });
+    expect(got).toEqual({ id: 11, patientSex: "female" });
+  });
+});
+
+describe("createHerb", () => {
+  it("POSTs a new herb and resolves to the created entity", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 12, nameThai: "ขิง" }) }));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    const got = await createHerb({
+      nameThai: "ขิง",
+      nameEnglish: "",
+      scientificName: "",
+      properties: "",
+      description: "",
+    });
+    expect(got).toEqual({ id: 12, nameThai: "ขิง" });
+  });
+});
+
 describe("deleteHealer", () => {
   it("DELETEs through the bff and throws on failure", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 409 })) as unknown as typeof fetch);
@@ -184,17 +253,18 @@ describe("provinceListKey / districtListKey", () => {
 });
 
 describe("createProvince / updateProvince / deleteProvince", () => {
-  it("POSTs a new province through the bff", async () => {
+  it("POSTs a new province through the bff and resolves to the created entity", async () => {
     const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
       ok: true,
       status: 201,
-      json: async () => ({}),
+      json: async () => ({ id: 9, nameThai: "ยโสธร", nameEnglish: "Yasothon" }),
     }));
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    await createProvince({ nameThai: "ยโสธร", nameEnglish: "Yasothon" });
+    const got = await createProvince({ nameThai: "ยโสธร", nameEnglish: "Yasothon" });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("/bff/provinces");
     expect((init as { method: string }).method).toBe("POST");
+    expect(got).toEqual({ id: 9, nameThai: "ยโสธร", nameEnglish: "Yasothon" });
   });
 
   it("PUTs changes through the bff", async () => {
@@ -217,14 +287,14 @@ describe("createProvince / updateProvince / deleteProvince", () => {
 });
 
 describe("createDistrict / updateDistrict / deleteDistrict", () => {
-  it("POSTs a new district (with provinceId) through the bff", async () => {
+  it("POSTs a new district (with provinceId) through the bff and resolves to the created entity", async () => {
     const fetchMock = vi.fn<(url?: string, init?: RequestInit) => Promise<unknown>>(async () => ({
       ok: true,
       status: 201,
-      json: async () => ({}),
+      json: async () => ({ id: 9, provinceId: 1, nameThai: "กุดชุม", nameEnglish: "Kut Chum" }),
     }));
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    await createDistrict({ provinceId: 1, nameThai: "กุดชุม", nameEnglish: "Kut Chum" });
+    const got = await createDistrict({ provinceId: 1, nameThai: "กุดชุม", nameEnglish: "Kut Chum" });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("/bff/districts");
     expect((init as { method: string }).method).toBe("POST");
@@ -233,6 +303,7 @@ describe("createDistrict / updateDistrict / deleteDistrict", () => {
       nameThai: "กุดชุม",
       nameEnglish: "Kut Chum",
     });
+    expect(got).toEqual({ id: 9, provinceId: 1, nameThai: "กุดชุม", nameEnglish: "Kut Chum" });
   });
 
   it("PUTs changes through the bff", async () => {

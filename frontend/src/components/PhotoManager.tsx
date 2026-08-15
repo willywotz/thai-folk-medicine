@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
 import { PhotoImage } from "@/components/PhotoImage";
+import { btnPrimary, staffField } from "@/components/staff-ui";
 import { deletePhoto, fetchPhotos, photoListKey, uploadPhoto } from "@/lib/staff-queries";
 
 export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerId: number }) {
@@ -45,7 +46,7 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
                 type="button"
                 onClick={() => remove.mutate(p.id)}
                 disabled={remove.isPending}
-                className="block text-sm text-red-600 underline disabled:opacity-50"
+                className="block text-sm text-destructive underline disabled:opacity-50"
               >
                 Delete
               </button>
@@ -53,16 +54,16 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-stone-500">No photos yet.</p>
+        <p className="text-sm text-ink-faint">No photos yet.</p>
       )}
-      {remove.isError ? <p className="text-sm text-red-600">Could not delete that photo.</p> : null}
+      {remove.isError ? <p className="text-sm text-destructive">Could not delete that photo.</p> : null}
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           upload.mutate();
         }}
-        className="space-y-2 border-t border-stone-200 pt-4"
+        className="space-y-2 border-t border-line pt-4"
       >
         <div className="space-y-1">
           <label htmlFor="photoFile" className="text-sm font-medium">
@@ -85,15 +86,11 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
             id="photoCaption"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            className="w-full max-w-sm rounded border border-stone-300 p-2"
+            className={`${staffField} max-w-sm`}
           />
         </div>
-        {upload.isError ? <p className="text-sm text-red-600">Could not upload. Try again.</p> : null}
-        <button
-          type="submit"
-          disabled={!file || upload.isPending}
-          className="rounded bg-stone-800 px-3 py-2 text-sm text-white disabled:opacity-50"
-        >
+        {upload.isError ? <p className="text-sm text-destructive">Could not upload. Try again.</p> : null}
+        <button type="submit" disabled={!file || upload.isPending} className={btnPrimary}>
           Upload
         </button>
       </form>

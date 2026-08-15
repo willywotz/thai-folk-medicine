@@ -320,6 +320,12 @@ District 1:n Healer stays.)
 - New frontend: `bff/{provinces,districts,activity,stats}` routes; `staff-queries` flat
   fetchers + province/district mutations; `DashboardStats`, `ActivityFeed`, `Province/District
   Form`+`AdminList`. Built TDD; full backend suite + `tsc`/`lint`/`vitest`/`build` green.
+- **Polish:** each staff list has a client-side name `StaffSearch` (filters the loaded ≤48
+  rows). Healer/Remedy lists show a parent-name column but no parent filter. Remedy/Case forms
+  pick their parent via a searchable `EntityCombobox` (Base UI). `PhotoManager` (brand-restyled)
+  renders inside each edit form (a sibling card — it has its own `<form>`, so not nested). Herb
+  rows link to `/staff/herbs/{id}` listing remedies that use the herb. Province edit page also
+  manages its districts.
 
 ## How to run
 

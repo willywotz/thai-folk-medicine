@@ -6,22 +6,21 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
-import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
 
 export function HealerAdminList({ districts }: { districts: District[] }) {
-  const [districtId, setDistrictId] = useState<number | undefined>(undefined);
   const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: healers, isLoading, isError } = useQuery({
-    queryKey: healerListKey(districtId),
-    queryFn: () => fetchHealers(districtId),
+    queryKey: healerListKey(),
+    queryFn: () => fetchHealers(),
   });
 
   const remove = useMutation({
     mutationFn: deleteHealer,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: healerListKey(districtId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: healerListKey() }),
   });
 
   const districtName = (id: number) => {
@@ -39,22 +38,6 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <StaffSearch value={query} onChange={setQuery} placeholder="Search healers…" />
-          <label htmlFor="districtFilter" className={staffLabel}>
-            District
-          </label>
-          <select
-            id="districtFilter"
-            className={staffField}
-            value={districtId ?? ""}
-            onChange={(e) => setDistrictId(e.target.value ? Number(e.target.value) : undefined)}
-          >
-            <option value="">All districts</option>
-            {districts.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.nameEnglish} · {d.nameThai}
-              </option>
-            ))}
-          </select>
         </div>
         <span className="text-sm text-ink-faint">
           {shown.length} {shown.length === 1 ? "healer" : "healers"}

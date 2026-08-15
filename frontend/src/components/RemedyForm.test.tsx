@@ -19,7 +19,8 @@ function renderWithClient(ui: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
-// stubFetch serves the HerbPicker's own herb list plus a generic save response.
+// stubFetch serves the HerbPicker's own herb list, PhotoManager's empty photo
+// list (edit mode only), and a generic save response.
 function stubFetch() {
   return vi.fn(async (url: string, opts?: { method?: string; body?: string }) => {
     void opts;
@@ -34,6 +35,9 @@ function stubFetch() {
           totalPages: 1,
         }),
       };
+    }
+    if (typeof url === "string" && url.startsWith("/api/v1/photos")) {
+      return { ok: true, json: async () => [] };
     }
     return { ok: true, status: 201, json: async () => ({ id: 9 }) };
   });
@@ -52,12 +56,10 @@ describe("RemedyForm (create)", () => {
     expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
   });
 
-  it("requires a healer and defaults to the first option", () => {
+  it("defaults the healer combobox to the first option", () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
     renderWithClient(<RemedyForm healers={healers} />);
-    const select = screen.getByLabelText(/healer/i);
-    expect(select).toHaveAttribute("required");
-    expect(select).toHaveValue("2");
+    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมชาย");
   });
 
   it("adds a herb via the picker and posts a new remedy with the selected healer", async () => {
@@ -65,7 +67,11 @@ describe("RemedyForm (create)", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<RemedyForm healers={healers} />);
     await userEvent.type(screen.getByLabelText(/^name/i), "ยาต้ม");
-    await userEvent.selectOptions(screen.getByLabelText(/healer/i), "3");
+    const healerInput = screen.getByLabelText(/healer/i);
+    await userEvent.click(healerInput);
+    await userEvent.clear(healerInput);
+    await userEvent.type(healerInput, "หมอสมหญิง");
+    await userEvent.click(await screen.findByRole("option", { name: "หมอสมหญิง" }));
     await waitFor(() => expect(screen.getByRole("button", { name: /add herb/i })).not.toBeDisabled());
     await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
     await screen.findByRole("combobox", { name: /herb/i });
@@ -86,7 +92,7 @@ describe("RemedyForm (create)", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/remedies"));
   });
 
-  it("defaults the healer select to the remedy's current healer when editing", () => {
+  it("defaults the healer combobox to the remedy's current healer when editing", () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
     const remedy = {
       id: 5,
@@ -101,6 +107,6 @@ describe("RemedyForm (create)", () => {
       updatedAt: "",
     };
     renderWithClient(<RemedyForm remedy={remedy} healers={healers} />);
-    expect(screen.getByLabelText(/healer/i)).toHaveValue("3");
+    expect(screen.getByLabelText(/healer/i)).toHaveValue("หมอสมหญิง");
   });
 });

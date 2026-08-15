@@ -58,6 +58,10 @@ describe("HealerForm (create)", () => {
   });
 
   it("defaults the district select to the healer's current district when editing", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch,
+    );
     const healer = {
       id: 1,
       districtId: 4,

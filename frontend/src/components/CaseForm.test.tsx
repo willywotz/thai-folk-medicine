@@ -25,11 +25,9 @@ afterEach(() => {
 });
 
 describe("CaseForm (create)", () => {
-  it("requires a remedy and defaults to the first option", () => {
+  it("defaults the remedy combobox to the first option", () => {
     renderWithClient(<CaseForm remedies={remedies} />);
-    const select = screen.getByLabelText(/^remedy/i);
-    expect(select).toHaveAttribute("required");
-    expect(select).toHaveValue("5");
+    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาต้ม");
   });
 
   it("requires patient sex and a date", async () => {
@@ -46,7 +44,11 @@ describe("CaseForm (create)", () => {
     });
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<CaseForm remedies={remedies} />);
-    await userEvent.selectOptions(screen.getByLabelText(/^remedy/i), "6");
+    const remedyInput = screen.getByLabelText(/^remedy/i);
+    await userEvent.click(remedyInput);
+    await userEvent.clear(remedyInput);
+    await userEvent.type(remedyInput, "ยาพอก");
+    await userEvent.click(await screen.findByRole("option", { name: "ยาพอก" }));
     await userEvent.type(screen.getByLabelText(/patient sex/i), "female");
     await userEvent.type(screen.getByLabelText(/age/i), "40");
     await userEvent.type(screen.getByLabelText(/date treated/i), "2026-03-01");
@@ -61,7 +63,11 @@ describe("CaseForm (create)", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/staff/cases"));
   });
 
-  it("defaults the remedy select to the case's current remedy when editing", () => {
+  it("defaults the remedy combobox to the case's current remedy when editing", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch,
+    );
     const treatmentCase = {
       id: 8,
       remedyId: 6,
@@ -76,6 +82,6 @@ describe("CaseForm (create)", () => {
       updatedAt: "",
     };
     renderWithClient(<CaseForm treatmentCase={treatmentCase} remedies={remedies} />);
-    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("6");
+    expect(screen.getByLabelText(/^remedy/i)).toHaveValue("ยาพอก");
   });
 });

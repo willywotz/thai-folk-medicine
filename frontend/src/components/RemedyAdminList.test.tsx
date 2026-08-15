@@ -36,7 +36,7 @@ describe("RemedyAdminList", () => {
     expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
   });
 
-  it("filters remedies by the selected healer", async () => {
+  it("fetches all remedies without a healer filter", async () => {
     const calls: string[] = [];
     vi.stubGlobal(
       "fetch",
@@ -47,8 +47,6 @@ describe("RemedyAdminList", () => {
     );
     renderWithClient(<RemedyAdminList healers={healers} />);
     await waitFor(() => expect(calls).toContain("/api/v1/remedies?pageSize=48"));
-    await userEvent.selectOptions(await screen.findByLabelText(/^healer/i), "2");
-    await waitFor(() => expect(calls.at(-1)).toBe("/api/v1/healers/2/remedies?pageSize=48"));
   });
 
   it("shows an error and keeps the row when delete fails", async () => {

@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { CaseForm } from "@/components/CaseForm";
-import { PhotoManager } from "@/components/PhotoManager";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getTreatmentCase, listRemedies } from "@/lib/api";
 
@@ -28,9 +27,6 @@ export default async function EditCasePage({
         title="Edit treatment case"
       />
       <CaseForm treatmentCase={treatmentCase} remedies={remedies} />
-      <div className="mt-8">
-        <PhotoManager ownerType="case" ownerId={treatmentCase.id} />
-      </div>
     </section>
   );
 }

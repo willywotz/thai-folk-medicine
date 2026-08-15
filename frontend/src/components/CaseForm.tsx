@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
+import { EntityCombobox } from "@/components/EntityCombobox";
+import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { TreatmentCase } from "@/lib/api-types";
 import { caseListKey, createCase, updateCase } from "@/lib/staff-queries";
@@ -59,81 +61,74 @@ export function CaseForm({
   const field = staffField;
 
   return (
-    <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} max-w-xl space-y-4 p-6`} noValidate>
-      <div className="space-y-1">
-        <label htmlFor="remedyId" className={staffLabel}>
-          Remedy (ตำรับยา)
-        </label>
-        <select
-          id="remedyId"
-          required
-          className={field}
-          value={remedyId}
-          onChange={(e) => setRemedyId(Number(e.target.value))}
-        >
-          {remedies.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="patientSex" className={staffLabel}>
-          Patient sex (เพศ)
-        </label>
-        <input id="patientSex" className={field} {...register("patientSex")} />
-        {errors.patientSex ? <p className={staffFieldError}>{errors.patientSex.message}</p> : null}
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="patientAge" className={staffLabel}>
-          Patient age (อายุ)
-        </label>
-        <input id="patientAge" type="number" min={0} className={field} {...register("patientAge")} />
-        {errors.patientAge ? <p className={staffFieldError}>{errors.patientAge.message}</p> : null}
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="treatedOn" className={staffLabel}>
-          Date treated (วันที่รักษา)
-        </label>
-        <input id="treatedOn" type="date" className={field} {...register("treatedOn")} />
-        {errors.treatedOn ? <p className={staffFieldError}>{errors.treatedOn.message}</p> : null}
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="symptoms" className={staffLabel}>
-          Symptoms (อาการ)
-        </label>
-        <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="result" className={staffLabel}>
-          Result (ผลการรักษา)
-        </label>
-        <textarea id="result" rows={2} className={field} {...register("result")} />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="note" className={staffLabel}>
-          Note (หมายเหตุ)
-        </label>
-        <textarea id="note" rows={2} className={field} {...register("note")} />
-      </div>
-      {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={save.isPending}
-          className={btnPrimary}
-        >
-          Save
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/staff/cases")}
-          className={btnGhost}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    <div className="max-w-xl space-y-6">
+      <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
+        <div className="space-y-1">
+          <label htmlFor="remedyId" className={staffLabel}>
+            Remedy (ตำรับยา)
+          </label>
+          <EntityCombobox
+            options={remedies.map((r) => ({ value: r.id, label: r.name }))}
+            value={remedyId}
+            onChange={setRemedyId}
+            placeholder="ค้นหาตำรับยา (search remedy)"
+            ariaLabel="remedy"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="patientSex" className={staffLabel}>
+            Patient sex (เพศ)
+          </label>
+          <input id="patientSex" className={field} {...register("patientSex")} />
+          {errors.patientSex ? <p className={staffFieldError}>{errors.patientSex.message}</p> : null}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="patientAge" className={staffLabel}>
+            Patient age (อายุ)
+          </label>
+          <input id="patientAge" type="number" min={0} className={field} {...register("patientAge")} />
+          {errors.patientAge ? <p className={staffFieldError}>{errors.patientAge.message}</p> : null}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="treatedOn" className={staffLabel}>
+            Date treated (วันที่รักษา)
+          </label>
+          <input id="treatedOn" type="date" className={field} {...register("treatedOn")} />
+          {errors.treatedOn ? <p className={staffFieldError}>{errors.treatedOn.message}</p> : null}
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="symptoms" className={staffLabel}>
+            Symptoms (อาการ)
+          </label>
+          <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="result" className={staffLabel}>
+            Result (ผลการรักษา)
+          </label>
+          <textarea id="result" rows={2} className={field} {...register("result")} />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="note" className={staffLabel}>
+            Note (หมายเหตุ)
+          </label>
+          <textarea id="note" rows={2} className={field} {...register("note")} />
+        </div>
+        {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
+        <div className="flex gap-3">
+          <button type="submit" disabled={save.isPending} className={btnPrimary}>
+            Save
+          </button>
+          <button type="button" onClick={() => router.push("/staff/cases")} className={btnGhost}>
+            Cancel
+          </button>
+        </div>
+      </form>
+      {treatmentCase ? (
+        <div className={`${staffCard} p-6`}>
+          <PhotoManager ownerType="case" ownerId={treatmentCase.id} />
+        </div>
+      ) : null}
+    </div>
   );
 }

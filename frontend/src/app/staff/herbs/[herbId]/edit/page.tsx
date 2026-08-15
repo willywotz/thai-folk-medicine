@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { HerbForm } from "@/components/HerbForm";
-import { PhotoManager } from "@/components/PhotoManager";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getHerb } from "@/lib/api";
 
@@ -19,9 +18,6 @@ export default async function EditHerbPage({ params }: { params: Promise<{ herbI
         title={`Edit ${herb.nameThai}`}
       />
       <HerbForm herb={herb} />
-      <div className="mt-8">
-        <PhotoManager ownerType="herb" ownerId={herb.id} />
-      </div>
     </section>
   );
 }

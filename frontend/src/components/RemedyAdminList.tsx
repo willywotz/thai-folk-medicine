@@ -6,22 +6,21 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { matchesQuery, StaffSearch } from "@/components/StaffSearch";
-import { btnPrimary, iconBtn, iconBtnDanger, staffCard, staffField, staffLabel } from "@/components/staff-ui";
+import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { deleteRemedy, fetchRemedies, remedyListKey } from "@/lib/staff-queries";
 
 export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "fullName">[] }) {
-  const [healerId, setHealerId] = useState<number | undefined>(undefined);
   const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: remedies, isLoading, isError } = useQuery({
-    queryKey: remedyListKey(healerId),
-    queryFn: () => fetchRemedies(healerId),
+    queryKey: remedyListKey(),
+    queryFn: () => fetchRemedies(),
   });
 
   const remove = useMutation({
     mutationFn: deleteRemedy,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey() }),
   });
 
   const healerName = (id: number) => healers.find((h) => h.id === id)?.fullName ?? "—";
@@ -36,22 +35,6 @@ export function RemedyAdminList({ healers }: { healers: Pick<Healer, "id" | "ful
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <StaffSearch value={query} onChange={setQuery} placeholder="Search remedies…" />
-          <label htmlFor="healerFilter" className={staffLabel}>
-            Healer
-          </label>
-          <select
-            id="healerFilter"
-            className={staffField}
-            value={healerId ?? ""}
-            onChange={(e) => setHealerId(e.target.value ? Number(e.target.value) : undefined)}
-          >
-            <option value="">All healers</option>
-            {healers.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.fullName}
-              </option>
-            ))}
-          </select>
         </div>
         <span className="text-sm text-ink-faint">
           {shown.length} {shown.length === 1 ? "remedy" : "remedies"}

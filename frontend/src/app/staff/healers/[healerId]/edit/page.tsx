@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { HealerForm } from "@/components/HealerForm";
-import { PhotoManager } from "@/components/PhotoManager";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getFirstProvince, getHealer, listDistricts } from "@/lib/api";
 
@@ -27,9 +26,6 @@ export default async function EditHealerPage({
         title={`Edit ${healer.fullName}`}
       />
       <HealerForm healer={healer} districts={districts} />
-      <div className="mt-8">
-        <PhotoManager ownerType="healer" ownerId={healer.id} />
-      </div>
     </section>
   );
 }

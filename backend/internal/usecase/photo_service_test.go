@@ -77,7 +77,7 @@ func TestUploadStoresAndPublishes(t *testing.T) {
 
 func TestUploadRejectsBadOwnerType(t *testing.T) {
 	service := NewPhotoService(&fakePhotoRepo{}, &fakeStore{}, &photoRecorder{})
-	_, err := service.Upload(context.Background(), "district", 3, bytes.NewBufferString("x"), ".jpg", "")
+	_, err := service.Upload(context.Background(), "unknown", 3, bytes.NewBufferString("x"), ".jpg", "")
 	assert.ErrorIs(t, err, ErrInvalidPhoto)
 }
 
@@ -99,7 +99,7 @@ func TestUploadDeletesFileWhenRowFails(t *testing.T) {
 
 func TestListByOwnerRejectsBadOwnerType(t *testing.T) {
 	service := NewPhotoService(&fakePhotoRepo{}, &fakeStore{}, &photoRecorder{})
-	_, err := service.ListByOwner(context.Background(), "district", 1)
+	_, err := service.ListByOwner(context.Background(), "unknown", 1)
 	assert.ErrorIs(t, err, ErrInvalidPhoto)
 }
 

@@ -12,6 +12,7 @@ import { PhotoInput, type PendingPhoto } from "@/components/PhotoInput";
 import { PhotoManager } from "@/components/PhotoManager";
 import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Remedy } from "@/lib/api-types";
+import { useT } from "@/lib/i18n/useT";
 import { remedySchema, type RemedyInput } from "@/lib/remedy-schema";
 import { createRemedy, remedyListKey, updateRemedy, uploadPhoto } from "@/lib/staff-queries";
 
@@ -24,6 +25,7 @@ export function RemedyForm({
   healerOptions: { value: number; label: string }[];
   defaultHealerId?: number;
 }) {
+  const t = useT();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [healerId, setHealerId] = useState(
@@ -74,55 +76,55 @@ export function RemedyForm({
       <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} space-y-4 p-6`} noValidate>
         <div className="space-y-1">
           <label htmlFor="healerId" className={staffLabel}>
-            Healer (หมอพื้นบ้าน)
+            {t.staff.form.healer}
           </label>
           <EntityCombobox
             options={healerOptions}
             value={healerId}
             onChange={setHealerId}
-            placeholder="ค้นหาหมอ (search healer)"
+            placeholder={t.staff.form.searchHealer}
             ariaLabel="healer"
           />
         </div>
         <div className="space-y-1">
           <label htmlFor="name" className={staffLabel}>
-            Name (ชื่อตำรับยา)
+            {t.staff.form.remedyName}
           </label>
           <input id="name" className={field} {...register("name")} />
           {errors.name ? <p className={staffFieldError}>{errors.name.message}</p> : null}
         </div>
         <div className="space-y-1">
           <label htmlFor="symptoms" className={staffLabel}>
-            Symptoms treated (สรรพคุณ)
+            {t.staff.form.symptomsTreated}
           </label>
           <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
         </div>
         <HerbPicker value={herbs} onChange={setHerbs} />
         <div className="space-y-1">
           <label htmlFor="preparationMethod" className={staffLabel}>
-            Preparation (วิธีปรุง)
+            {t.staff.form.preparation}
           </label>
           <textarea id="preparationMethod" rows={2} className={field} {...register("preparationMethod")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="usage" className={staffLabel}>
-            Usage (วิธีใช้)
+            {t.staff.form.usage}
           </label>
           <textarea id="usage" rows={2} className={field} {...register("usage")} />
         </div>
         <div className="space-y-1">
           <label htmlFor="note" className={staffLabel}>
-            Note (หมายเหตุ)
+            {t.staff.form.note}
           </label>
           <textarea id="note" rows={2} className={field} {...register("note")} />
         </div>
-        {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
+        {save.isError ? <p className={staffFieldError}>{t.staff.errorSave}</p> : null}
         <div className="flex gap-3">
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
-            Save
+            {t.staff.save}
           </button>
           <button type="button" onClick={() => router.push("/staff/remedies")} className={btnGhost}>
-            Cancel
+            {t.staff.cancel}
           </button>
         </div>
       </form>

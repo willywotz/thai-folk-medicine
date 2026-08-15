@@ -3,11 +3,17 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 import { ProvinceAdminList } from "./ProvinceAdminList";
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -30,8 +36,8 @@ describe("ProvinceAdminList", () => {
       "href",
       "/staff/provinces/1",
     );
-    expect(screen.getByRole("link", { name: /edit/i })).toHaveAttribute("href", "/staff/provinces/1/edit");
-    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "แก้ไข เชียงใหม่" })).toHaveAttribute("href", "/staff/provinces/1/edit");
+    expect(screen.getByRole("button", { name: "ลบ เชียงใหม่" })).toBeInTheDocument();
   });
 
   it("shows a specific message when delete fails because it still has districts", async () => {
@@ -44,9 +50,9 @@ describe("ProvinceAdminList", () => {
     );
     renderWithClient(<ProvinceAdminList />);
     await screen.findByText("เชียงใหม่");
-    await userEvent.click(screen.getByRole("button", { name: /delete/i }));
+    await userEvent.click(screen.getByRole("button", { name: "ลบ เชียงใหม่" }));
     expect(
-      await screen.findByText("This province still has districts. Delete them first."),
+      await screen.findByText("จังหวัดนี้ยังมีอำเภออยู่ กรุณาลบอำเภอก่อน"),
     ).toBeInTheDocument();
     expect(screen.getByText("เชียงใหม่")).toBeInTheDocument();
   });

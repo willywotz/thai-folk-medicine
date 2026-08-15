@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getDictionary } from "@/lib/i18n/getDictionary";
+
 const WINDOW_SIZE = 2;
 
 function hrefFor(
@@ -17,7 +19,7 @@ function hrefFor(
   return `${basePath}?${params.toString()}`;
 }
 
-export function Pagination({
+export async function Pagination({
   page,
   totalPages,
   searchParams,
@@ -32,6 +34,7 @@ export function Pagination({
     return null;
   }
 
+  const t = await getDictionary();
   const start = Math.max(1, page - WINDOW_SIZE);
   const end = Math.min(totalPages, page + WINDOW_SIZE);
   const pages = Array.from({ length: end - start + 1 }, (_, i) => start + i);
@@ -41,7 +44,7 @@ export function Pagination({
       {page > 1 ? (
         <Link href={hrefFor(basePath, searchParams, page - 1)} className="rounded px-2 py-1 hover:bg-brand-tint">
           <span aria-hidden>&laquo;</span>
-          <span className="sr-only">Previous</span>
+          <span className="sr-only">{t.common.previous}</span>
         </Link>
       ) : null}
       {pages.map((p) => (
@@ -59,7 +62,7 @@ export function Pagination({
       {page < totalPages ? (
         <Link href={hrefFor(basePath, searchParams, page + 1)} className="rounded px-2 py-1 hover:bg-brand-tint">
           <span aria-hidden>&raquo;</span>
-          <span className="sr-only">Next</span>
+          <span className="sr-only">{t.common.next}</span>
         </Link>
       ) : null}
     </nav>

@@ -1,0 +1,33 @@
+import { notFound } from "next/navigation";
+
+import { CaseAdminList } from "@/components/CaseAdminList";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
+import { getRemedy, listRemedies } from "@/lib/api";
+
+export default async function RemedyTreatmentCasesPage({
+  params,
+}: {
+  params: Promise<{ remedyId: string }>;
+}) {
+  const t = await getDictionary();
+  const { remedyId } = await params;
+  const id = Number(remedyId);
+  if (!Number.isInteger(id) || id <= 0) notFound();
+
+  const remedy = await getRemedy(id);
+  if (!remedy) notFound();
+  // withinlazy: pageSize 48 caps the remedy-name lookup; add real staff pagination
+  // if the catalog ever has more than 48 remedies.
+  const { items: remedies } = await listRemedies({ pageSize: 48 });
+
+  return (
+    <section>
+      <StaffPageHeader
+        crumbs={[{ label: t.staff.headers.remedies, href: "/staff/remedies" }, { label: remedy.name }]}
+        title={t.staff.headers.remedyCases}
+      />
+      <CaseAdminList remedies={remedies} remedyId={id} />
+    </section>
+  );
+}

@@ -3,6 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 const push = vi.fn();
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
@@ -16,7 +18,11 @@ const districtOptions = [
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -27,7 +33,7 @@ afterEach(() => {
 describe("HealerForm (create)", () => {
   it("validates the required name", async () => {
     renderWithClient(<HealerForm districtOptions={districtOptions} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/full name is required/i)).toBeInTheDocument();
   });
 
@@ -40,13 +46,13 @@ describe("HealerForm (create)", () => {
     const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ id: 9 }) }));
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<HealerForm districtOptions={districtOptions} />);
-    await userEvent.type(screen.getByLabelText(/full name/i), "หมอสมชาย");
+    await userEvent.type(screen.getByLabelText("ชื่อ"), "หมอสมชาย");
     const districtInput = screen.getByLabelText(/^district/i);
     await userEvent.click(districtInput);
     await userEvent.clear(districtInput);
     await userEvent.type(districtInput, "แม่ริม");
     await userEvent.click(await screen.findByRole("option", { name: /แม่ริม/ }));
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         "/bff/healers",

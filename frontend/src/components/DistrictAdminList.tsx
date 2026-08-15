@@ -8,9 +8,11 @@ import { EmptyState } from "@/components/EmptyState";
 import { RowAvatar } from "@/components/RowAvatar";
 import { btnPrimary, iconBtn, iconBtnDanger, staffCard } from "@/components/staff-ui";
 import type { District } from "@/lib/api-types";
+import { useT } from "@/lib/i18n/useT";
 import { deleteDistrict, districtListKey, fetchDistricts } from "@/lib/staff-queries";
 
 export function DistrictAdminList({ provinceId }: { provinceId: number }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<District | null>(null);
@@ -27,14 +29,12 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
   });
 
   if (isLoading) return <p className="text-ink-faint">Loading…</p>;
-  if (isError) return <p className="text-destructive">Could not load districts.</p>;
+  if (isError) return <p className="text-destructive">{t.staff.errorLoadDistricts}</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-ink-faint">
-          {districts?.length ?? 0} {districts?.length === 1 ? "district" : "districts"}
-        </span>
+        <span className="text-sm text-ink-faint">{t.staff.count.districts(districts?.length ?? 0)}</span>
         <button
           type="button"
           onClick={() => {
@@ -43,7 +43,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
           }}
           className={btnPrimary}
         >
-          <span aria-hidden>+</span> New district
+          <span aria-hidden>+</span> {t.staff.newDistrictButton}
         </button>
       </div>
       {adding ? <DistrictForm provinceId={provinceId} onDone={() => setAdding(false)} /> : null}
@@ -51,10 +51,10 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
         <DistrictForm provinceId={provinceId} district={editing} onDone={() => setEditing(null)} />
       ) : null}
       {remove.isError ? (
-        <p className="text-sm text-destructive">This district still has healers. Delete them first.</p>
+        <p className="text-sm text-destructive">{t.staff.errorDistrictHasHealers}</p>
       ) : null}
       {!districts || districts.length === 0 ? (
-        <EmptyState message="No districts yet." />
+        <EmptyState message={t.staff.emptyDistricts} />
       ) : (
         <ul className={staffCard}>
           {districts.map((d) => (
@@ -70,7 +70,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
                   setAdding(false);
                   setEditing(d);
                 }}
-                aria-label={`Edit ${d.nameThai}`}
+                aria-label={t.staff.editName(d.nameThai)}
                 className={iconBtn}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -81,7 +81,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
                 type="button"
                 onClick={() => remove.mutate(d.id)}
                 disabled={remove.isPending}
-                aria-label={`Delete ${d.nameThai}`}
+                aria-label={t.staff.deleteName(d.nameThai)}
                 className={iconBtnDanger}
               >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

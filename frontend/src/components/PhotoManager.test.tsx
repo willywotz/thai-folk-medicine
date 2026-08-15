@@ -3,11 +3,17 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 import { PhotoManager } from "./PhotoManager";
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -35,8 +41,8 @@ describe("PhotoManager", () => {
     renderWithClient(<PhotoManager ownerType="healer" ownerId={2} />);
 
     const file = new File(["bytes"], "p.jpg", { type: "image/jpeg" });
-    await userEvent.upload(screen.getByLabelText(/photo file/i), file);
-    await userEvent.click(screen.getByRole("button", { name: /upload/i }));
+    await userEvent.upload(screen.getByLabelText("ไฟล์รูปภาพ"), file);
+    await userEvent.click(screen.getByRole("button", { name: "อัปโหลด" }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/photos", expect.objectContaining({ method: "POST" })),

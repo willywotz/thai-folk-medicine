@@ -3,6 +3,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+import { th } from "@/lib/i18n/dictionaries/th";
+
 const push = vi.fn();
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
@@ -16,7 +19,11 @@ const healerOptions = [
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 // stubFetch serves the HerbPicker's own herb list, PhotoManager's empty photo
@@ -52,7 +59,7 @@ describe("RemedyForm (create)", () => {
   it("validates the required name", async () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
     renderWithClient(<RemedyForm healerOptions={healerOptions} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
   });
 
@@ -66,16 +73,18 @@ describe("RemedyForm (create)", () => {
     const fetchMock = stubFetch();
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<RemedyForm healerOptions={healerOptions} />);
-    await userEvent.type(screen.getByLabelText(/^name/i), "ยาต้ม");
+    await userEvent.type(screen.getByLabelText("ชื่อตำรับยา"), "ยาต้ม");
     const healerInput = screen.getByLabelText(/healer/i);
     await userEvent.click(healerInput);
     await userEvent.clear(healerInput);
     await userEvent.type(healerInput, "หมอสมหญิง");
     await userEvent.click(await screen.findByRole("option", { name: /หมอสมหญิง/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /add herb/i })).not.toBeDisabled());
-    await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
-    await screen.findByRole("combobox", { name: /herb/i });
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: th.staff.form.addHerb })).not.toBeDisabled(),
+    );
+    await userEvent.click(screen.getByRole("button", { name: th.staff.form.addHerb }));
+    await screen.findByRole("combobox", { name: th.staff.form.herbs });
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(

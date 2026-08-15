@@ -3,6 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { I18nProvider } from "@/components/I18nProvider";
+
 const push = vi.fn();
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
@@ -16,7 +18,11 @@ const remedyOptions = [
 
 function renderWithClient(ui: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <I18nProvider locale="th">{ui}</I18nProvider>
+    </QueryClientProvider>,
+  );
 }
 
 afterEach(() => {
@@ -32,7 +38,7 @@ describe("CaseForm (create)", () => {
 
   it("requires patient sex and a date", async () => {
     renderWithClient(<CaseForm remedyOptions={remedyOptions} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/patient sex is required/i)).toBeInTheDocument();
   });
 
@@ -49,10 +55,10 @@ describe("CaseForm (create)", () => {
     await userEvent.clear(remedyInput);
     await userEvent.type(remedyInput, "ยาพอก");
     await userEvent.click(await screen.findByRole("option", { name: /ยาพอก/ }));
-    await userEvent.type(screen.getByLabelText(/patient sex/i), "female");
-    await userEvent.type(screen.getByLabelText(/age/i), "40");
-    await userEvent.type(screen.getByLabelText(/date treated/i), "2026-03-01");
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.type(screen.getByLabelText("เพศ"), "female");
+    await userEvent.type(screen.getByLabelText("อายุ"), "40");
+    await userEvent.type(screen.getByLabelText("วันที่รักษา"), "2026-03-01");
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/treatment-cases", expect.objectContaining({ method: "POST" })),
     );

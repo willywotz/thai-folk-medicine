@@ -18,3 +18,8 @@
       ansible.builtin.template:
         src: templates/env.j2
         dest: "{{ render_dir }}/.env"
+
+    - name: Render nginx conf
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: "{{ render_dir }}/nginx.conf"

@@ -10,3 +10,6 @@ postgres_password: ci-placeholder-password
 staff_admin_username: admin
 staff_admin_password: ci-placeholder-admin
 staff_admin_email: admin@example.com
+frontend_port: 14285
+nginx_server_name: _
+nginx_conf_name: thai-folk-medicine.conf

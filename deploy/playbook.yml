@@ -38,6 +38,19 @@
         cmd: docker compose -f "{{ compose_file }}" up -d
         chdir: "{{ app_dir }}"
 
+    - name: Install nginx reverse-proxy site
+      become: true
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: "/etc/nginx/conf.d/{{ nginx_conf_name }}"
+        mode: "0644"
+      notify: reload nginx
+
     - name: Prune dangling images
       ansible.builtin.command:
         cmd: docker image prune -f
+
+  handlers:
+    - name: reload nginx
+      become: true
+      ansible.builtin.shell: nginx -t && systemctl reload nginx

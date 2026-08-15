@@ -434,7 +434,9 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
   images, pushes to `ghcr.io/willywotz/thai-folk-medicine-{backend,frontend}`,
   then runs `deploy/playbook.yml` over SSH.
 - `deploy/`: Ansible playbook + `compose.prod.yaml.j2` (GHCR images) + `.env`
-  from an encrypted vault. See `deploy/README.md` for setup.
+  from an encrypted vault. The playbook also installs an nginx reverse proxy
+  (`nginx.conf.j2` → `/etc/nginx/conf.d/`, HTTP `:80` → frontend port) and
+  reloads nginx. See `deploy/README.md` for setup.
 
 ## Docs
 

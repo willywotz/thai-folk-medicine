@@ -91,6 +91,7 @@ frontend/
 - Postgres pool + migrations; seed = 1 province (Yasothon) + 9 districts.
 - `GET /api/v1/provinces`
 - `GET /api/v1/provinces/{provinceId}/districts`
+- `GET /api/v1/districts/{districtId}` (public; 404 if the district is unknown)
 
 **Plan 2 — healer + in-process event bus:**
 - Event port (`domain/event`) + in-process bus (`platform/eventbus`); an audit
@@ -149,7 +150,7 @@ safe; swap the `photo.Store` for S3/MinIO before horizontal scaling).
   click revalidates against the guard with the current cookie (a prefetched auth-gated link
   otherwise caches the redirect from whichever auth state existed at prefetch time).
 - `withinlazy`: no photo-gallery-by-owner (needs a backend `GET /{owner}/{id}/photos`
-  endpoint); breadcrumb shows a static "District" label (needs `GET /districts/{id}`).
+  endpoint). The staff district page shows the real district name via `GET /districts/{id}`.
 
 **Plan 6 — staff admin (auth + healer management):**
 - Staff log in at `/login`; the JWT is kept in an httpOnly `session` cookie set by the
@@ -352,7 +353,6 @@ Integration tests need Docker. On this host, set `TESTCONTAINERS_RYUK_DISABLED=t
 
 ## Possible future work
 
-- `GET /districts/{id}` so staff breadcrumbs show the district name.
 - Swap the local-disk `photo.Store` for S3/MinIO before horizontal scaling.
 - Staff roles (admin vs normal) if the team grows.
 - End-to-end tests (Playwright) across the login → manage → browse flow.

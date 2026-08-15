@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { LogoutButton } from "@/components/LogoutButton";
 import { StaffNavLink } from "@/components/StaffNavLink";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 
 const NAV_ITEMS = [
   {
@@ -63,16 +64,17 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function StaffLayout({ children }: { children: ReactNode }) {
+export default async function StaffLayout({ children }: { children: ReactNode }) {
+  const t = await getDictionary();
   return (
     <div className="grid gap-6 md:grid-cols-[228px_1fr]">
       <aside className="flex flex-col gap-1 rounded-xl border border-line bg-surface p-3 md:sticky md:top-20 md:h-fit">
         <div className="flex items-center gap-2.5 px-2 pb-3 pt-1">
           <span className="grid size-8 flex-none place-items-center rounded-lg bg-brand font-serif text-base font-semibold text-white">
-            ต
+            {t.staff.brand[0]}
           </span>
           <span className="text-sm font-semibold text-ink">
-            ตำรายา
+            {t.staff.brand}
             <span className="block text-[10px] font-bold uppercase tracking-wider text-ink-faint">
               Staff workspace
             </span>

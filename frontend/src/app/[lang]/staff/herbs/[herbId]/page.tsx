@@ -6,6 +6,7 @@ import { Pagination } from "@/components/Pagination";
 import { RowAvatar } from "@/components/RowAvatar";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { staffCard } from "@/components/staff-ui";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getFirstProvince, getHerb, listDistricts, listHealers, listRemediesByHerb } from "@/lib/api";
 
 const PAGE_SIZE = 20;
@@ -17,6 +18,7 @@ export default async function StaffHerbUsagePage({
   params: Promise<{ herbId: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
+  const t = await getDictionary();
   const { herbId } = await params;
   const id = Number(herbId);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -42,7 +44,7 @@ export default async function StaffHerbUsagePage({
     <section>
       <StaffPageHeader
         crumbs={[{ label: "Herbs", href: "/staff/herbs" }, { label: herb.nameThai }]}
-        eyebrow="สมุนไพร · used in"
+        eyebrow={t.staff.headers.herbUsedIn}
         title={`Remedies using ${herb.nameThai}`}
       />
       {remedies.items.length === 0 ? (

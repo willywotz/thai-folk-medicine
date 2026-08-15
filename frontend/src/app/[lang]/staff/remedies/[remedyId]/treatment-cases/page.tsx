@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CaseAdminList } from "@/components/CaseAdminList";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getRemedy, listRemedies } from "@/lib/api";
 
 export default async function RemedyTreatmentCasesPage({
@@ -9,6 +10,7 @@ export default async function RemedyTreatmentCasesPage({
 }: {
   params: Promise<{ remedyId: string }>;
 }) {
+  const t = await getDictionary();
   const { remedyId } = await params;
   const id = Number(remedyId);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -23,7 +25,7 @@ export default async function RemedyTreatmentCasesPage({
     <section>
       <StaffPageHeader
         crumbs={[{ label: "Remedies", href: "/staff/remedies" }, { label: remedy.name }]}
-        title="กรณีการรักษา · Cases"
+        title={t.staff.headers.remedyCases}
       />
       <CaseAdminList remedies={remedies} remedyId={id} />
     </section>

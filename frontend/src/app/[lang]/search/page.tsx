@@ -54,7 +54,7 @@ export default async function SearchPage({
 
       {empty ? (
         <div className="mt-6">
-          <EmptyState message="No matches found." />
+          <EmptyState message={t.search.noMatches} />
         </div>
       ) : null}
 

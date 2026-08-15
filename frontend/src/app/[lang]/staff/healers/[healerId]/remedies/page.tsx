@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { RemedyAdminList } from "@/components/RemedyAdminList";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getHealer, listHealers } from "@/lib/api";
 
 export default async function HealerRemediesPage({
@@ -9,6 +10,7 @@ export default async function HealerRemediesPage({
 }: {
   params: Promise<{ healerId: string }>;
 }) {
+  const t = await getDictionary();
   const { healerId } = await params;
   const id = Number(healerId);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -23,7 +25,7 @@ export default async function HealerRemediesPage({
     <section>
       <StaffPageHeader
         crumbs={[{ label: "Healers", href: "/staff/healers" }, { label: healer.fullName }]}
-        title="ตำรับยา · Remedies"
+        title={t.staff.headers.healerRemedies}
       />
       <RemedyAdminList healers={healers} healerId={id} />
     </section>

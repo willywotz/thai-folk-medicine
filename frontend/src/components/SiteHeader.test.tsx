@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { I18nProvider } from "@/components/I18nProvider";
-import { th } from "@/lib/i18n/dictionaries/th";
 
 import { SiteHeader } from "./SiteHeader";
 
@@ -14,7 +13,7 @@ vi.mock("@/lib/i18n/getDictionary", () => ({
 describe("SiteHeader", () => {
   it("shows a province-neutral brand and a staff link", async () => {
     render(
-      <I18nProvider locale="th" dict={th}>
+      <I18nProvider locale="th">
         {await SiteHeader()}
       </I18nProvider>,
     );

@@ -7,7 +7,7 @@ import "../globals.css";
 import { I18nProvider } from "@/components/I18nProvider";
 import { SiteHeader } from "@/components/SiteHeader";
 import { locales } from "@/lib/i18n/config";
-import { getDictionary, getLocale } from "@/lib/i18n/getDictionary";
+import { getLocale } from "@/lib/i18n/getDictionary";
 
 import { Providers } from "./providers";
 
@@ -33,16 +33,10 @@ export function generateStaticParams() {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
-  const dict = await getDictionary();
-  // withinlazy: functions (e.g. dict.home.treatedWithRemedy) can't cross the
-  // server->client prop boundary; strip them for the client copy. No client
-  // component reads a formatter fn via useT() today — if one needs to,
-  // compute the string server-side and pass it as a plain prop instead.
-  const clientDict = JSON.parse(JSON.stringify(dict));
   return (
     <html lang={locale}>
       <body className={`${notoThai.variable} ${notoSerifThai.variable} ${notoThai.className} bg-bg text-ink`}>
-        <I18nProvider locale={locale} dict={clientDict}>
+        <I18nProvider locale={locale}>
           <Providers>
             <SiteHeader />
             <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>

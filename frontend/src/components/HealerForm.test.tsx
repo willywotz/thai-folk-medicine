@@ -33,7 +33,7 @@ afterEach(() => {
 describe("HealerForm (create)", () => {
   it("validates the required name", async () => {
     renderWithClient(<HealerForm districtOptions={districtOptions} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/full name is required/i)).toBeInTheDocument();
   });
 
@@ -52,7 +52,7 @@ describe("HealerForm (create)", () => {
     await userEvent.clear(districtInput);
     await userEvent.type(districtInput, "แม่ริม");
     await userEvent.click(await screen.findByRole("option", { name: /แม่ริม/ }));
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         "/bff/healers",

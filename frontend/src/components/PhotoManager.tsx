@@ -5,9 +5,11 @@ import { useRef, useState } from "react";
 
 import { PhotoImage } from "@/components/PhotoImage";
 import { btnPrimary, staffField } from "@/components/staff-ui";
+import { useT } from "@/lib/i18n/useT";
 import { deletePhoto, fetchPhotos, photoListKey, uploadPhoto } from "@/lib/staff-queries";
 
 export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerId: number }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState("");
@@ -35,7 +37,7 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Photos</h2>
+      <h2 className="text-lg font-semibold">{t.staff.photos}</h2>
 
       {photos && photos.length > 0 ? (
         <ul className="flex flex-wrap gap-4">
@@ -48,15 +50,15 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
                 disabled={remove.isPending}
                 className="block text-sm text-destructive underline disabled:opacity-50"
               >
-                Delete
+                {t.staff.deletePhoto}
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-ink-faint">No photos yet.</p>
+        <p className="text-sm text-ink-faint">{t.staff.noPhotosYet}</p>
       )}
-      {remove.isError ? <p className="text-sm text-destructive">Could not delete that photo.</p> : null}
+      {remove.isError ? <p className="text-sm text-destructive">{t.staff.errorDeletePhoto}</p> : null}
 
       <form
         onSubmit={(e) => {
@@ -67,7 +69,7 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
       >
         <div className="space-y-1">
           <label htmlFor="photoFile" className="text-sm font-medium">
-            Photo file
+            {t.staff.photoFile}
           </label>
           <input
             id="photoFile"
@@ -80,7 +82,7 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
         </div>
         <div className="space-y-1">
           <label htmlFor="photoCaption" className="text-sm font-medium">
-            Caption
+            {t.staff.caption}
           </label>
           <input
             id="photoCaption"
@@ -89,9 +91,9 @@ export function PhotoManager({ ownerType, ownerId }: { ownerType: string; ownerI
             className={`${staffField} max-w-sm`}
           />
         </div>
-        {upload.isError ? <p className="text-sm text-destructive">Could not upload. Try again.</p> : null}
+        {upload.isError ? <p className="text-sm text-destructive">{t.staff.errorUploadPhoto}</p> : null}
         <button type="submit" disabled={!file || upload.isPending} className={btnPrimary}>
-          Upload
+          {t.staff.upload}
         </button>
       </form>
     </div>

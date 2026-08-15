@@ -128,13 +128,13 @@ export function CaseForm({
           </label>
           <textarea id="note" rows={2} className={field} {...register("note")} />
         </div>
-        {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
+        {save.isError ? <p className={staffFieldError}>{t.staff.errorSave}</p> : null}
         <div className="flex gap-3">
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
-            Save
+            {t.staff.save}
           </button>
           <button type="button" onClick={() => router.push("/staff/cases")} className={btnGhost}>
-            Cancel
+            {t.staff.cancel}
           </button>
         </div>
       </form>

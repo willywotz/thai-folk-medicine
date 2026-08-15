@@ -58,7 +58,7 @@ describe("RemedyForm (create)", () => {
   it("validates the required name", async () => {
     vi.stubGlobal("fetch", stubFetch() as unknown as typeof fetch);
     renderWithClient(<RemedyForm healerOptions={healerOptions} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe("RemedyForm (create)", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /add herb/i })).not.toBeDisabled());
     await userEvent.click(screen.getByRole("button", { name: /add herb/i }));
     await screen.findByRole("combobox", { name: /herb/i });
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
 
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(

@@ -24,7 +24,7 @@ afterEach(() => {
 describe("DistrictForm (create)", () => {
   it("requires the Thai name", async () => {
     renderWithClient(<DistrictForm provinceId={1} onDone={vi.fn()} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/thai name is required/i)).toBeInTheDocument();
   });
 
@@ -34,7 +34,7 @@ describe("DistrictForm (create)", () => {
     const onDone = vi.fn();
     renderWithClient(<DistrictForm provinceId={1} onDone={onDone} />);
     await userEvent.type(screen.getByLabelText("ชื่อไทย"), "อำเภอเมือง");
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/districts", expect.objectContaining({ method: "POST" })),
     );

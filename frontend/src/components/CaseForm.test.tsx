@@ -38,7 +38,7 @@ describe("CaseForm (create)", () => {
 
   it("requires patient sex and a date", async () => {
     renderWithClient(<CaseForm remedyOptions={remedyOptions} />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/patient sex is required/i)).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe("CaseForm (create)", () => {
     await userEvent.type(screen.getByLabelText("เพศ"), "female");
     await userEvent.type(screen.getByLabelText("อายุ"), "40");
     await userEvent.type(screen.getByLabelText("วันที่รักษา"), "2026-03-01");
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/treatment-cases", expect.objectContaining({ method: "POST" })),
     );

@@ -65,7 +65,7 @@ export function HerbForm({ herb }: { herb?: Herb }) {
         </div>
         <div className="space-y-1">
           <label htmlFor="nameEnglish" className={staffLabel}>
-            English name
+            {t.staff.englishName}
           </label>
           <input id="nameEnglish" className={field} {...register("nameEnglish")} />
         </div>
@@ -87,13 +87,13 @@ export function HerbForm({ herb }: { herb?: Herb }) {
           </label>
           <textarea id="description" rows={3} className={field} {...register("description")} />
         </div>
-        {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
+        {save.isError ? <p className={staffFieldError}>{t.staff.errorSave}</p> : null}
         <div className="flex gap-3">
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
-            Save
+            {t.staff.save}
           </button>
           <button type="button" onClick={() => router.push("/staff/herbs")} className={btnGhost}>
-            Cancel
+            {t.staff.cancel}
           </button>
         </div>
       </form>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 
 import { staffField, staffLabel } from "@/components/staff-ui";
+import { useT } from "@/lib/i18n/useT";
 
 export type PendingPhoto = { file: File; caption: string };
 
@@ -18,12 +19,13 @@ export function PhotoInput({
   value: PendingPhoto[];
   onChange: (value: PendingPhoto[]) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-ink">Photos</h2>
+      <h2 className="text-lg font-semibold text-ink">{t.staff.photos}</h2>
       <div className="space-y-1">
         <label htmlFor="pendingPhotoFile" className={staffLabel}>
-          Photo file
+          {t.staff.photoFile}
         </label>
         <input
           id="pendingPhotoFile"
@@ -53,7 +55,7 @@ export function PhotoInput({
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-ink-faint">No photos added yet.</p>
+        <p className="text-sm text-ink-faint">{t.staff.noPhotosAddedYet}</p>
       )}
     </div>
   );
@@ -68,6 +70,7 @@ function PendingPhotoRow({
   onCaptionChange: (caption: string) => void;
   onRemove: () => void;
 }) {
+  const t = useT();
   const url = useMemo(() => URL.createObjectURL(pending.file), [pending.file]);
   useEffect(() => () => URL.revokeObjectURL(url), [url]);
 
@@ -76,14 +79,14 @@ function PendingPhotoRow({
       {/* eslint-disable-next-line @next/next/no-img-element -- local blob: preview, no next/image optimization needed */}
       <img src={url} alt={pending.file.name} className="size-24 rounded-lg border border-line object-cover" />
       <input
-        aria-label="Caption"
+        aria-label={t.staff.caption}
         value={pending.caption}
-        placeholder="Caption"
+        placeholder={t.staff.caption}
         onChange={(e) => onCaptionChange(e.target.value)}
         className={`${staffField} max-w-sm`}
       />
       <button type="button" onClick={onRemove} className="block text-sm text-destructive underline">
-        Remove
+        {t.staff.removePending}
       </button>
     </li>
   );

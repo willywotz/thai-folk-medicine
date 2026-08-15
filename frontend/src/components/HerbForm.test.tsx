@@ -28,13 +28,13 @@ afterEach(() => {
 describe("HerbForm (create)", () => {
   it("requires the Thai name", async () => {
     renderWithClient(<HerbForm />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/thai name is required/i)).toBeInTheDocument();
   });
 
   it("shows the pending-photo picker (no PhotoManager, no id yet)", () => {
     renderWithClient(<HerbForm />);
-    expect(screen.getByText(/no photos added yet/i)).toBeInTheDocument();
+    expect(screen.getByText("ยังไม่ได้เพิ่มรูปภาพ")).toBeInTheDocument();
   });
 
   it("posts a new herb and navigates back", async () => {
@@ -42,7 +42,7 @@ describe("HerbForm (create)", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<HerbForm />);
     await userEvent.type(screen.getByLabelText("ชื่อไทย"), "ขิง");
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/herbs", expect.objectContaining({ method: "POST" })),
     );
@@ -62,7 +62,7 @@ describe("HerbForm (create)", () => {
       updatedAt: "",
     };
     renderWithClient(<HerbForm herb={herb} />);
-    expect(await screen.findByText(/no photos yet/i)).toBeInTheDocument();
-    expect(screen.queryByText(/no photos added yet/i)).toBeNull();
+    expect(await screen.findByText("ยังไม่มีรูปภาพ")).toBeInTheDocument();
+    expect(screen.queryByText("ยังไม่ได้เพิ่มรูปภาพ")).toBeNull();
   });
 });

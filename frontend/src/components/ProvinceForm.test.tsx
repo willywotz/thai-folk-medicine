@@ -28,7 +28,7 @@ afterEach(() => {
 describe("ProvinceForm (create)", () => {
   it("requires the Thai name", async () => {
     renderWithClient(<ProvinceForm />);
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     expect(await screen.findByText(/thai name is required/i)).toBeInTheDocument();
   });
 
@@ -37,7 +37,7 @@ describe("ProvinceForm (create)", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
     renderWithClient(<ProvinceForm />);
     await userEvent.type(screen.getByLabelText("ชื่อไทย"), "เชียงใหม่");
-    await userEvent.click(screen.getByRole("button", { name: /save/i }));
+    await userEvent.click(screen.getByRole("button", { name: "บันทึก" }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/bff/provinces", expect.objectContaining({ method: "POST" })),
     );

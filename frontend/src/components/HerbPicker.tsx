@@ -72,7 +72,7 @@ export function HerbPicker({ value, onChange }: { value: HerbLink[]; onChange: (
             onChange={(e) => setRow(i, { amount: e.target.value })}
           />
           <button type="button" onClick={() => removeRow(i)} className="text-sm text-red-600 underline">
-            remove
+            {t.staff.removeHerb}
           </button>
         </div>
       ))}

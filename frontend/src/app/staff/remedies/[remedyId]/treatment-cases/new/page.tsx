@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { CaseForm } from "@/components/CaseForm";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getRemedy } from "@/lib/api";
 
 export default async function NewCasePage({
@@ -17,7 +18,14 @@ export default async function NewCasePage({
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">New treatment case</h1>
+      <StaffPageHeader
+        crumbs={[
+          { label: remedy.name, href: `/staff/remedies/${id}/treatment-cases` },
+          { label: "New case" },
+        ]}
+        eyebrow="new record"
+        title="Add a treatment case"
+      />
       <CaseForm remedyId={id} healerId={remedy.healerId} />
     </section>
   );

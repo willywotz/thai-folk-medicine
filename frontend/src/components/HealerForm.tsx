@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
+import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Healer } from "@/lib/api-types";
 import { healerSchema, type HealerInput } from "@/lib/healer-schema";
 import { createHealer, healerListKey, updateHealer } from "@/lib/staff-queries";
@@ -38,48 +39,52 @@ export function HealerForm({ districtId, healer }: { districtId: number; healer?
     },
   });
 
-  const field = "w-full rounded border border-stone-300 p-2";
+  const field = staffField;
 
   return (
-    <form onSubmit={handleSubmit((v) => save.mutate(v))} className="max-w-lg space-y-4" noValidate>
+    <form
+      onSubmit={handleSubmit((v) => save.mutate(v))}
+      className={`${staffCard} max-w-xl space-y-4 p-6`}
+      noValidate
+    >
       <div className="space-y-1">
-        <label htmlFor="fullName" className="text-sm font-medium">
+        <label htmlFor="fullName" className={staffLabel}>
           Full name (ชื่อ)
         </label>
         <input id="fullName" className={field} {...register("fullName")} />
-        {errors.fullName ? <p className="text-sm text-red-600">{errors.fullName.message}</p> : null}
+        {errors.fullName ? <p className={staffFieldError}>{errors.fullName.message}</p> : null}
       </div>
       <div className="space-y-1">
-        <label htmlFor="subDistrict" className="text-sm font-medium">
+        <label htmlFor="subDistrict" className={staffLabel}>
           Sub-district (ตำบล/หมู่บ้าน)
         </label>
         <input id="subDistrict" className={field} {...register("subDistrict")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="specialty" className="text-sm font-medium">
+        <label htmlFor="specialty" className={staffLabel}>
           Specialty (ความชำนาญ)
         </label>
         <input id="specialty" className={field} {...register("specialty")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="biography" className="text-sm font-medium">
+        <label htmlFor="biography" className={staffLabel}>
           Biography (ประวัติ)
         </label>
         <textarea id="biography" rows={4} className={field} {...register("biography")} />
       </div>
-      {save.isError ? <p className="text-sm text-red-600">Could not save. Try again.</p> : null}
+      {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={save.isPending}
-          className="rounded bg-stone-800 px-4 py-2 text-white disabled:opacity-50"
+          className={btnPrimary}
         >
           Save
         </button>
         <button
           type="button"
           onClick={() => router.push(`/staff/districts/${districtId}`)}
-          className="rounded border border-stone-300 px-4 py-2"
+          className={btnGhost}
         >
           Cancel
         </button>

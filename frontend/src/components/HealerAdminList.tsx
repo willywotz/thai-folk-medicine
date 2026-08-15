@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/EmptyState";
+import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import { deleteHealer, fetchHealers, healerListKey } from "@/lib/staff-queries";
 
 export function HealerAdminList({ districtId }: { districtId: number }) {
@@ -18,52 +19,60 @@ export function HealerAdminList({ districtId }: { districtId: number }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: healerListKey(districtId) }),
   });
 
-  if (isLoading) return <p className="text-stone-500">Loading…</p>;
-  if (isError) return <p className="text-red-600">Could not load healers.</p>;
+  if (isLoading) return <p className="text-ink-faint">Loading…</p>;
+  if (isError) return <p className="text-destructive">Could not load healers.</p>;
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-ink-faint">
+          {healers?.length ?? 0} {healers?.length === 1 ? "healer" : "healers"}
+        </span>
+        <Link href={`/staff/districts/${districtId}/healers/new`} className={btnPrimary}>
+          <span aria-hidden>+</span> New healer
+        </Link>
+      </div>
       {remove.isError ? (
-        <p className="text-red-600">Could not delete this healer. It may still have remedies or cases.</p>
+        <p className="text-sm text-destructive">
+          Could not delete this healer. It may still have remedies or cases.
+        </p>
       ) : null}
-      <Link
-        href={`/staff/districts/${districtId}/healers/new`}
-        className="inline-block rounded bg-stone-800 px-3 py-2 text-sm text-white"
-      >
-        + New healer
-      </Link>
       {!healers || healers.length === 0 ? (
         <EmptyState message="No healers in this district yet." />
       ) : (
-        <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white">
+        <ul className={staffCard}>
           {healers.map((h) => (
-            <li key={h.id} className="flex items-center justify-between p-3">
-              <div>
-                <p className="font-medium">{h.fullName}</p>
-                {h.specialty ? <p className="text-sm text-stone-500">{h.specialty}</p> : null}
+            <li key={h.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
+              <span className="grid size-9 flex-none place-items-center rounded-lg bg-brand-tint font-serif text-base font-semibold text-brand-strong" aria-hidden>
+                {h.fullName.trim().charAt(0)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-ink">{h.fullName}</p>
+                {h.specialty ? <p className="truncate text-sm text-ink-soft">{h.specialty}</p> : null}
               </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Link
-                  href={`/staff/healers/${h.id}/remedies`}
-                  className="text-stone-700 underline"
-                >
-                  Remedies
-                </Link>
-                <Link
-                  href={`/staff/districts/${districtId}/healers/${h.id}/edit`}
-                  className="text-stone-700 underline"
-                >
-                  Edit
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(h.id)}
-                  disabled={remove.isPending}
-                  className="text-red-600 underline disabled:opacity-50"
-                >
-                  Delete
-                </button>
-              </div>
+              <Link href={`/staff/healers/${h.id}/remedies`} className={linkAction}>
+                Remedies
+              </Link>
+              <Link
+                href={`/staff/districts/${districtId}/healers/${h.id}/edit`}
+                aria-label={`Edit ${h.fullName}`}
+                className={iconBtn}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
+                </svg>
+              </Link>
+              <button
+                type="button"
+                onClick={() => remove.mutate(h.id)}
+                disabled={remove.isPending}
+                aria-label={`Delete ${h.fullName}`}
+                className={iconBtnDanger}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M5 7h14M9 7V5h6v2M6 7l1 13h10l1-13" />
+                </svg>
+              </button>
             </li>
           ))}
         </ul>

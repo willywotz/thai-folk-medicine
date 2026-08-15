@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
+import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Herb } from "@/lib/api-types";
 import { herbSchema, type HerbInput } from "@/lib/herb-schema";
 import { createHerb, herbListKey, updateHerb } from "@/lib/staff-queries";
@@ -36,54 +37,54 @@ export function HerbForm({ herb }: { herb?: Herb }) {
     },
   });
 
-  const field = "w-full rounded border border-stone-300 p-2";
+  const field = staffField;
 
   return (
-    <form onSubmit={handleSubmit((v) => save.mutate(v))} className="max-w-lg space-y-4" noValidate>
+    <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} max-w-xl space-y-4 p-6`} noValidate>
       <div className="space-y-1">
-        <label htmlFor="nameThai" className="text-sm font-medium">
+        <label htmlFor="nameThai" className={staffLabel}>
           ชื่อไทย (Thai name)
         </label>
         <input id="nameThai" className={field} {...register("nameThai")} />
-        {errors.nameThai ? <p className="text-sm text-red-600">{errors.nameThai.message}</p> : null}
+        {errors.nameThai ? <p className={staffFieldError}>{errors.nameThai.message}</p> : null}
       </div>
       <div className="space-y-1">
-        <label htmlFor="nameEnglish" className="text-sm font-medium">
+        <label htmlFor="nameEnglish" className={staffLabel}>
           English name
         </label>
         <input id="nameEnglish" className={field} {...register("nameEnglish")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="scientificName" className="text-sm font-medium">
+        <label htmlFor="scientificName" className={staffLabel}>
           ชื่อวิทยาศาสตร์ (Scientific name)
         </label>
         <input id="scientificName" className={field} {...register("scientificName")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="properties" className="text-sm font-medium">
+        <label htmlFor="properties" className={staffLabel}>
           สรรพคุณ (Properties)
         </label>
         <textarea id="properties" rows={3} className={field} {...register("properties")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="description" className="text-sm font-medium">
+        <label htmlFor="description" className={staffLabel}>
           รายละเอียด (Description)
         </label>
         <textarea id="description" rows={3} className={field} {...register("description")} />
       </div>
-      {save.isError ? <p className="text-sm text-red-600">Could not save. Try again.</p> : null}
+      {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={save.isPending}
-          className="rounded bg-stone-800 px-4 py-2 text-white disabled:opacity-50"
+          className={btnPrimary}
         >
           Save
         </button>
         <button
           type="button"
           onClick={() => router.push("/staff/herbs")}
-          className="rounded border border-stone-300 px-4 py-2"
+          className={btnGhost}
         >
           Cancel
         </button>

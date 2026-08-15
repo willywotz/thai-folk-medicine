@@ -78,7 +78,7 @@ frontend/
 │   │   ├── bff/session/                # POST login / DELETE logout (sets httpOnly cookie)
 │   │   ├── bff/healers/                # POST / [healerId] PUT·DELETE (cookie → Bearer → Go)
 │   │   └── layout.tsx                  # Thai font shell (Noto Sans Thai) + TanStack Query Providers
-│   ├── components/                     # public: RecordCard, Breadcrumb, …; staff: LoginForm, HealerAdminList, HealerForm, LogoutButton
+│   ├── components/                     # public: RecordCard, Breadcrumb, …; staff shell: StaffNavLink, StaffPageHeader, staff-ui (brand class tokens); staff CRUD: HealerAdminList, HealerForm, LogoutButton
 │   │   └── ui/                         # shadcn/ui primitives
 │   └── lib/                            # api.ts, api-types.ts, format.ts, session.ts, bff-forward.ts, staff-queries.ts, *-schema.ts
 └── vitest.config.ts                    # Vitest + RTL (jsdom)
@@ -262,6 +262,27 @@ endpoints and the three-group search above):
 **The planned scope is complete:** backend API, public browse site (remedy/herb-first,
 paginated), and full staff admin (healers, remedies, herbs, treatment cases, and photos) all
 work end to end. Public search is one merged, ranked, paginated result list.
+
+**Plan 12 — staff-zone redesign (frontend only, no API/behavior change):**
+- The staff zone now uses the same brand palette as the public site (the `--brand`/`--ink`/
+  `--line`/`--surface` tokens in `globals.css`) instead of raw `stone-*` greys.
+- **Shell:** `staff/layout.tsx` is a sidebar (brand mark + `Records` nav: Districts, Herbs +
+  logout), not a thin top bar. `StaffNavLink` (client, `usePathname`) marks the active
+  section via `aria-current`; it matches by path prefix (Districts owns `/staff/districts`,
+  `/staff/healers`, `/staff/remedies`).
+- **`StaffPageHeader`** renders the shared page head: breadcrumb (reuses `Breadcrumb`) +
+  eyebrow + serif title. Every staff list/form page passes `crumbs` built from ancestor names
+  (list/new/edit pages fetch the parent via existing `getDistrict`/`getHealer`/`getRemedy` so
+  the crumb links back up the District→Healer→Remedy→Case chain).
+- **`staff-ui.ts`** holds the shared brand class strings (`staffCard`, `staffField`,
+  `staffLabel`, `btnPrimary`, `btnGhost`, `iconBtn`, `iconBtnDanger`, `linkAction`) reused by
+  all four admin lists and forms. Lists became branded rows (initial badge, count line, one
+  primary `+ New`, icon Edit/Delete with `aria-label`, delete tinted red on hover only). Forms
+  became a single branded surface panel with brand focus rings.
+- Accessible names/labels and copy are unchanged, so the existing component/form tests still
+  pass; `StaffNavLink` adds its own test. `withinlazy:` the `ui/` shadcn primitives map to the
+  grayscale `--primary` tokens, so the staff zone styles with `--brand` tokens directly rather
+  than adopting them.
 
 ## How to run
 

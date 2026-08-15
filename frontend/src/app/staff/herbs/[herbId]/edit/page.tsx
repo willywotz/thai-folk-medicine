@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { HerbForm } from "@/components/HerbForm";
 import { PhotoManager } from "@/components/PhotoManager";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getHerb } from "@/lib/api";
 
 export default async function EditHerbPage({ params }: { params: Promise<{ herbId: string }> }) {
@@ -12,7 +13,11 @@ export default async function EditHerbPage({ params }: { params: Promise<{ herbI
   if (!herb) notFound();
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Edit herb</h1>
+      <StaffPageHeader
+        crumbs={[{ label: "Herbs", href: "/staff/herbs" }, { label: herb.nameThai }]}
+        eyebrow="สมุนไพร · edit record"
+        title={`Edit ${herb.nameThai}`}
+      />
       <HerbForm herb={herb} />
       <div className="mt-8">
         <PhotoManager ownerType="herb" ownerId={herb.id} />

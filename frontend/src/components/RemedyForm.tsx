@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { HerbPicker } from "@/components/HerbPicker";
+import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { Remedy } from "@/lib/api-types";
 import { remedySchema, type RemedyInput } from "@/lib/remedy-schema";
 import { createRemedy, remedyListKey, updateRemedy } from "@/lib/staff-queries";
@@ -45,55 +46,55 @@ export function RemedyForm({ healerId, remedy }: { healerId: number; remedy?: Re
     },
   });
 
-  const field = "w-full rounded border border-stone-300 p-2";
+  const field = staffField;
 
   return (
-    <form onSubmit={handleSubmit((v) => save.mutate(v))} className="max-w-lg space-y-4" noValidate>
+    <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} max-w-xl space-y-4 p-6`} noValidate>
       <div className="space-y-1">
-        <label htmlFor="name" className="text-sm font-medium">
+        <label htmlFor="name" className={staffLabel}>
           Name (ชื่อตำรับยา)
         </label>
         <input id="name" className={field} {...register("name")} />
-        {errors.name ? <p className="text-sm text-red-600">{errors.name.message}</p> : null}
+        {errors.name ? <p className={staffFieldError}>{errors.name.message}</p> : null}
       </div>
       <div className="space-y-1">
-        <label htmlFor="symptoms" className="text-sm font-medium">
+        <label htmlFor="symptoms" className={staffLabel}>
           Symptoms treated (สรรพคุณ)
         </label>
         <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
       </div>
       <HerbPicker value={herbs} onChange={setHerbs} />
       <div className="space-y-1">
-        <label htmlFor="preparationMethod" className="text-sm font-medium">
+        <label htmlFor="preparationMethod" className={staffLabel}>
           Preparation (วิธีปรุง)
         </label>
         <textarea id="preparationMethod" rows={2} className={field} {...register("preparationMethod")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="usage" className="text-sm font-medium">
+        <label htmlFor="usage" className={staffLabel}>
           Usage (วิธีใช้)
         </label>
         <textarea id="usage" rows={2} className={field} {...register("usage")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="note" className="text-sm font-medium">
+        <label htmlFor="note" className={staffLabel}>
           Note (หมายเหตุ)
         </label>
         <textarea id="note" rows={2} className={field} {...register("note")} />
       </div>
-      {save.isError ? <p className="text-sm text-red-600">Could not save. Try again.</p> : null}
+      {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={save.isPending}
-          className="rounded bg-stone-800 px-4 py-2 text-white disabled:opacity-50"
+          className={btnPrimary}
         >
           Save
         </button>
         <button
           type="button"
           onClick={() => router.push(`/staff/healers/${healerId}/remedies`)}
-          className="rounded border border-stone-300 px-4 py-2"
+          className={btnGhost}
         >
           Cancel
         </button>

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/EmptyState";
+import { btnPrimary, iconBtn, iconBtnDanger, linkAction, staffCard } from "@/components/staff-ui";
 import { deleteRemedy, fetchRemedies, remedyListKey } from "@/lib/staff-queries";
 
 export function RemedyAdminList({ healerId }: { healerId: number }) {
@@ -18,46 +19,54 @@ export function RemedyAdminList({ healerId }: { healerId: number }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: remedyListKey(healerId) }),
   });
 
-  if (isLoading) return <p className="text-stone-500">Loading…</p>;
-  if (isError) return <p className="text-red-600">Could not load remedies.</p>;
+  if (isLoading) return <p className="text-ink-faint">Loading…</p>;
+  if (isError) return <p className="text-destructive">Could not load remedies.</p>;
 
   return (
     <div className="space-y-4">
-      <Link
-        href={`/staff/healers/${healerId}/remedies/new`}
-        className="inline-block rounded bg-stone-800 px-3 py-2 text-sm text-white"
-      >
-        + New remedy
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-ink-faint">
+          {remedies?.length ?? 0} {remedies?.length === 1 ? "remedy" : "remedies"}
+        </span>
+        <Link href={`/staff/healers/${healerId}/remedies/new`} className={btnPrimary}>
+          <span aria-hidden>+</span> New remedy
+        </Link>
+      </div>
       {remove.isError ? (
-        <p className="text-red-600">Could not delete this remedy. It may still have treatment cases.</p>
+        <p className="text-sm text-destructive">
+          Could not delete this remedy. It may still have treatment cases.
+        </p>
       ) : null}
       {!remedies || remedies.length === 0 ? (
         <EmptyState message="No remedies for this healer yet." />
       ) : (
-        <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white">
+        <ul className={staffCard}>
           {remedies.map((r) => (
-            <li key={r.id} className="flex items-center justify-between p-3">
-              <p className="font-medium">{r.name}</p>
-              <div className="flex items-center gap-3 text-sm">
-                <Link href={`/staff/remedies/${r.id}/treatment-cases`} className="text-stone-700 underline">
-                  Cases
-                </Link>
-                <Link
-                  href={`/staff/healers/${healerId}/remedies/${r.id}/edit`}
-                  className="text-stone-700 underline"
-                >
-                  Edit
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(r.id)}
-                  disabled={remove.isPending}
-                  className="text-red-600 underline disabled:opacity-50"
-                >
-                  Delete
-                </button>
-              </div>
+            <li key={r.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
+              <p className="min-w-0 flex-1 truncate font-medium text-ink">{r.name}</p>
+              <Link href={`/staff/remedies/${r.id}/treatment-cases`} className={linkAction}>
+                Cases
+              </Link>
+              <Link
+                href={`/staff/healers/${healerId}/remedies/${r.id}/edit`}
+                aria-label={`Edit ${r.name}`}
+                className={iconBtn}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
+                </svg>
+              </Link>
+              <button
+                type="button"
+                onClick={() => remove.mutate(r.id)}
+                disabled={remove.isPending}
+                aria-label={`Delete ${r.name}`}
+                className={iconBtnDanger}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M5 7h14M9 7V5h6v2M6 7l1 13h10l1-13" />
+                </svg>
+              </button>
             </li>
           ))}
         </ul>

@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import { HealerForm } from "@/components/HealerForm";
 import { PhotoManager } from "@/components/PhotoManager";
-import { getHealer } from "@/lib/api";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDistrict, getHealer } from "@/lib/api";
 
 export default async function EditHealerPage({
   params,
@@ -16,10 +17,17 @@ export default async function EditHealerPage({
 
   const healer = await getHealer(hId);
   if (!healer) notFound();
+  const district = await getDistrict(dId);
+
+  const crumbs = [
+    { label: "Districts", href: "/staff" },
+    ...(district ? [{ label: district.nameThai, href: `/staff/districts/${dId}` }] : []),
+    { label: healer.fullName },
+  ];
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Edit healer</h1>
+      <StaffPageHeader crumbs={crumbs} eyebrow="edit record" title={`Edit ${healer.fullName}`} />
       <HealerForm districtId={dId} healer={healer} />
       <div className="mt-8">
         <PhotoManager ownerType="healer" ownerId={healer.id} />

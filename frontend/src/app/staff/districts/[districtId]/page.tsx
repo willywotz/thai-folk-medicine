@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { HealerAdminList } from "@/components/HealerAdminList";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getDistrict } from "@/lib/api";
 
 export default async function StaffDistrictPage({
@@ -17,7 +18,11 @@ export default async function StaffDistrictPage({
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Healers in {district.nameThai}</h1>
+      <StaffPageHeader
+        crumbs={[{ label: "Districts", href: "/staff" }, { label: district.nameThai }]}
+        eyebrow={`${district.nameEnglish} · ${district.nameThai}`}
+        title="Healers in this district"
+      />
       <HealerAdminList districtId={id} />
     </section>
   );

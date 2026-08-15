@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
+import { btnGhost, btnPrimary, staffCard, staffField, staffFieldError, staffLabel } from "@/components/staff-ui";
 import type { TreatmentCase } from "@/lib/api-types";
 import { caseListKey, createCase, updateCase } from "@/lib/staff-queries";
 import { treatmentCaseSchema, type TreatmentCaseInput } from "@/lib/treatment-case-schema";
@@ -54,62 +55,62 @@ export function CaseForm({
     },
   });
 
-  const field = "w-full rounded border border-stone-300 p-2";
+  const field = staffField;
 
   return (
-    <form onSubmit={handleSubmit((v) => save.mutate(v))} className="max-w-lg space-y-4" noValidate>
+    <form onSubmit={handleSubmit((v) => save.mutate(v))} className={`${staffCard} max-w-xl space-y-4 p-6`} noValidate>
       <div className="space-y-1">
-        <label htmlFor="patientSex" className="text-sm font-medium">
+        <label htmlFor="patientSex" className={staffLabel}>
           Patient sex (เพศ)
         </label>
         <input id="patientSex" className={field} {...register("patientSex")} />
-        {errors.patientSex ? <p className="text-sm text-red-600">{errors.patientSex.message}</p> : null}
+        {errors.patientSex ? <p className={staffFieldError}>{errors.patientSex.message}</p> : null}
       </div>
       <div className="space-y-1">
-        <label htmlFor="patientAge" className="text-sm font-medium">
+        <label htmlFor="patientAge" className={staffLabel}>
           Patient age (อายุ)
         </label>
         <input id="patientAge" type="number" min={0} className={field} {...register("patientAge")} />
-        {errors.patientAge ? <p className="text-sm text-red-600">{errors.patientAge.message}</p> : null}
+        {errors.patientAge ? <p className={staffFieldError}>{errors.patientAge.message}</p> : null}
       </div>
       <div className="space-y-1">
-        <label htmlFor="treatedOn" className="text-sm font-medium">
+        <label htmlFor="treatedOn" className={staffLabel}>
           Date treated (วันที่รักษา)
         </label>
         <input id="treatedOn" type="date" className={field} {...register("treatedOn")} />
-        {errors.treatedOn ? <p className="text-sm text-red-600">{errors.treatedOn.message}</p> : null}
+        {errors.treatedOn ? <p className={staffFieldError}>{errors.treatedOn.message}</p> : null}
       </div>
       <div className="space-y-1">
-        <label htmlFor="symptoms" className="text-sm font-medium">
+        <label htmlFor="symptoms" className={staffLabel}>
           Symptoms (อาการ)
         </label>
         <textarea id="symptoms" rows={2} className={field} {...register("symptoms")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="result" className="text-sm font-medium">
+        <label htmlFor="result" className={staffLabel}>
           Result (ผลการรักษา)
         </label>
         <textarea id="result" rows={2} className={field} {...register("result")} />
       </div>
       <div className="space-y-1">
-        <label htmlFor="note" className="text-sm font-medium">
+        <label htmlFor="note" className={staffLabel}>
           Note (หมายเหตุ)
         </label>
         <textarea id="note" rows={2} className={field} {...register("note")} />
       </div>
-      {save.isError ? <p className="text-sm text-red-600">Could not save. Try again.</p> : null}
+      {save.isError ? <p className={staffFieldError}>Could not save. Try again.</p> : null}
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={save.isPending}
-          className="rounded bg-stone-800 px-4 py-2 text-white disabled:opacity-50"
+          className={btnPrimary}
         >
           Save
         </button>
         <button
           type="button"
           onClick={() => router.push(`/staff/remedies/${remedyId}/treatment-cases`)}
-          className="rounded border border-stone-300 px-4 py-2"
+          className={btnGhost}
         >
           Cancel
         </button>

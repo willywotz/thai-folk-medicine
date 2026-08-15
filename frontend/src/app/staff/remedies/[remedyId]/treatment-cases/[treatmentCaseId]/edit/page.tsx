@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CaseForm } from "@/components/CaseForm";
 import { PhotoManager } from "@/components/PhotoManager";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { getRemedy, getTreatmentCase } from "@/lib/api";
 
 export default async function EditCasePage({
@@ -21,7 +22,14 @@ export default async function EditCasePage({
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Edit treatment case</h1>
+      <StaffPageHeader
+        crumbs={[
+          { label: remedy.name, href: `/staff/remedies/${rId}/treatment-cases` },
+          { label: "Edit case" },
+        ]}
+        eyebrow="edit record"
+        title="Edit treatment case"
+      />
       <CaseForm remedyId={rId} healerId={remedy.healerId} treatmentCase={treatmentCase} />
       <div className="mt-8">
         <PhotoManager ownerType="case" ownerId={treatmentCase.id} />

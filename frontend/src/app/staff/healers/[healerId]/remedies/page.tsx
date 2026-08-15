@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { RemedyAdminList } from "@/components/RemedyAdminList";
-import { getHealer } from "@/lib/api";
+import { StaffPageHeader } from "@/components/StaffPageHeader";
+import { getDistrict, getHealer } from "@/lib/api";
 
 export default async function StaffRemediesPage({
   params,
@@ -14,10 +15,19 @@ export default async function StaffRemediesPage({
 
   const healer = await getHealer(id);
   if (!healer) notFound();
+  const district = await getDistrict(healer.districtId);
+
+  const crumbs = [
+    { label: "Districts", href: "/staff" },
+    ...(district
+      ? [{ label: district.nameThai, href: `/staff/districts/${district.id}` }]
+      : []),
+    { label: healer.fullName },
+  ];
 
   return (
     <section>
-      <h1 className="mb-4 text-xl font-bold">Remedies of {healer.fullName}</h1>
+      <StaffPageHeader crumbs={crumbs} eyebrow={`Remedies of ${healer.fullName}`} title="ตำรับยา · Remedies" />
       <RemedyAdminList healerId={id} />
     </section>
   );

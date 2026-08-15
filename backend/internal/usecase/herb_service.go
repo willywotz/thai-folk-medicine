@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrInvalidHerb means the herb input failed validation.
@@ -40,9 +41,9 @@ func (s *HerbService) Get(ctx context.Context, id int64) (herb.Herb, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-// List returns every herb.
-func (s *HerbService) List(ctx context.Context) ([]herb.Herb, error) {
-	return s.repo.List(ctx)
+// ListPage returns one paginated, filtered page of herbs.
+func (s *HerbService) ListPage(ctx context.Context, q herb.ListQuery) (listing.Page[herb.Herb], error) {
+	return s.repo.ListPage(ctx, q)
 }
 
 // Update validates and changes a herb, then publishes UpdatedEvent.

@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 // ErrNotFound means no herb has the given id.
@@ -34,6 +36,12 @@ type CreateParams struct {
 	Description    string
 }
 
+// ListQuery selects and pages herbs for public browse.
+type ListQuery struct {
+	Page  listing.Params
+	Query string
+}
+
 // UpdateParams holds the fields to update a herb.
 type UpdateParams struct {
 	ID             int64
@@ -48,7 +56,7 @@ type UpdateParams struct {
 type Repository interface {
 	Create(ctx context.Context, p CreateParams) (Herb, error)
 	GetByID(ctx context.Context, id int64) (Herb, error)
-	List(ctx context.Context) ([]Herb, error)
+	ListPage(ctx context.Context, q ListQuery) (listing.Page[Herb], error)
 	Update(ctx context.Context, p UpdateParams) (Herb, error)
 	Delete(ctx context.Context, id int64) error
 }

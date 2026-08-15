@@ -1,13 +1,17 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 )
 
 func TestHerbRepository_CRUD(t *testing.T) {
@@ -29,9 +33,9 @@ func TestHerbRepository_CRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, got.ID)
 
-	list, err := repo.List(ctx)
+	page, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}})
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, len(list), 1)
+	assert.GreaterOrEqual(t, len(page.Items), 1)
 
 	_, err = repo.Update(ctx, herb.UpdateParams{ID: created.ID, NameThai: "ฟ้าทะลายโจร*", NameEnglish: "A"})
 	require.NoError(t, err)
@@ -39,4 +43,48 @@ func TestHerbRepository_CRUD(t *testing.T) {
 	require.NoError(t, repo.Delete(ctx, created.ID))
 	_, err = repo.GetByID(ctx, created.ID)
 	assert.True(t, errors.Is(err, herb.ErrNotFound))
+}
+
+// seedHerbFixtures creates three herbs with distinct Thai names, English
+// names, and properties, so a query filter can be scoped to exactly one.
+func seedHerbFixtures(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
+	t.Helper()
+	repo := NewHerb(db.New(pool))
+	_, err := repo.Create(ctx, herb.CreateParams{NameThai: "ขิง", NameEnglish: "Ginger", Properties: "แก้ท้องอืด"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, herb.CreateParams{NameThai: "ไพล", NameEnglish: "Cassumunar", Properties: "แก้ปวดเมื่อย"})
+	require.NoError(t, err)
+	_, err = repo.Create(ctx, herb.CreateParams{NameThai: "กระชาย", NameEnglish: "Fingerroot", Properties: "บำรุงกำลัง"})
+	require.NoError(t, err)
+}
+
+func TestHerbRepository_ListPage_FilterByQuery(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewHerb(db.New(pool))
+	seedHerbFixtures(t, ctx, pool)
+
+	all, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}})
+	require.NoError(t, err)
+	assert.Equal(t, 3, all.Total)
+
+	byName, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}, Query: "ขิง"})
+	require.NoError(t, err)
+	require.Equal(t, 1, byName.Total)
+	assert.Equal(t, "ขิง", byName.Items[0].NameThai)
+
+	byProperty, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 10}, Query: "ปวด"})
+	require.NoError(t, err)
+	require.Equal(t, 1, byProperty.Total)
+	assert.Equal(t, "ไพล", byProperty.Items[0].NameThai)
+}
+
+func TestHerbRepository_ListPage_OffsetWindow(t *testing.T) {
+	ctx, pool := newTestPoolConn(t)
+	repo := NewHerb(db.New(pool))
+	seedHerbFixtures(t, ctx, pool)
+
+	page2, err := repo.ListPage(ctx, herb.ListQuery{Page: listing.Params{Limit: 2, Offset: 2}})
+	require.NoError(t, err)
+	assert.Equal(t, 3, page2.Total)
+	assert.Len(t, page2.Items, 1)
 }

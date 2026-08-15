@@ -72,18 +72,22 @@ type herbRequest struct {
 	Description    string `json:"description"`
 }
 
-// List handles GET /api/v1/herbs.
+// List handles GET /api/v1/herbs?page&pageSize&query.
 func (h *HerbHandler) List(c *gin.Context) {
-	list, err := h.service.List(c.Request.Context())
+	params, page, pageSize := parsePageParams(c, 12)
+	result, err := h.service.ListPage(c.Request.Context(), herb.ListQuery{
+		Page:  params,
+		Query: trimmedQuery(c, "query"),
+	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot list herbs"})
 		return
 	}
-	out := make([]herbDTO, 0, len(list))
-	for _, item := range list {
+	out := make([]herbDTO, 0, len(result.Items))
+	for _, item := range result.Items {
 		out = append(out, toHerbDTO(item))
 	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, newPageDTO(out, page, pageSize, result.Total))
 }
 
 // Get handles GET /api/v1/herbs/:herbId.

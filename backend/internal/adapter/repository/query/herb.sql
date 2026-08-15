@@ -8,10 +8,22 @@ SELECT id, name_thai, name_english, scientific_name, properties, description, cr
 FROM herb
 WHERE id = $1;
 
--- name: ListHerb :many
+-- name: ListHerbPage :many
 SELECT id, name_thai, name_english, scientific_name, properties, description, created_at, updated_at
 FROM herb
-ORDER BY name_thai;
+WHERE (sqlc.narg('query')::text IS NULL
+       OR name_thai ILIKE '%' || sqlc.narg('query')::text || '%'
+       OR name_english ILIKE '%' || sqlc.narg('query')::text || '%'
+       OR properties ILIKE '%' || sqlc.narg('query')::text || '%')
+ORDER BY name_thai
+LIMIT sqlc.arg('page_limit') OFFSET sqlc.arg('page_offset');
+
+-- name: CountHerbPage :one
+SELECT COUNT(*) FROM herb
+WHERE (sqlc.narg('query')::text IS NULL
+       OR name_thai ILIKE '%' || sqlc.narg('query')::text || '%'
+       OR name_english ILIKE '%' || sqlc.narg('query')::text || '%'
+       OR properties ILIKE '%' || sqlc.narg('query')::text || '%');
 
 -- name: UpdateHerb :one
 UPDATE herb

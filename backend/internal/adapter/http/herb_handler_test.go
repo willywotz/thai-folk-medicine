@@ -13,12 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/herb"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/listing"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/remedy"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
 type stubHerbRepo struct {
-	getErr error
+	getErr   error
+	page     listing.Page[herb.Herb]
+	gotQuery herb.ListQuery
 }
 
 func (s *stubHerbRepo) Create(_ context.Context, p herb.CreateParams) (herb.Herb, error) {
@@ -30,8 +33,9 @@ func (s *stubHerbRepo) GetByID(_ context.Context, id int64) (herb.Herb, error) {
 	}
 	return herb.Herb{ID: id, NameThai: "ไพล"}, nil
 }
-func (s *stubHerbRepo) List(context.Context) ([]herb.Herb, error) {
-	return []herb.Herb{{ID: 1, NameThai: "ไพล"}}, nil
+func (s *stubHerbRepo) ListPage(_ context.Context, q herb.ListQuery) (listing.Page[herb.Herb], error) {
+	s.gotQuery = q
+	return s.page, nil
 }
 func (s *stubHerbRepo) Update(_ context.Context, p herb.UpdateParams) (herb.Herb, error) {
 	return herb.Herb{ID: p.ID, NameThai: p.NameThai}, nil
@@ -87,18 +91,28 @@ func TestHerbHandler_GetNotFound(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestHerbHandler_ListEndpoint(t *testing.T) {
-	router := newHerbRouter(&stubHerbRepo{})
+func TestHerbHandler_ListEndpoint_Envelope(t *testing.T) {
+	repo := &stubHerbRepo{page: listing.Page[herb.Herb]{
+		Items: []herb.Herb{{ID: 1, NameThai: "ไพล"}}, Total: 1,
+	}}
+	router := newHerbRouter(repo)
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/herbs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/herbs?page=1&pageSize=12&query=ไพล", nil)
 	router.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	var got []map[string]any
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	require.Len(t, got, 1)
-	assert.Equal(t, "ไพล", got[0]["nameThai"])
+	var body struct {
+		Items      []map[string]any `json:"items"`
+		Total      int              `json:"total"`
+		TotalPages int              `json:"totalPages"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	require.Len(t, body.Items, 1)
+	assert.Equal(t, "ไพล", body.Items[0]["nameThai"])
+	assert.Equal(t, 1, body.Total)
+	assert.Equal(t, 1, body.TotalPages)
+	assert.Equal(t, "ไพล", repo.gotQuery.Query)
 }
 
 func TestHerbHandler_ListRemediesEndpoint(t *testing.T) {

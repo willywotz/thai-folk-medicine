@@ -32,7 +32,44 @@ and plans under `docs/superpowers/`.
 - **Searchable herb picker** — the staff remedy form filters herbs by Thai name with a
   Base UI `Combobox` (no new dependency) — done.
 
-### Latest — staff-zone overhaul (Plan 13, merge `2ddee03`)
+### Latest — internationalization (th/en) + UX polish (merged to `main`)
+
+Two-language support (**Thai default, English**) via the official Next.js App Router sub-path
+standard, plus a batch of UX fixes. All merged to `main`.
+
+**i18n (`feat/i18n-th-en`, merge `cd0b2b4`).** Spec/plan:
+`docs/superpowers/specs/2026-08-16-i18n-th-en-design.md`,
+`docs/superpowers/plans/2026-08-16-i18n-th-en.md`.
+
+- All UI routes moved under `app/[lang]/` (`th`|`en`); `app/[lang]/layout.tsx` is the single
+  root layout. `app/bff/*` API handlers stay at the root (a static segment beats `[lang]`).
+- `src/proxy.ts` redirects a locale-less path to `/th`, then applies the staff auth guard to the
+  locale-stripped path (keeping the prefix).
+- `src/lib/i18n/`: `config` (locales, `defaultLocale = "th"`), typed dictionaries
+  `dictionaries/{th,en}.ts` (`th` is the source of truth; `en: Dictionary` → a missing key is a
+  **compile error**), `getDictionary()` (server, via `next/root-params`). Client components use
+  `useT()`, which selects `{th,en}` by the locale from `I18nProvider` — **locale-only context**;
+  the dict is imported client-side so its function-valued keys survive the RSC boundary. Never
+  pass the dict object across the server→client prop boundary.
+- Only UI **chrome** is translated (public + staff + login); record content shows as saved. The
+  brand mark stays Thai in both locales. A `LanguageSwitcher` in the header swaps the locale.
+
+**UX polish (small commits on `main`, newest first).**
+
+- **Multi-province By-area fix** (`0a21aef`): home By-area chips linked to a bare `/districts`,
+  which always showed the first province; chips now pass `?provinceId=<id>` and the districts
+  page honors it (falls back to the first province, 404 on an unknown id).
+- **Breadcrumbs everywhere**: every staff page is rooted at **Dashboard**, every public page at
+  **Home** (`09afcae`, `e5a918f`, `6a5e043`).
+- **Dedicated district create/edit pages** (merge `6b340fc`): districts were the last staff
+  entity with an inline form; they now use `staff/provinces/[provinceId]/districts/new` +
+  `.../[districtId]/edit`, matching every other entity. `DistrictForm` navigates instead of an
+  `onDone` callback.
+- **Pointer cursor** for all links/buttons/`role` controls via one `globals.css` base rule
+  (`afc26c0`) — Tailwind v4 drops the default button pointer.
+- Home **"Recent cases"** links to the full `/treatment-cases` listing (`902fa61`).
+
+### Staff-zone overhaul (Plan 13, merge `2ddee03`)
 
 The biggest increment since the previous handoff. Spec/plan:
 `docs/superpowers/specs/2026-08-15-staff-workspace-sections-design.md` and
@@ -328,7 +365,14 @@ gotcha below.
 - **S3 / MinIO** photo store to replace local disk before horizontal scaling.
 - **Staff roles** (admin vs normal) if the team grows — one flat staff type today.
 - **Playwright** end-to-end tests across login → manage → browse.
-- **A second province** — the data model already supports it; seed more rows.
+- **A second province** — the model supports it and the home By-area chips now reach each
+  province's districts (`/districts?provinceId=`). Still missing: a public province **index**
+  page (the By-area section-head "view all" link was removed since there is no such page).
+- **i18n follow-ups** — record **content** is not localized (only chrome is; most entities store
+  Thai-only text). No URL hreflang/SEO tags yet. Two trivial shared strings stay English in both
+  locales by choice: `Pagination` "Loading…" and one nav `aria-label="Pagination"`.
+- **Locale via `Accept-Language`** — `defaultLocale` is always `th` today; the proxy could pick
+  a locale from the header on a locale-less request instead of always redirecting to `/th`.
 
 ---
 
@@ -337,8 +381,9 @@ gotcha below.
 - Design specs: `docs/superpowers/specs/` (original design + search + herb/remedy focus).
 - Plans (one per increment): `docs/superpowers/plans/` — backend foundation, healer + events,
   remedy + case, auth + photos, public frontend, staff healer admin, staff remedy/case admin,
-  photo management, search by symptom/herb, **herb + remedy focus** (Plan 10), and
-  **pagination + merged search** (Plan 11, `2026-08-15-pagination-filter-search.md`).
+  photo management, search by symptom/herb, **herb + remedy focus** (Plan 10),
+  **pagination + merged search** (Plan 11, `2026-08-15-pagination-filter-search.md`), the
+  **staff-zone overhaul** (Plan 13), and **th/en i18n** (`2026-08-16-i18n-th-en.md`).
 - SDD ledgers / per-task reports: `.superpowers/sdd/` (git-ignored scratch).
 - System reference: `CONTEXT.md`.
 - Project rules and agent config: `.claude/`.

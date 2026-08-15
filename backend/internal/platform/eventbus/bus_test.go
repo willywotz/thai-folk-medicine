@@ -57,3 +57,17 @@ func TestPublishSwallowsHandlerError(t *testing.T) {
 		bus.Publish(context.Background(), sampleEvent{name: "healer.created"})
 	})
 }
+
+func TestSubscribeAllReceivesEveryEvent(t *testing.T) {
+	bus := newSilentBus()
+	var got []string
+	bus.SubscribeAll(func(_ context.Context, e event.Event) error {
+		got = append(got, e.EventName())
+		return nil
+	})
+
+	bus.Publish(context.Background(), sampleEvent{name: "a.created"})
+	bus.Publish(context.Background(), sampleEvent{name: "b.updated"})
+
+	assert.Equal(t, []string{"a.created", "b.updated"}, got)
+}

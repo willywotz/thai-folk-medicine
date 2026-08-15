@@ -74,7 +74,7 @@ export default async function HerbPage({
 
           <h2 className="mb-3 mt-8 font-serif text-lg text-ink">{t.herb.usedIn}</h2>
           {remedies.length === 0 ? (
-            <EmptyState message="No remedies use this herb yet." />
+            <EmptyState message={t.herb.noRemedies} />
           ) : (
             <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
               {remedies.map((r, i) => (

@@ -87,7 +87,7 @@ export default async function RemedyPage({
 
           <h2 className="mb-3 mt-8 font-serif text-lg text-ink">{t.remedy.treatmentCases}</h2>
           {cases.length === 0 ? (
-            <EmptyState message="No treatment cases recorded for this remedy yet." />
+            <EmptyState message={t.remedy.noCases} />
           ) : (
             <ul className="grid gap-3">
               {cases.map((c) => (

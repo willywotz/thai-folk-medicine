@@ -70,7 +70,7 @@ export default async function HealerPage({
 
       <SectionHead title={t.healer.remedies} />
       {remedies.length === 0 ? (
-        <EmptyState message="No remedies recorded for this healer yet." />
+        <EmptyState message={t.healer.noRemedies} />
       ) : (
         <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
           {remedies.map((r, i) => (

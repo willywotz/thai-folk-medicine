@@ -7,7 +7,7 @@ import { getFirstProvince, listDistricts } from "@/lib/api";
 export default async function DistrictsPage() {
   const t = await getDictionary();
   const province = await getFirstProvince();
-  if (!province) return <EmptyState message="No province data yet." />;
+  if (!province) return <EmptyState message={t.district.noData} />;
   const districts = await listDistricts(province.id);
   return (
     <section>

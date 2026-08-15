@@ -49,7 +49,7 @@ export default async function DistrictPage({
 
       <SectionHead title={t.district.healers} />
       {healers.length === 0 ? (
-        <EmptyState message="No healers recorded in this district yet." />
+        <EmptyState message={t.district.noHealers} />
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {healers.map((h) => (

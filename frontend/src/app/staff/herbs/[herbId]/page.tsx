@@ -2,22 +2,28 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EmptyState } from "@/components/EmptyState";
+import { Pagination } from "@/components/Pagination";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { staffCard } from "@/components/staff-ui";
 import { getFirstProvince, getHerb, listDistricts, listHealers, listRemediesByHerb } from "@/lib/api";
 
+const PAGE_SIZE = 20;
+
 export default async function StaffHerbUsagePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ herbId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { herbId } = await params;
   const id = Number(herbId);
   if (!Number.isInteger(id) || id <= 0) notFound();
+  const page = Math.max(1, Number((await searchParams).page) || 1);
 
   const herb = await getHerb(id);
   if (!herb) notFound();
-  const remedies = await listRemediesByHerb(id, { pageSize: 48 });
+  const remedies = await listRemediesByHerb(id, { page, pageSize: PAGE_SIZE });
 
   // Resolve each remedy's ancestry (healer -> district -> province) for the row.
   const province = await getFirstProvince();
@@ -58,6 +64,14 @@ export default async function StaffHerbUsagePage({
           ))}
         </ul>
       )}
+      <div className="mt-4">
+        <Pagination
+          page={remedies.page}
+          totalPages={remedies.totalPages}
+          basePath={`/staff/herbs/${id}`}
+          searchParams={{}}
+        />
+      </div>
     </section>
   );
 }

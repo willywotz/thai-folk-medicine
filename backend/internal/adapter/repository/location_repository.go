@@ -3,6 +3,9 @@ package repository
 
 import (
 	"context"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/location"
@@ -53,4 +56,22 @@ func (r *Location) ListDistrictByProvince(ctx context.Context, provinceID int64)
 		})
 	}
 	return result, nil
+}
+
+// GetDistrict returns one district or location.ErrNotFound.
+func (r *Location) GetDistrict(ctx context.Context, id int64) (location.District, error) {
+	row, err := r.q.GetDistrict(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return location.District{}, location.ErrNotFound
+		}
+		return location.District{}, err
+	}
+
+	return location.District{
+		ID:          row.ID,
+		ProvinceID:  row.ProvinceID,
+		NameThai:    row.NameThai,
+		NameEnglish: row.NameEnglish,
+	}, nil
 }

@@ -27,3 +27,8 @@ func (s *LocationService) ListProvince(ctx context.Context) ([]location.Province
 func (s *LocationService) ListDistrictByProvince(ctx context.Context, provinceID int64) ([]location.District, error) {
 	return s.repo.ListDistrictByProvince(ctx, provinceID)
 }
+
+// GetDistrict returns one district or location.ErrNotFound.
+func (s *LocationService) GetDistrict(ctx context.Context, id int64) (location.District, error) {
+	return s.repo.GetDistrict(ctx, id)
+}

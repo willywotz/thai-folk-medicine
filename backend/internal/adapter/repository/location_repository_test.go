@@ -11,6 +11,7 @@ import (
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/adapter/repository/db"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/location"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/database"
 )
 
@@ -71,4 +72,32 @@ func TestLocationListDistrictByProvinceReturnsNine(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, districts, 9)
 	assert.Equal(t, provinces[0].ID, districts[0].ProvinceID)
+}
+
+func TestLocationGetDistrictReturnsOne(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	provinces, err := repo.ListProvince(ctx)
+	require.NoError(t, err)
+	districts, err := repo.ListDistrictByProvince(ctx, provinces[0].ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, districts)
+
+	got, err := repo.GetDistrict(ctx, districts[0].ID)
+
+	require.NoError(t, err)
+	assert.Equal(t, districts[0].ID, got.ID)
+	assert.Equal(t, districts[0].ProvinceID, got.ProvinceID)
+	assert.Equal(t, districts[0].NameThai, got.NameThai)
+	assert.Equal(t, districts[0].NameEnglish, got.NameEnglish)
+}
+
+func TestLocationGetDistrictNotFound(t *testing.T) {
+	ctx, queries := newTestPool(t)
+	repo := NewLocation(queries)
+
+	_, err := repo.GetDistrict(ctx, 999999)
+
+	assert.ErrorIs(t, err, location.ErrNotFound)
 }

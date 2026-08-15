@@ -2,7 +2,13 @@
 // repository interface. It imports no framework code.
 package location
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+// ErrNotFound means no district has the given id.
+var ErrNotFound = errors.New("district not found")
 
 // Province is one Thai province.
 type Province struct {
@@ -23,4 +29,5 @@ type District struct {
 type Repository interface {
 	ListProvince(ctx context.Context) ([]Province, error)
 	ListDistrictByProvince(ctx context.Context, provinceID int64) ([]District, error)
+	GetDistrict(ctx context.Context, id int64) (District, error)
 }

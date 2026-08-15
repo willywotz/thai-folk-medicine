@@ -34,6 +34,15 @@ func (f *fakeLocationRepo) ListDistrictByProvince(_ context.Context, provinceID 
 	return out, nil
 }
 
+func (f *fakeLocationRepo) GetDistrict(_ context.Context, id int64) (location.District, error) {
+	for _, d := range f.districts {
+		if d.ID == id {
+			return d, nil
+		}
+	}
+	return location.District{}, location.ErrNotFound
+}
+
 func newTestRouter(repo location.Repository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	service := usecase.NewLocationService(repo)
@@ -87,4 +96,44 @@ func TestListDistrictRejectsBadProvinceID(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestGetDistrictEndpoint(t *testing.T) {
+	repo := &fakeLocationRepo{districts: []location.District{
+		{ID: 5, ProvinceID: 1, NameThai: "กุดชุม", NameEnglish: "Kut Chum"},
+	}}
+	router := newTestRouter(repo)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/districts/5", nil)
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, float64(5), body["id"])
+	assert.Equal(t, float64(1), body["provinceId"])
+	assert.Equal(t, "กุดชุม", body["nameThai"])
+	assert.Equal(t, "Kut Chum", body["nameEnglish"])
+}
+
+func TestGetDistrictRejectsBadID(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/districts/abc", nil)
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestGetDistrictNotFound(t *testing.T) {
+	router := newTestRouter(&fakeLocationRepo{})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/districts/999", nil)
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }

@@ -34,6 +34,18 @@ func (f *fakeLocationRepo) ListDistrictByProvince(_ context.Context, provinceID 
 	return out, nil
 }
 
+func (f *fakeLocationRepo) GetDistrict(_ context.Context, id int64) (location.District, error) {
+	if f.err != nil {
+		return location.District{}, f.err
+	}
+	for _, d := range f.districts {
+		if d.ID == id {
+			return d, nil
+		}
+	}
+	return location.District{}, location.ErrNotFound
+}
+
 func TestListProvincePassesThrough(t *testing.T) {
 	repo := &fakeLocationRepo{provinces: []location.Province{{ID: 1, NameEnglish: "Yasothon"}}}
 	service := NewLocationService(repo)

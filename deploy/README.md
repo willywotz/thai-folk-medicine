@@ -69,5 +69,7 @@ ansible-playbook -i inventory.ini playbook.yml \
 
 - First push makes the GHCR package private. If the server token cannot pull,
   set the package to internal/public or link it to this repo in the GHCR UI.
-- No reverse proxy is included. The frontend listens on `:3000`; the server's
-  existing proxy terminates TLS and forwards to it.
+- No reverse proxy is included. The frontend container listens on `:3000`,
+  published on the host at `${FRONTEND_PORT}` (set by `frontend_port` in
+  `group_vars/prod/vars.yml`, currently `14285`; falls back to `3000`). Point
+  the server's existing TLS-terminating proxy at that published port.

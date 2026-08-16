@@ -32,7 +32,27 @@ and plans under `docs/superpowers/`.
 - **Searchable herb picker** — the staff remedy form filters herbs by Thai name with a
   Base UI `Combobox` (no new dependency) — done.
 
-### Latest — internationalization (th/en) + UX polish (merged to `main`)
+### Latest — CI/CD + Ansible deployment (merged to `main`, live on `v0.1.2`)
+
+The app now ships to production automatically. Spec/plan:
+`docs/superpowers/specs/2026-08-16-ci-cd-ansible-design.md`,
+`docs/superpowers/plans/2026-08-16-ci-cd-ansible.md`. Full operator runbook:
+`deploy/README.md`. See the **Deployment (CI/CD)** section below for how it works
+and how to run a release.
+
+- **`.github/workflows/ci.yml`** — on PR + push to `main`: Go `vet`+`test`, frontend
+  `lint`+`test`, and a static check of the deploy files (ansible `--syntax-check`,
+  render templates, `docker compose config`).
+- **`.github/workflows/release.yml`** — on a `v*` tag: builds backend+frontend images,
+  pushes to `ghcr.io/willywotz/thai-folk-medicine-{backend,frontend}:<tag>`, then runs
+  `deploy/playbook.yml` over SSH to the production server.
+- **`deploy/`** — Ansible playbook + `compose.prod.yaml.j2` (GHCR images) + `.env` from an
+  **encrypted Ansible Vault**, plus an **nginx** reverse proxy (`:80` → frontend) and a
+  **manual** `seed` service (the deploy ships it but does not run it).
+- **Live:** deployed to `152.42.209.242` as `root`, serving `tfm.willywotz.com`. Current
+  release **`v0.1.2`**.
+
+### internationalization (th/en) + UX polish (merged to `main`)
 
 Two-language support (**Thai default, English**) via the official Next.js App Router sub-path
 standard, plus a batch of UX fixes. All merged to `main`.
@@ -185,6 +205,61 @@ go run ./cmd/seed              # (same env) fill the dev DB; add -reset to rebui
 # frontend (another terminal)
 cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev   # http://localhost:3000
 ```
+
+---
+
+## Deployment (CI/CD)
+
+Production runs the same Docker Compose stack, but from images built in CI and
+pulled from GHCR. Everything below is committed under `deploy/` and `.github/workflows/`.
+The authoritative operator guide is **`deploy/README.md`**.
+
+**How a release works**
+
+1. Push a semver tag: `git tag -a vX.Y.Z -m "…" && git push origin vX.Y.Z`.
+2. `release.yml` builds `backend` and `frontend` (`--target production`) and pushes
+   `ghcr.io/willywotz/thai-folk-medicine-{backend,frontend}:vX.Y.Z` + `:latest`.
+3. The `deploy` job SSHes to the server and runs `deploy/playbook.yml`, which renders
+   `compose.prod.yaml` + `.env`, `docker login ghcr.io`, `pull`, `up -d`, installs the
+   nginx site, and reloads nginx. The backend applies its **embedded migrations on start** —
+   there is no separate migration step.
+
+**Watch a run:** `gh run watch <run-id> --exit-status`, or the Actions tab.
+
+**The server (already provisioned)**
+
+- Host `152.42.209.242`, connects as **`root`** (root-only box — no `deploy` user, no sudo
+  escalation in the playbook). App dir `/opt/thai-folk-medicine`.
+- **nginx** must be installed; the deploy drops `/etc/nginx/conf.d/thai-folk-medicine.conf`
+  (HTTP `:80`, `server_name tfm.willywotz.com`) proxying to the frontend's published port
+  **`14285`** (`frontend_port` in `vars.yml`; the container still listens on `:3000`).
+  HTTP only — terminate TLS in front.
+
+**Secrets**
+
+- **GitHub Actions secrets** (set): `SSH_PRIVATE_KEY` (root's key), `KNOWN_HOSTS`,
+  `ANSIBLE_VAULT_PASSWORD`. `GITHUB_TOKEN` is automatic (GHCR push + server pull).
+- **Ansible Vault** (`deploy/group_vars/prod/vault.yml`, committed **encrypted**): `ansible_host`,
+  `ansible_user`, `jwt_secret`, `postgres_password`, `staff_admin_*`. Edit with
+  `ansible-vault edit deploy/group_vars/prod/vault.yml`.
+
+**Seeding prod** — the deploy ships the `seed` service but does **not** run it. Do it by hand
+on the server from `/opt/thai-folk-medicine`:
+```
+docker compose -f compose.prod.yaml --profile seed run --rm seed          # fill empty DB
+docker compose -f compose.prod.yaml --profile seed run --rm seed -reset   # wipe + reseed
+```
+
+**Gotchas learned the hard way** (all fixed, noted so they don't recur)
+
+- The `deploy` job checks out the **tagged commit**, not `main` — fixes on `main` need a
+  **new tag** to take effect. Re-running an old tag re-runs old code.
+- `inventory.ini` lists the host **only**; `ansible_host`/`ansible_user` come from the vault
+  group_vars. Do **not** restate them as inventory host vars — `ansible_host="{{ ansible_host }}"`
+  self-references and dies with a template-recursion error at connect.
+- Workflow `uses:` are pinned to latest majors (checkout v7, setup-go/node v7,
+  pnpm/action-setup v6, docker/* v4–v7). The pnpm step keeps an explicit `version:` because
+  there is no root `package.json` for `packageManager` to be read from.
 
 ---
 
@@ -383,7 +458,10 @@ gotcha below.
   remedy + case, auth + photos, public frontend, staff healer admin, staff remedy/case admin,
   photo management, search by symptom/herb, **herb + remedy focus** (Plan 10),
   **pagination + merged search** (Plan 11, `2026-08-15-pagination-filter-search.md`), the
-  **staff-zone overhaul** (Plan 13), and **th/en i18n** (`2026-08-16-i18n-th-en.md`).
+  **staff-zone overhaul** (Plan 13), **th/en i18n** (`2026-08-16-i18n-th-en.md`), and
+  **CI/CD + Ansible deploy** (`2026-08-16-ci-cd-ansible.md`).
+- Deployment: `deploy/` (Ansible + prod compose template + vault + nginx), operator runbook
+  `deploy/README.md`; workflows in `.github/workflows/` (`ci.yml`, `release.yml`).
 - SDD ledgers / per-task reports: `.superpowers/sdd/` (git-ignored scratch).
 - System reference: `CONTEXT.md`.
 - Project rules and agent config: `.claude/`.

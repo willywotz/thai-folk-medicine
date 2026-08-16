@@ -38,6 +38,11 @@
         cmd: docker compose -f "{{ compose_file }}" up -d
         chdir: "{{ app_dir }}"
 
+    - name: Seed the database (idempotent; no-op if already seeded)
+      ansible.builtin.command:
+        cmd: docker compose -f "{{ compose_file }}" --profile seed run --rm seed
+        chdir: "{{ app_dir }}"
+
     - name: Install nginx reverse-proxy site
       ansible.builtin.template:
         src: templates/nginx.conf.j2

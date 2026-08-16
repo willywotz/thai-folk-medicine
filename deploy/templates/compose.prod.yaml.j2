@@ -31,6 +31,23 @@ services:
     volumes:
       - photo_data:/data/photo
 
+  # One-shot demo-data loader. Not started by `up`; the deploy runs it on
+  # demand. Idempotent: seeds only an empty database, no-op otherwise.
+  seed:
+    image: {{ registry }}/{{ image_backend }}:{{ app_version }}
+    entrypoint: ["/usr/local/bin/seed"]
+    environment:
+      DATABASE_URL: postgres://folk:${POSTGRES_PASSWORD}@postgres:5432/folk_medicine?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      PHOTO_STORAGE_DIR: /data/photo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - photo_data:/data/photo
+    profiles:
+      - seed
+
   frontend:
     image: {{ registry }}/{{ image_frontend }}:{{ app_version }}
     restart: unless-stopped

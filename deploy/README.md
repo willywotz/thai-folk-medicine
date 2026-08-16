@@ -67,6 +67,10 @@ ansible-playbook -i inventory.ini playbook.yml \
 
 ## Notes
 
+- The deploy runs the demo-data seeder (`docker compose --profile seed run
+  --rm seed`) after starting the stack. It is idempotent — it seeds only an
+  empty database and is a no-op once data exists. To wipe and reseed, run it
+  by hand with `-reset` on the server.
 - First push makes the GHCR package private. If the server token cannot pull,
   set the package to internal/public or link it to this repo in the GHCR UI.
 - The frontend container listens on `:3000`, published on the host at

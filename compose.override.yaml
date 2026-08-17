@@ -1,6 +1,8 @@
 services:
   backend:
     build: { target: development }
+    environment:
+      COOKIE_SECURE: "false"
     develop:
       watch:
         - action: sync+restart

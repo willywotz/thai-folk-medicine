@@ -25,6 +25,7 @@ services:
       STAFF_ADMIN_USERNAME: ${STAFF_ADMIN_USERNAME}
       STAFF_ADMIN_PASSWORD: ${STAFF_ADMIN_PASSWORD}
       STAFF_ADMIN_EMAIL: ${STAFF_ADMIN_EMAIL}
+      COOKIE_SECURE: "true"
     depends_on:
       postgres:
         condition: service_healthy

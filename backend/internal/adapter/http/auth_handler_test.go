@@ -117,3 +117,38 @@ func TestLogoutClearsSessionCookie(t *testing.T) {
 	assert.Equal(t, "session", cookie[0].Name)
 	assert.True(t, cookie[0].MaxAge < 0)
 }
+
+func TestSessionEndpointRequiresAuth(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/authentication/session", nil)
+	loginTestRouter().ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+func TestSessionEndpointReturnsStaffID(t *testing.T) {
+	router := loginTestRouter()
+
+	// First, login to get the session cookie
+	loginRec := httptest.NewRecorder()
+	body := `{"username":"admin","password":"admin"}`
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/v1/authentication/login", strings.NewReader(body))
+	loginReq.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(loginRec, loginReq)
+	require.Equal(t, http.StatusOK, loginRec.Code)
+
+	// Extract the session cookie
+	cookies := loginRec.Result().Cookies()
+	require.Len(t, cookies, 1)
+	sessionCookie := cookies[0]
+
+	// Now call the session endpoint with the cookie
+	sessionRec := httptest.NewRecorder()
+	sessionReq := httptest.NewRequest(http.MethodGet, "/api/v1/authentication/session", nil)
+	sessionReq.AddCookie(sessionCookie)
+	router.ServeHTTP(sessionRec, sessionReq)
+
+	assert.Equal(t, http.StatusOK, sessionRec.Code)
+	var got map[string]int64
+	require.NoError(t, json.Unmarshal(sessionRec.Body.Bytes(), &got))
+	assert.Equal(t, int64(1), got["staffId"])
+}

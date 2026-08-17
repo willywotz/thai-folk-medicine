@@ -1,11 +1,12 @@
+import { it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { LangLayout } from "./provider";
 import { useT } from "./useT";
 
 function Probe() {
-  const { lang, t } = useT();
-  return <div>{lang}:{Object.keys(t).length > 0 ? "HAS_DICT" : "EMPTY"}</div>;
+  const { t } = useT();
+  return <div>{t.common.home}</div>;
 }
 
 function routerAt(path: string) {
@@ -17,10 +18,10 @@ function routerAt(path: string) {
 
 it("selects the Thai dictionary under /th", () => {
   render(<RouterProvider router={routerAt("/th")} />);
-  expect(screen.getByText("th:HAS_DICT")).toBeInTheDocument();
+  expect(screen.getByText("หน้าแรก")).toBeInTheDocument();
 });
 
 it("selects the English dictionary under /en", () => {
   render(<RouterProvider router={routerAt("/en")} />);
-  expect(screen.getByText("en:HAS_DICT")).toBeInTheDocument();
+  expect(screen.getByText("Home")).toBeInTheDocument();
 });

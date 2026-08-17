@@ -52,8 +52,6 @@ services:
   frontend:
     image: {{ registry }}/{{ image_frontend }}:{{ app_version }}
     restart: unless-stopped
-    environment:
-      INTERNAL_API_URL: http://backend:8080
     depends_on:
       - backend
     ports:

@@ -35,16 +35,19 @@ jobs:
         with:
           node-version: "24"
           cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
+          cache-dependency-path: web/pnpm-lock.yaml
       - name: Install
-        working-directory: frontend
+        working-directory: web
         run: pnpm install --frozen-lockfile
-      - name: Lint
-        working-directory: frontend
-        run: pnpm lint
+      - name: Typecheck
+        working-directory: web
+        run: pnpm typecheck
       - name: Test
-        working-directory: frontend
+        working-directory: web
         run: pnpm test
+      - name: Build
+        working-directory: web
+        run: pnpm build
 
   deploy-artifacts:
     runs-on: ubuntu-latest

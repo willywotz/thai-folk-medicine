@@ -87,6 +87,10 @@ frontend/
 └── vitest.config.ts                    # Vitest + RTL (jsdom)
 ```
 
+## Vite SPA foundation (`web/`)
+
+A Vite + React Router SPA is being built in parallel to `frontend/`, pending Plan 3 page-port and cutover to full SPA. Architecture: Vite + React 19, React Router 7 with `/:lang` (reusing the dictionary structure from `frontend/`), TanStack Query with `apiFetch` (credentials sent with requests), `StaffGuard` probing `GET /api/v1/authentication/session` for staff-only routes. Tests: Vitest + RTL (`@testing-library/jest-dom/vitest`). Docker image: lightweight nginx serving `dist/` with `try_files` SPA fallback and `/api` proxy to the backend. Typecheck script: `pnpm typecheck` runs `tsc --noEmit`. Built TDD; `pnpm test`, `pnpm build`, and `pnpm typecheck` all pass.
+
 ### Internationalization (i18n) — th (default) + en
 
 Official Next.js App Router sub-path standard. All UI routes live under

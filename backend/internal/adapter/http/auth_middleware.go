@@ -16,11 +16,14 @@ type TokenVerifier interface {
 // the staff id in the context as "staffId".
 func NewAuthMiddleware(verifier TokenVerifier) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		tokenString, ok := strings.CutPrefix(header, "Bearer ")
+		tokenString, ok := strings.CutPrefix(c.GetHeader("Authorization"), "Bearer ")
 		if !ok || tokenString == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing bearer token"})
-			return
+			if cookie, err := c.Cookie("session"); err == nil && cookie != "" {
+				tokenString = cookie
+			} else {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing bearer token or session cookie"})
+				return
+			}
 		}
 		staffID, err := verifier.Verify(tokenString)
 		if err != nil {

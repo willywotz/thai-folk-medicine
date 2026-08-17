@@ -91,6 +91,8 @@ frontend/
 
 A Vite + React Router SPA is being built in parallel to `frontend/`, pending Plan 3 page-port and cutover to full SPA. Architecture: Vite + React 19, React Router 7 with `/:lang` (reusing the dictionary structure from `frontend/`), TanStack Query with `apiFetch` (credentials sent with requests), `StaffGuard` probing `GET /api/v1/authentication/session` for staff-only routes. Tests: Vitest + RTL (`@testing-library/jest-dom/vitest`). Docker image: lightweight nginx serving `dist/` with `try_files` SPA fallback and `/api` proxy to the backend. Typecheck script: `pnpm typecheck` runs `tsc --noEmit`. Built TDD; `pnpm test`, `pnpm build`, and `pnpm typecheck` all pass.
 
+**Shared layer ported (Plan 3a):** the lib layer (`api-types`, zod schemas, formatters, a client `api.ts` with `ApiError`, and `staff-queries.ts` repointed from `/bff/*` to `/api/v1/*` with `credentials: "include"`), the Tailwind brand tokens + self-hosted Noto Thai fonts, all framework-agnostic components, and the 24 `next/*` components router-swapped to React Router (`Link`/`useNavigate`/`useLocation`), plus `NotFound`. i18n reconciled to the frontend API under `@/lib/i18n` (`useT()` returns the dictionary, `useLocale()` the locale) + `@/components/I18nProvider`. Auth components (`LoginForm`/`LogoutButton`) post directly to Go's `/api/v1/authentication/{login,logout}` — **no BFF** (the Go backend reads the `session` cookie, Plan 1). `web/` has zero `next/*` imports and zero `/bff` calls. Pages are still to be wired (Plans 3b/3c); Next still serves prod until the 3d cutover.
+
 ### Internationalization (i18n) — th (default) + en
 
 Official Next.js App Router sub-path standard. All UI routes live under

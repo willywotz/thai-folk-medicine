@@ -2,6 +2,7 @@ import { Outlet, useParams } from "react-router-dom";
 import type { ReactNode } from "react";
 
 import { LogoutButton } from "@/components/LogoutButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import { StaffNavLink } from "@/components/StaffNavLink";
 import { useT } from "@/lib/i18n/useT";
 import type { Dictionary } from "@/lib/i18n/dictionaries/th";
@@ -78,8 +79,10 @@ export function StaffLayout() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="grid gap-6 md:grid-cols-[228px_1fr]">
+    <>
+      <SiteHeader />
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <div className="grid gap-6 md:grid-cols-[228px_1fr]">
         <aside className="flex flex-col gap-1 rounded-xl border border-line bg-surface p-3 md:sticky md:top-20 md:h-fit">
         <div className="flex items-center gap-2.5 px-2 pb-3 pt-1">
           <span className="grid size-8 flex-none place-items-center rounded-lg bg-brand font-serif text-base font-semibold text-white">
@@ -121,7 +124,8 @@ export function StaffLayout() {
       <main className="min-w-0">
           <Outlet />
         </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -32,7 +32,40 @@ and plans under `docs/superpowers/`.
 - **Searchable herb picker** — the staff remedy form filters herbs by Thai name with a
   Base UI `Combobox` (no new dependency) — done.
 
-### Latest — CI/CD + Ansible deployment (merged to `main`, live on `v0.1.2`)
+### Latest — Drop-Node frontend migration (in progress; `web/` on `main`)
+
+Goal: remove the Node.js process from production (RAM) by replacing the Next.js
+`frontend/` with a **Vite + React Router SPA** in `web/`, served as static files
+by nginx, with the Go backend doing auth via the `session` cookie. Design:
+`docs/superpowers/specs/2026-08-17-drop-node-frontend-design.md`. See the
+**Drop-Node migration** section below for full state, gotchas, and how to run
+`web/`.
+
+Progress (a 3-phase plan series; each phase merged to `main` on its own):
+
+- **Plan 1 — backend cookie auth** (merged): Go reads the JWT from the `session`
+  cookie as well as `Authorization: Bearer`; login/logout set/clear it; new
+  `GET /api/v1/authentication/session` probe. **Transition-safe** — the current
+  Next app still uses Bearer, so this is already safe on prod.
+- **Plan 2 — Vite SPA foundation** (merged): `web/` scaffold — Vite 8 + React 19
+  + React Router 7 + React Query + Tailwind v4, `/:lang` i18n, `apiFetch`,
+  `StaffGuard` (session probe), nginx image, `pnpm typecheck` gate.
+- **Plan 3a — shared layer port** (merged, `a7ebf94`): lib (types, zod schemas,
+  formatters, client `api.ts` + `ApiError`, `staff-queries` repointed
+  `/bff/*`→`/api/v1/*` with cookie creds), Tailwind brand tokens + Noto Thai
+  fonts, all framework-agnostic components, the **24 `next/*` components
+  router-swapped**, `NotFound`, i18n reconciled to `@/lib/i18n`. **`web/` has 0
+  `next/*` imports and 0 `/bff` calls.**
+- **Remaining — Plans 3b / 3c / 3d** (not started): 3b wire ~10 public routes
+  as client React Query pages; 3c wire ~23 staff routes + login/logout + the 7
+  forms under `StaffGuard`; 3d cutover — delete `frontend/` + all `/bff` routes,
+  point the `frontend` compose service's image at `web/`, release a `v*` tag.
+  Plans 3b–3d are authored just-in-time against the state each prior plan leaves.
+
+**`frontend/` (Next.js) is still the production app** until the 3d cutover —
+`web/` ships nothing to prod yet.
+
+### CI/CD + Ansible deployment (merged to `main`, live on `v0.1.2`)
 
 The app now ships to production automatically. Spec/plan:
 `docs/superpowers/specs/2026-08-16-ci-cd-ansible-design.md`,
@@ -263,6 +296,60 @@ docker compose -f compose.prod.yaml --profile seed run --rm seed -reset   # wipe
 
 ---
 
+## Drop-Node migration (`web/`, in progress)
+
+Replacing the Next.js `frontend/` with a static Vite SPA in `web/` so production
+runs no Node. Full design + rationale:
+`docs/superpowers/specs/2026-08-17-drop-node-frontend-design.md`; plans:
+`docs/superpowers/plans/2026-08-17-drop-node-{1,2,3}-*.md`. Status summary is in
+the top increment section. This section is the working reference.
+
+**Why it's simpler than it looks:** the staff pages were already client +
+React Query over `staff-queries.ts`; the whole `/bff/*` layer only turned the
+`session` cookie into a `Bearer` header, and **Plan 1 made Go read the cookie
+directly**, so the browser calls `/api/v1/*` with `credentials: "include"` and
+Go authorizes it — **no Node BFF, no JWT in browser storage**.
+
+**Run `web/` locally:**
+```bash
+# backend on :8080 first (repo root): docker compose up -d backend postgres
+cd web && pnpm install
+pnpm dev          # Vite dev server; proxies /api → http://localhost:8080
+pnpm typecheck    # tsc --noEmit   (a real gate — keep it clean)
+pnpm test         # vitest
+pnpm build        # → dist/ (what the nginx image serves)
+```
+
+**`web/` architecture (what's built through Plan 3a):**
+- Vite 8 + React 19 + React Router 7 + React Query 5 + Tailwind v4; pnpm.
+- `@` → `web/src`. Same-origin `/api/v1` via `apiGet`/`apiSend` (`web/src/lib/api.ts`),
+  always `credentials: "include"`. `ApiError` carries `status` (public search
+  catches 400). `staff-queries.ts` = the staff CRUD/query layer, all on `/api/v1`.
+- **i18n lives at `@/lib/i18n`** + `@/components/I18nProvider`. `LangLayout`
+  (route element) reads `:lang`, redirects unknown locales to `th`, provides the
+  `{locale}` context. **`useT()` returns the dictionary directly** (`const t =
+  useT(); t.common.home`), `useLocale()` returns the locale.
+- Components: `web/src/components/` — the framework-agnostic set + the 24
+  router-swapped ones + `NotFound`. Auth: `LoginForm`→`POST /api/v1/authentication/login`,
+  `LogoutButton`→`POST /api/v1/authentication/logout`; guard = `StaffGuard`
+  probing `GET /api/v1/authentication/session`.
+- Docker image (`web/Dockerfile`): build with node → serve `dist/` with
+  `nginx:alpine`, `try_files $uri /index.html` SPA fallback + `/api` proxy to the
+  backend. No Node at runtime.
+
+**Gotchas (learned this migration):**
+- `useT()` returns the **dictionary**, not `{lang, t}` — never destructure `{t}`.
+- Every in-app `navigate()`/`<Link to>` must be **locale-prefixed** (`/${lang}/…`),
+  since all routes are under `/:lang`. Reach `lang` via `useParams()`.
+- `web/` uses **pnpm**; versions are **vite 8 + @vitejs/plugin-react 6 + vitest 4**
+  (plugin-react 6 peer-requires vite 8). Not npm, not vite 6/7.
+- `tsc` is the completeness gate for the Next removal: `web/` has no `next`
+  dependency, so any stray `next/*` import fails the build.
+- Not yet wired: the router only has the `/:lang` shell + `StaffGuard`; the 33
+  pages are Plans 3b/3c. `frontend/` remains the prod app until 3d.
+
+---
+
 ## Architecture
 
 **Backend (`backend/`, Go 1.26.5)** — Clean Architecture, 15-Factor, event-driven.
@@ -459,7 +546,10 @@ gotcha below.
   photo management, search by symptom/herb, **herb + remedy focus** (Plan 10),
   **pagination + merged search** (Plan 11, `2026-08-15-pagination-filter-search.md`), the
   **staff-zone overhaul** (Plan 13), **th/en i18n** (`2026-08-16-i18n-th-en.md`), and
-  **CI/CD + Ansible deploy** (`2026-08-16-ci-cd-ansible.md`).
+  **CI/CD + Ansible deploy** (`2026-08-16-ci-cd-ansible.md`), and the
+  **drop-node** series (`2026-08-17-drop-node-{1,2,3}-*.md`; spec
+  `2026-08-17-drop-node-frontend-design.md`).
+- Vite SPA (in-progress migration): `web/` — see the **Drop-Node migration** section.
 - Deployment: `deploy/` (Ansible + prod compose template + vault + nginx), operator runbook
   `deploy/README.md`; workflows in `.github/workflows/` (`ci.yml`, `release.yml`).
 - SDD ledgers / per-task reports: `.superpowers/sdd/` (git-ignored scratch).

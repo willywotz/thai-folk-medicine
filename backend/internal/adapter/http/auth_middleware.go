@@ -12,8 +12,9 @@ type TokenVerifier interface {
 	Verify(tokenString string) (int64, error)
 }
 
-// NewAuthMiddleware guards routes: it requires a valid Bearer token and stores
-// the staff id in the context as "staffId".
+// NewAuthMiddleware guards routes: it requires a valid staff JWT from either the
+// Authorization: Bearer header or the "session" cookie, and stores the staff id
+// in the context as "staffId".
 func NewAuthMiddleware(verifier TokenVerifier) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, ok := strings.CutPrefix(c.GetHeader("Authorization"), "Bearer ")

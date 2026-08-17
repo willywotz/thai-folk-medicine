@@ -114,7 +114,7 @@ func main() {
 
 	tokenManager := token.NewManager(cfg.JWTSecret, 24*time.Hour)
 	authMiddleware := httpapi.NewAuthMiddleware(tokenManager)
-	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager))
+	authHandler := httpapi.NewAuthHandler(usecase.NewAuthService(repository.NewStaff(queries), tokenManager), cfg.CookieSecure)
 
 	router := httpapi.NewRouter(authMiddleware, authHandler, locationHandler, healerHandler, remedyHandler, treatmentCaseHandler, photoHandler, searchHandler, herbHandler, activityHandler, statsHandler)
 

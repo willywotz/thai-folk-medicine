@@ -8,6 +8,7 @@ type Config struct {
 	HTTPPort           string `env:"HTTP_PORT" envDefault:"8080"`
 	DatabaseURL        string `env:"DATABASE_URL,required"`
 	JWTSecret          string `env:"JWT_SECRET,required"`
+	CookieSecure       bool   `env:"COOKIE_SECURE" envDefault:"true"`
 	PhotoStorageDir    string `env:"PHOTO_STORAGE_DIR" envDefault:"./storage/photo"`
 	StaffAdminUsername string `env:"STAFF_ADMIN_USERNAME"`
 	StaffAdminPassword string `env:"STAFF_ADMIN_PASSWORD"`

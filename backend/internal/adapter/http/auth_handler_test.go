@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/willywotz/thai-folk-medicine/backend/internal/domain/staff"
+	"github.com/willywotz/thai-folk-medicine/backend/internal/platform/token"
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
@@ -41,7 +44,21 @@ func loginRouter(t *testing.T) *gin.Engine {
 	require.NoError(t, err)
 	repo := loginStaffRepo{user: staff.Staff{ID: 1, Username: "admin", PasswordHash: string(hash)}}
 	service := usecase.NewAuthService(repo, stubIssuer{})
-	return NewRouter(noAuth, NewAuthHandler(service))
+	return NewRouter(noAuth, NewAuthHandler(service, false))
+}
+
+func loginTestRouter() *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	hash, _ := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+	repo := loginStaffRepo{user: staff.Staff{ID: 1, Username: "admin", PasswordHash: string(hash)}}
+	service := usecase.NewAuthService(repo, token.NewManager("test-secret", time.Hour))
+	r := gin.New()
+	r.Use(gin.Recovery())
+	public := r.Group("/api/v1")
+	protected := r.Group("/api/v1")
+	protected.Use(NewAuthMiddleware(token.NewManager("test-secret", time.Hour)))
+	NewAuthHandler(service, false).RegisterRoutes(public, protected)
+	return r
 }
 
 func TestLoginEndpointSucceeds(t *testing.T) {
@@ -74,4 +91,29 @@ func TestLoginEndpointRejectsEmptyBody(t *testing.T) {
 	loginRouter(t).ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestLoginSetsSessionCookie(t *testing.T) {
+	rec := httptest.NewRecorder()
+	body := `{"username":"admin","password":"admin"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/authentication/login", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	loginTestRouter().ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	cookie := rec.Result().Cookies()
+	require.Len(t, cookie, 1)
+	assert.Equal(t, "session", cookie[0].Name)
+	assert.NotEmpty(t, cookie[0].Value)
+	assert.True(t, cookie[0].HttpOnly)
+}
+
+func TestLogoutClearsSessionCookie(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/authentication/logout", nil)
+	loginTestRouter().ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	cookie := rec.Result().Cookies()
+	require.Len(t, cookie, 1)
+	assert.Equal(t, "session", cookie[0].Name)
+	assert.True(t, cookie[0].MaxAge < 0)
 }

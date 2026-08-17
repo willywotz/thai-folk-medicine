@@ -9,19 +9,30 @@ import (
 	"github.com/willywotz/thai-folk-medicine/backend/internal/usecase"
 )
 
-// AuthHandler serves the login endpoint.
+const sessionCookieName = "session"
+const sessionCookieMaxAge = 60 * 60 * 24 // 24h, matches the JWT TTL
+
+// AuthHandler serves authentication endpoints.
 type AuthHandler struct {
-	service *usecase.AuthService
+	service      *usecase.AuthService
+	cookieSecure bool
 }
 
 // NewAuthHandler builds the auth handler.
-func NewAuthHandler(service *usecase.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+func NewAuthHandler(service *usecase.AuthService, cookieSecure bool) *AuthHandler {
+	return &AuthHandler{service: service, cookieSecure: cookieSecure}
 }
 
-// RegisterRoutes mounts the login route on the public group.
-func (h *AuthHandler) RegisterRoutes(public, _ *gin.RouterGroup) {
+// RegisterRoutes mounts login/logout as public and the session probe as protected.
+func (h *AuthHandler) RegisterRoutes(public, protected *gin.RouterGroup) {
 	public.POST("/authentication/login", h.Login)
+	public.POST("/authentication/logout", h.Logout)
+	protected.GET("/authentication/session", h.Session)
+}
+
+func (h *AuthHandler) setSessionCookie(c *gin.Context, token string, maxAge int) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(sessionCookieName, token, maxAge, "/", "", h.cookieSecure, true)
 }
 
 type loginRequest struct {
@@ -45,5 +56,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot log in"})
 		return
 	}
+	h.setSessionCookie(c, tok, sessionCookieMaxAge)
 	c.JSON(http.StatusOK, gin.H{"token": tok})
+}
+
+// Logout clears the session cookie. POST /api/v1/authentication/logout.
+func (h *AuthHandler) Logout(c *gin.Context) {
+	h.setSessionCookie(c, "", -1)
+	c.Status(http.StatusNoContent)
+}
+
+// Session returns the current staff id. GET /api/v1/authentication/session (protected).
+func (h *AuthHandler) Session(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"staffId": c.GetInt64("staffId")})
 }

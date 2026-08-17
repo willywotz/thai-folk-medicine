@@ -15,15 +15,17 @@ services:
 
   frontend:
     build: { target: development }
+    environment:
+      # Vite dev proxy: /api -> the backend container (host dev keeps the
+      # vite.config.ts default of http://localhost:8080).
+      VITE_API_TARGET: http://backend:8080
     develop:
       watch:
+        # Vite HMR picks up source changes with no restart.
         - action: sync
-          path: ./frontend
-          target: /app
-          ignore:
-            - node_modules/
-            - .next/
+          path: ./web/src
+          target: /app/src
         - action: rebuild
-          path: ./frontend/pnpm-lock.yaml
+          path: ./web/pnpm-lock.yaml
         - action: rebuild
-          path: ./frontend/package.json
+          path: ./web/package.json

@@ -16,10 +16,11 @@ and plans under `docs/superpowers/`.
 **The planned scope is complete and all merged to `main`.**
 
 - Backend API (Go) — done.
-- Public browse site (Next.js, server-rendered), remedy/herb-first — done.
-- Staff admin (Next.js) — login + full CRUD for **provinces, districts,** healers, remedies,
-  herbs, treatment cases, and photos — done. **Redesigned** into six flat entity sections
-  (see the staff-zone overhaul below).
+- Public browse site (Vite + React Router SPA in `web/`, client-rendered), remedy/herb-first
+  — done.
+- Staff admin (`web/`, same SPA under `StaffGuard`) — login + full CRUD for **provinces,
+  districts,** healers, remedies, herbs, treatment cases, and photos — done. **Redesigned**
+  into six flat entity sections (see the staff-zone overhaul below).
 - **Pagination** on every public list endpoint (uniform `{items,page,pageSize,total,totalPages}`
   envelope) — done (**Plan 11**).
 - **Public search** — one merged, relevance-ranked, **paginated** list across remedies +
@@ -32,21 +33,20 @@ and plans under `docs/superpowers/`.
 - **Searchable herb picker** — the staff remedy form filters herbs by Thai name with a
   Base UI `Combobox` (no new dependency) — done.
 
-### Latest — Drop-Node frontend migration (in progress; `web/` on `main`)
+### Latest — Drop-Node frontend migration (complete; `web/` is the production app)
 
-Goal: remove the Node.js process from production (RAM) by replacing the Next.js
-`frontend/` with a **Vite + React Router SPA** in `web/`, served as static files
-by nginx, with the Go backend doing auth via the `session` cookie. Design:
+The drop-node migration is **complete**. Production runs **no Node** — Postgres +
+Go + nginx only. `web/` (a Vite + React Router SPA) is the production frontend;
+the Next.js `frontend/` directory is **deleted**. Design:
 `docs/superpowers/specs/2026-08-17-drop-node-frontend-design.md`. See the
 **Drop-Node migration** section below for full state, gotchas, and how to run
 `web/`.
 
-Progress (a 3-phase plan series; each phase merged to `main` on its own):
+A 3-phase plan series; each phase merged to `main`:
 
 - **Plan 1 — backend cookie auth** (merged): Go reads the JWT from the `session`
   cookie as well as `Authorization: Bearer`; login/logout set/clear it; new
-  `GET /api/v1/authentication/session` probe. **Transition-safe** — the current
-  Next app still uses Bearer, so this is already safe on prod.
+  `GET /api/v1/authentication/session` probe.
 - **Plan 2 — Vite SPA foundation** (merged): `web/` scaffold — Vite 8 + React 19
   + React Router 7 + React Query + Tailwind v4, `/:lang` i18n, `apiFetch`,
   `StaffGuard` (session probe), nginx image, `pnpm typecheck` gate.
@@ -56,14 +56,14 @@ Progress (a 3-phase plan series; each phase merged to `main` on its own):
   fonts, all framework-agnostic components, the **24 `next/*` components
   router-swapped**, `NotFound`, i18n reconciled to `@/lib/i18n`. **`web/` has 0
   `next/*` imports and 0 `/bff` calls.**
-- **Remaining — Plans 3b / 3c / 3d** (not started): 3b wire ~10 public routes
-  as client React Query pages; 3c wire ~23 staff routes + login/logout + the 7
-  forms under `StaffGuard`; 3d cutover — delete `frontend/` + all `/bff` routes,
-  point the `frontend` compose service's image at `web/`, release a `v*` tag.
-  Plans 3b–3d are authored just-in-time against the state each prior plan leaves.
-
-**`frontend/` (Next.js) is still the production app** until the 3d cutover —
-`web/` ships nothing to prod yet.
+- **Plan 3b — public routes** (merged): ~10 public client-rendered React Query
+  pages.
+- **Plan 3c — staff routes** (merged): ~23 staff routes + login/logout + the 7
+  forms under `StaffGuard`.
+- **Plan 3d — cutover** (merged): deleted `frontend/`, repointed compose/CI/release
+  at `web/`, dropped `INTERNAL_API_URL`, dropped the frontend dev override (web/
+  dev runs on the host). The GHCR image name stayed `thai-folk-medicine-frontend`
+  (new build context `./web`).
 
 ### CI/CD + Ansible deployment (merged to `main`, live on `v0.1.2`)
 
@@ -74,8 +74,8 @@ The app now ships to production automatically. Spec/plan:
 and how to run a release.
 
 - **`.github/workflows/ci.yml`** — on PR + push to `main`: Go `vet`+`test`, frontend
-  `lint`+`test`, and a static check of the deploy files (ansible `--syntax-check`,
-  render templates, `docker compose config`).
+  `typecheck`+`test`+`build` (in `web/`), and a static check of the deploy files (ansible
+  `--syntax-check`, render templates, `docker compose config`).
 - **`.github/workflows/release.yml`** — on a `v*` tag: builds backend+frontend images,
   pushes to `ghcr.io/willywotz/thai-folk-medicine-{backend,frontend}:<tag>`, then runs
   `deploy/playbook.yml` over SSH to the production server.
@@ -196,20 +196,21 @@ docker compose down            # stop (add -v to also drop the data volumes)
 
 **Compose has two layers.** `compose.yaml` is the **production** layer (`backend`/`frontend`
 build their Dockerfile `production` target). `compose.override.yaml` is auto-merged by plain
-`docker compose` and is the **development** layer (both services build their `development`
-target and declare `develop.watch` rules). So:
+`docker compose` and is the **development** layer — but it now overrides the **backend only**
+(the `frontend` dev override was dropped: `web/` has no `development` Docker target, and web/
+dev runs on the host via `pnpm dev`). So:
 
 ```bash
-docker compose watch                 # hot-reload dev: syncs source into the containers
-docker compose up                    # dev images, no file-watching
+docker compose watch                 # hot-reload the BACKEND only (syncs source into the container)
+docker compose up                    # dev backend image + production frontend image
 docker compose -f compose.yaml up    # pure production images (skip the override)
 ```
 
 Under `docker compose watch`, a change under `./backend` triggers `sync+restart` — the
 `development` stage runs `go run ./cmd/api`, so it recompiles on restart; a `go.mod` change
-triggers a rebuild. The frontend uses Next fast refresh (`sync`); lockfile/`package.json`
-changes rebuild. (Note: `docker compose up` currently runs the **dev** images because of the
-override — add `-f compose.yaml` for production.)
+triggers a rebuild. The frontend has **no container hot-reload** — run `cd web && pnpm dev`
+on the host for Vite HMR. (Note: `docker compose up` runs the dev backend image but the
+production frontend image, because the override no longer touches `frontend`.)
 
 Default admin login: `admin` / `change-me`. Override the secrets in a root `.env`:
 `JWT_SECRET`, `STAFF_ADMIN_USERNAME`, `STAFF_ADMIN_PASSWORD`.
@@ -236,7 +237,7 @@ JWT_SECRET=dev STAFF_ADMIN_USERNAME=admin STAFF_ADMIN_PASSWORD=dev go run ./cmd/
 go run ./cmd/seed              # (same env) fill the dev DB; add -reset to rebuild
 
 # frontend (another terminal)
-cd frontend && INTERNAL_API_URL=http://localhost:8080 pnpm dev   # http://localhost:3000
+cd web && pnpm dev   # Vite dev server; proxies /api → http://localhost:8080 (vite.config.ts)
 ```
 
 ---
@@ -296,13 +297,19 @@ docker compose -f compose.prod.yaml --profile seed run --rm seed -reset   # wipe
 
 ---
 
-## Drop-Node migration (`web/`, in progress)
+## Drop-Node migration (`web/` — complete; production runs no Node)
 
-Replacing the Next.js `frontend/` with a static Vite SPA in `web/` so production
+The Next.js `frontend/` was replaced with a static Vite SPA in `web/`, so production
 runs no Node. Full design + rationale:
 `docs/superpowers/specs/2026-08-17-drop-node-frontend-design.md`; plans:
 `docs/superpowers/plans/2026-08-17-drop-node-{1,2,3}-*.md`. Status summary is in
 the top increment section. This section is the working reference.
+
+**Cutover outcome (Plan 3d, merged):** `web/` is the production frontend;
+`frontend/` is deleted. The GHCR image name stayed `thai-folk-medicine-frontend`
+(new build context `./web`). The `frontend` dev override was dropped — web/ dev
+runs on the host (`pnpm dev`). `INTERNAL_API_URL` is gone (`web/nginx.conf`
+hardcodes `backend:8080`). Compose/CI/release all build from `web/`.
 
 **Why it's simpler than it looks:** the staff pages were already client +
 React Query over `staff-queries.ts`; the whole `/bff/*` layer only turned the
@@ -320,7 +327,7 @@ pnpm test         # vitest
 pnpm build        # → dist/ (what the nginx image serves)
 ```
 
-**`web/` architecture (what's built through Plan 3a):**
+**`web/` architecture:**
 - Vite 8 + React 19 + React Router 7 + React Query 5 + Tailwind v4; pnpm.
 - `@` → `web/src`. Same-origin `/api/v1` via `apiGet`/`apiSend` (`web/src/lib/api.ts`),
   always `credentials: "include"`. `ApiError` carries `status` (public search
@@ -345,8 +352,8 @@ pnpm build        # → dist/ (what the nginx image serves)
   (plugin-react 6 peer-requires vite 8). Not npm, not vite 6/7.
 - `tsc` is the completeness gate for the Next removal: `web/` has no `next`
   dependency, so any stray `next/*` import fails the build.
-- Not yet wired: the router only has the `/:lang` shell + `StaffGuard`; the 33
-  pages are Plans 3b/3c. `frontend/` remains the prod app until 3d.
+- All 34 routes (10 public + login + 23 staff) are wired under `/:lang`; the
+  SPA is the production frontend.
 
 ---
 
@@ -386,25 +393,29 @@ many-to-many** through `remedy_herb` (with a per-link `amount`). A remedy's ingr
 its linked herbs — the old free-text `remedy.ingredients` column was dropped. A herb is a
 rich record (Thai/English/scientific name, properties, description) with its own photos.
 
-**Frontend (`frontend/`, Next.js App Router + TypeScript, Tailwind)**
+**Frontend (`web/`, Vite + React Router SPA + TypeScript, Tailwind)**
 
-- **Public pages** are React Server Components that read the Go API server-side. The home
-  page leads with a search box, then **Herbs → Remedies → Cases** sections (each "see all
-  →"), plus a secondary "browse by district" link. Pages: `/herbs`, `/herbs/{id}` (herb
-  profile + remedies using it), `/remedies`, `/treatment-cases`, `/districts`, and the
-  detail pages. A remedy page shows its linked herbs (name → `/herbs/{id}`, with amount) and
-  keeps "recorded by healer · district" context. Every list page is **paginated** via a
-  server `<Pagination>` component (URL `?page=` links that preserve other params). `/search`
-  is **one merged, ranked list** — each row a type badge linking to the remedy/healer/herb
-  detail page.
-- **Staff pages** (`/staff/*`, guarded by `src/proxy.ts`) use TanStack Query +
-  react-hook-form + zod + shadcn/ui. Includes `/staff/herbs` CRUD; the remedy form uses a
-  **herb picker** (herb + amount rows).
-- **Auth is a BFF pattern.** The JWT lives ONLY in an httpOnly `session` cookie. Login and
-  every write go browser → a `/bff/*` route handler (reads the cookie, adds
-  `Authorization: Bearer`) → the Go API. The token never reaches browser JavaScript.
-  Public reads go through the `/api/*` proxy (`next.config.ts` → `INTERNAL_API_URL`).
-  `src/proxy.ts` also redirects `/login` → `/staff` when already logged in.
+- **Stack:** Vite 8 + React 19 + React Router 7 + React Query 5 + Tailwind v4; pnpm.
+  Client-rendered (CSR) — no server runtime, no SSR. Skeletons fill while data loads.
+- **Routing:** all 34 routes live under `/:lang` — 10 public, `/login`, and 23 staff.
+  The `LangLayout` reads `:lang`, redirects unknown locales to `th`, and provides the
+  locale context. In-app `navigate()`/`<Link to>` must be locale-prefixed (`/${lang}/…`).
+- **Public pages** are client React Query pages. The home page leads with a search box,
+  then **Herbs → Remedies → Cases** sections. Pages: `/herbs`, `/herbs/{id}` (herb profile
+  + remedies using it), `/remedies`, `/treatment-cases`, `/districts`, and the detail
+  pages. Every list page is **paginated**; `/search` is one merged, ranked list.
+- **Staff pages** (`/staff/*`, guarded by `StaffGuard`) use TanStack Query + react-hook-form
+  + zod + shadcn/ui. Includes `/staff/herbs` CRUD; the remedy form uses a **herb picker**
+  (herb + amount rows).
+- **Auth: the `session` cookie, no BFF.** The JWT lives ONLY in an httpOnly `session`
+  cookie. The browser calls `/api/v1/*` directly with `credentials: "include"`, and Go
+  reads the cookie directly (Plan 1). `StaffGuard` probes `GET
+  /api/v1/authentication/session`; `LoginForm`→`POST
+  /api/v1/authentication/login`, `LogoutButton`→`POST /api/v1/authentication/logout`. No
+  `/bff/*` layer, no JWT in browser storage.
+- **Serving:** the `web/Dockerfile` builds with node → serves `dist/` with `nginx:alpine`.
+  `nginx.conf` does the SPA fallback (`try_files $uri /index.html`) and proxies `/api/` to
+  `backend:8080` (hardcoded). No Node at runtime.
 
 The full API contract and the frontend file tree are in `CONTEXT.md`.
 
@@ -430,9 +441,9 @@ The full API contract and the frontend file tree are in `CONTEXT.md`.
 
 - **Backend:** `cd backend && go test ./...` — unit tests plus repository/integration
   tests that spin real Postgres via **testcontainers-go** (needs Docker running).
-- **Frontend:** `cd frontend && pnpm test` — Vitest + React Testing Library
-  (schemas, the API/staff client, every component and form).
-- `pnpm lint` and `pnpm build` (which type-checks) must stay clean.
+- **Frontend:** `cd web && pnpm test` — Vitest + React Testing Library (schemas, the
+  API/staff client, every component and form). `pnpm typecheck` (`tsc --noEmit`) and
+  `pnpm build` (`vite build`) must also stay clean.
 
 **Host gotcha:** on this machine testcontainers needs `TESTCONTAINERS_RYUK_DISABLED=true`
 (a local Docker config quirk, not a code issue):
@@ -454,65 +465,62 @@ cd backend && TESTCONTAINERS_RYUK_DISABLED=true go test ./...
 set and the staff table is empty, the first admin is created on startup. No default
 password is baked into code.
 
-**Frontend:** `INTERNAL_API_URL` (default `http://localhost:8080`). Used at runtime by
-server components AND **baked at build time** into the `/api` proxy destination — see the
-gotcha below.
+**Frontend:** no environment variables. `web/nginx.conf` hardcodes the backend target
+(`backend:8080`); the Vite dev server proxies `/api` → `http://localhost:8080` via
+`vite.config.ts`. (`INTERNAL_API_URL` was removed in the drop-node cutover.)
 
 ---
 
 ## Known gotchas / non-obvious decisions
 
-1. **`INTERNAL_API_URL` is baked at build time.** Next.js resolves the `/api` rewrite
-   destination during `next build`, not at runtime. The frontend `Dockerfile` passes it as
-   a build ARG (pointing at `http://backend:8080`). Change it via the compose build arg.
-2. **The route guard is `src/proxy.ts`, not `middleware.ts`** (Next.js 16 rename; export
-   `proxy`, `config.matcher`). It guards `/staff/*` (→ `/login` if no session) AND redirects
-   `/login` → `/staff` when a session cookie is present.
-3. **The public "staff" header link uses `prefetch={false}`.** A prefetched auth-gated link
-   caches the guard's redirect from whichever auth state existed at prefetch time, so it
-   could send a logged-in user to `/login`; disabling prefetch makes each click revalidate.
-4. **The `cmd/seed` container image is built separately.** It is a profile-gated compose
+1. **`web/` dev runs on the host, not in a container.** `docker compose watch` hot-reloads
+   the **backend only** — the frontend dev override was dropped (web/ has no `development`
+   Docker target). For frontend HMR, run `cd web && pnpm dev` on the host (Vite proxies
+   `/api` → `http://localhost:8080`).
+2. **The `cmd/seed` container image is built separately.** It is a profile-gated compose
    service, so `docker compose up --build` does NOT rebuild it. After any migration or seed
    change, run the seed with `--build` (`docker compose --profile seed run --build --rm
    seed`) or its embedded migrations/schema go stale and you get "no migration found for
    version N". `-reset` truncates `photo, treatment_case, remedy_herb, remedy, herb,
    healer`; it leaves old photo files on disk (`withinlazy`).
-5. **`pnpm-workspace.yaml` carries `allowBuilds`.** Any Docker/CI `pnpm install
+3. **`pnpm-workspace.yaml` carries `allowBuilds`.** Any Docker/CI `pnpm install
    --frozen-lockfile` must copy that file or pnpm 10+ fails with `ERR_PNPM_IGNORED_BUILDS`.
    The `Dockerfile` copies it in the deps stage.
-6. **`treatedOn` is a date string `YYYY-MM-DD`** end to end (native `<input type="date">` ↔
+4. **`treatedOn` is a date string `YYYY-MM-DD`** end to end (native `<input type="date">` ↔
    zod regex ↔ Go `time.Parse("2006-01-02")`); `formatThaiDate` pins UTC to avoid
    off-by-one.
-7. **Photo storage is local disk** behind a `photo.Store` port (`withinlazy`) — not
+5. **Photo storage is local disk** behind a `photo.Store` port (`withinlazy`) — not
    multi-instance safe; swap for S3/MinIO before scaling horizontally. Owner types are
    `healer | remedy | case | herb`.
-8. **Delete conflicts return 409.** Deleting a healer/remedy/herb that still has children
+6. **Delete conflicts return 409.** Deleting a healer/remedy/herb that still has children
    maps the Postgres FK violation to a domain `ErrReferenced`; the UI surfaces it. A remedy
    cascades its `remedy_herb` links on delete; a herb still linked to a remedy cannot be
    deleted.
-9. **The remedy write is transactional.** `repository.NewRemedy(pool)` takes the pgx pool
+7. **The remedy write is transactional.** `repository.NewRemedy(pool)` takes the pgx pool
    and writes the remedy + its `remedy_herb` rows in one transaction (Create/Update);
    `GetByID` loads the herb links after commit.
-10. **Search uses `pg_trgm`, not `to_tsvector`** (Thai has no word spaces). Migrations
-    `000008`–`000010` maintain the GIN trigram indexes. Minimum term is **2 runes**
-    (`utf8.RuneCountInString`). Search is now **one merged, paginated list** (`SearchAll` in
-    `query/search.sql`): a `UNION ALL` of remedy / healer / herb, each scored by
-    `GREATEST(similarity(...))::real`, ordered `score DESC, type, id` (deterministic paging).
-    Cross-type scores are **uncalibrated** (a herb-name match and a remedy-symptom match are
-    not on the same scale) — `withinlazy:` in `search_repository.go` marks where to add
-    per-type weights if the ordering needs tuning.
-11. **Every public list returns the same envelope** `{items,page,pageSize,total,totalPages}`.
-    `pageSize` defaults to 12 (20 for search), caps at 48; `page` past the end returns valid
-    metadata with empty `items`. Each list SQL query has a paired `Count*` with an **identical
-    `WHERE`** — if you add a scope/filter to a list query, add it to its count too or `total`
-    disagrees with `items`. List *filters* were built then removed (see the Plan 11 note up
-    top); only pagination remains.
-12. **Compose has a prod layer and a dev layer.** `compose.yaml` = production (`production`
-    build target). `compose.override.yaml` = development (`development` target + `develop.watch`)
-    and is **auto-merged by plain `docker compose`** — so `docker compose up` runs the DEV
-    images. Use `docker compose watch` for hot reload; `docker compose -f compose.yaml up` for
-    pure production. The backend `development` stage runs `go run ./cmd/api` (recompiles on the
-    watch `sync+restart`); `seed` is pinned to the `production` target.
+8. **Search uses `pg_trgm`, not `to_tsvector`** (Thai has no word spaces). Migrations
+   `000008`–`000010` maintain the GIN trigram indexes. Minimum term is **2 runes**
+   (`utf8.RuneCountInString`). Search is now **one merged, paginated list** (`SearchAll` in
+   `query/search.sql`): a `UNION ALL` of remedy / healer / herb, each scored by
+   `GREATEST(similarity(...))::real`, ordered `score DESC, type, id` (deterministic paging).
+   Cross-type scores are **uncalibrated** (a herb-name match and a remedy-symptom match are
+   not on the same scale) — `withinlazy:` in `search_repository.go` marks where to add
+   per-type weights if the ordering needs tuning.
+9. **Every public list returns the same envelope** `{items,page,pageSize,total,totalPages}`.
+   `pageSize` defaults to 12 (20 for search), caps at 48; `page` past the end returns valid
+   metadata with empty `items`. Each list SQL query has a paired `Count*` with an **identical
+   `WHERE`** — if you add a scope/filter to a list query, add it to its count too or `total`
+   disagrees with `items`. List *filters* were built then removed (see the Plan 11 note up
+   top); only pagination remains.
+10. **Compose has a prod layer and a dev layer.** `compose.yaml` = production (`production`
+    build target). `compose.override.yaml` = development — but it now overrides the
+    **backend only** (`development` target + `develop.watch`) and is **auto-merged by plain
+    `docker compose`** — so `docker compose up` runs the dev backend image but the production
+    frontend image. Use `docker compose watch` for backend hot reload; `docker compose -f
+    compose.yaml up` for pure production. The backend `development` stage runs `go run
+    ./cmd/api` (recompiles on the watch `sync+restart`); `seed` is pinned to the `production`
+    target.
 
 ---
 
@@ -549,7 +557,7 @@ gotcha below.
   **CI/CD + Ansible deploy** (`2026-08-16-ci-cd-ansible.md`), and the
   **drop-node** series (`2026-08-17-drop-node-{1,2,3}-*.md`; spec
   `2026-08-17-drop-node-frontend-design.md`).
-- Vite SPA (in-progress migration): `web/` — see the **Drop-Node migration** section.
+- Vite SPA (production frontend): `web/` — see the **Drop-Node migration** section.
 - Deployment: `deploy/` (Ansible + prod compose template + vault + nginx), operator runbook
   `deploy/README.md`; workflows in `.github/workflows/` (`ci.yml`, `release.yml`).
 - SDD ledgers / per-task reports: `.superpowers/sdd/` (git-ignored scratch).

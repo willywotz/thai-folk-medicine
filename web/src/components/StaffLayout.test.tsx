@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 
@@ -8,6 +9,7 @@ import { th } from "@/lib/i18n/dictionaries/th";
 import { StaffLayout } from "./StaffLayout";
 
 function renderAt(path: string) {
+  const queryClient = new QueryClient();
   const router = createMemoryRouter(
     [
       {
@@ -22,7 +24,11 @@ function renderAt(path: string) {
     ],
     { initialEntries: [path] },
   );
-  return render(<RouterProvider router={router} />);
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
 }
 
 describe("StaffLayout", () => {

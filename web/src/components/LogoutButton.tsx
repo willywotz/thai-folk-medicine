@@ -1,4 +1,5 @@
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useT } from "@/lib/i18n/useT";
@@ -7,8 +8,12 @@ export function LogoutButton() {
   const t = useT();
   const navigate = useNavigate();
   const { lang } = useParams();
+  const queryClient = useQueryClient();
   async function logout() {
     await fetch("/api/v1/authentication/logout", { method: "POST", credentials: "include" });
+    // Clear the cached session probe so LoginPage re-fetches fresh (no stale
+    // 200 → instant redirect back to /staff) after the cookie is cleared.
+    queryClient.removeQueries({ queryKey: ["session"] });
     navigate(`/${lang ?? "th"}/login`);
   }
   return (

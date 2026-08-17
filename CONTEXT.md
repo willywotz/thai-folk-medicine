@@ -140,10 +140,14 @@ Plan: `docs/superpowers/plans/2026-08-16-i18n-th-en.md`.
 
 **Plan 4 — auth (JWT) + photos:**
 - Staff aggregate + `platform/token` JWT manager (HS256) + `AuthService` (bcrypt).
-  - `POST /api/v1/authentication/login` → returns a JWT.
+  - `POST /api/v1/authentication/login` → returns a JWT in an httpOnly `session` cookie,
+    plus a Bearer token for backward compatibility.
+  - `POST /api/v1/authentication/logout` → clears the httpOnly cookie.
+  - `GET /api/v1/authentication/session` → probes the session cookie (staff-only for session refresh).
 - **Every write route (healer/remedy/treatment-case/photo POST·PUT·DELETE) is now
   behind JWT middleware.** Public GET routes and login stay open. The Plan 2–3
-  security gap is **closed**.
+  security gap is **closed**. Bearer token (header) or cookie (httpOnly) both work for auth.
+- Cookie security: `COOKIE_SECURE` env (prod `true` / dev `false` for local http testing).
 - First staff user: env bootstrap (`STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD`),
   created only when the table is empty; no default password.
 - Photo aggregate: `Store` port + local-disk store (path-traversal guarded),

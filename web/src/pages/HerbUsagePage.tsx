@@ -8,7 +8,7 @@ import { RowAvatar } from "@/components/RowAvatar";
 import { Skeleton } from "@/components/Skeleton";
 import { StaffPageHeader } from "@/components/StaffPageHeader";
 import { staffCard } from "@/components/staff-ui";
-import { getHerb, listRemediesByHerb } from "@/lib/api";
+import { getFirstProvince, getHerb, listDistricts, listHealers, listRemediesByHerb } from "@/lib/api";
 import { useT } from "@/lib/i18n/useT";
 
 const PAGE_SIZE = 20;
@@ -28,14 +28,26 @@ export function HerbUsagePage() {
       const herb = await getHerb(id);
       if (!herb) return null;
       const remedies = await listRemediesByHerb(id, { page, pageSize: PAGE_SIZE });
-      return { herb, remedies };
+      // Resolve each remedy's ancestry (healer -> district -> province) for the row.
+      const province = await getFirstProvince();
+      const districts = province ? await listDistricts(province.id) : [];
+      const healers = (await listHealers({ pageSize: 48 })).items;
+      // withinlazy: pageSize=48 caps the healer lookup; fine for a small catalogue.
+      return { herb, remedies, province, districts, healers };
     },
   });
 
   if (!Number.isInteger(id) || id <= 0) return <NotFound />;
   if (isPending) return <Skeleton className="m-8 h-24" />;
   if (!data) return <NotFound />;
-  const { herb, remedies } = data;
+  const { herb, remedies, province, districts, healers } = data;
+  const districtName = (districtId: number) =>
+    districts.find((d) => d.id === districtId)?.nameThai ?? "—";
+  const ancestry = (healerId: number) => {
+    const healer = healers.find((h) => h.id === healerId);
+    if (!healer) return "—";
+    return `${healer.fullName} · ${districtName(healer.districtId)} · ${province?.nameThai ?? "—"}`;
+  };
 
   return (
     <section>
@@ -60,6 +72,7 @@ export function HerbUsagePage() {
               <RowAvatar ownerType="remedy" ownerId={r.id} fallback={r.name.trim().charAt(0)} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{r.name}</p>
+                <p className="truncate text-sm text-ink-soft">{ancestry(r.healerId)}</p>
               </div>
               <Link
                 to={`/${lang}/staff/remedies/${r.id}/edit`}

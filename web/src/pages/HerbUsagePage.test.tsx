@@ -42,6 +42,23 @@ vi.mock("@/lib/api", () => ({
     total: 1,
     totalPages: 1,
   })),
+  getFirstProvince: vi.fn(async () => ({
+    id: 1,
+    nameThai: "ยโสธร",
+    nameEnglish: "Yasothon",
+  })),
+  listDistricts: vi.fn(async () => [
+    { id: 10, provinceId: 1, nameThai: "เมืองยโสธร", nameEnglish: "Mueang" },
+  ]),
+  listHealers: vi.fn(async () => ({
+    items: [
+      { id: 1, districtId: 10, fullName: "หมอทดสอบ", subDistrict: "", specialty: "", biography: "", createdAt: "", updatedAt: "" },
+    ],
+    page: 1,
+    pageSize: 48,
+    total: 1,
+    totalPages: 1,
+  })),
 }));
 
 function renderAt(path: string) {
@@ -69,6 +86,8 @@ describe("HerbUsagePage", () => {
       "href",
       "/th/staff/remedies/7/edit",
     );
+    // ancestry subtitle: healer · district · province
+    expect(screen.getByText("หมอทดสอบ · เมืองยโสธร · ยโสธร")).toBeInTheDocument();
   });
 
   it("renders NotFound when the herb is missing", async () => {

@@ -1,6 +1,6 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
@@ -16,6 +16,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function HerbAdminList() {
   const t = useT();
+  const { lang = "th" } = useParams();
   const [input, setInput] = useState("");
   const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
   const [page, setPage] = useState(1);
@@ -47,7 +48,7 @@ export function HerbAdminList() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchHerbsList} />
         <span className="text-sm text-ink-faint">{t.staff.count.herbs(data?.total ?? 0)}</span>
-        <Link to="/staff/herbs/new" className={btnPrimary}>
+        <Link to={`/${lang}/staff/herbs/new`} className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newHerbCrumb}
         </Link>
       </div>
@@ -65,10 +66,10 @@ export function HerbAdminList() {
                 <p className="truncate font-medium text-ink">{h.nameThai}</p>
                 {h.nameEnglish ? <p className="truncate text-sm text-ink-soft">{h.nameEnglish}</p> : null}
               </div>
-              <Link to={`/staff/herbs/${h.id}`} className={linkAction}>
+              <Link to={`/${lang}/staff/herbs/${h.id}`} className={linkAction}>
                 {t.staff.link.usedIn}
               </Link>
-              <Link to={`/staff/herbs/${h.id}/edit`} aria-label={t.staff.editName(h.nameThai)} className={iconBtn}>
+              <Link to={`/${lang}/staff/herbs/${h.id}/edit`} aria-label={t.staff.editName(h.nameThai)} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
                 </svg>

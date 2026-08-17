@@ -1,6 +1,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
@@ -12,6 +12,7 @@ import { deleteProvince, fetchProvinces, provinceListKey } from "@/lib/staff-que
 
 export function ProvinceAdminList() {
   const t = useT();
+  const { lang = "th" } = useParams();
   const [query, setQuery] = useState("");
   const queryClient = useQueryClient();
   const { data: provinces, isLoading, isError } = useQuery({
@@ -34,7 +35,7 @@ export function ProvinceAdminList() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <StaffSearch value={query} onChange={setQuery} placeholder={t.staff.searchProvinces} />
         <span className="text-sm text-ink-faint">{t.staff.count.provinces(shown.length)}</span>
-        <Link to="/staff/provinces/new" className={btnPrimary}>
+        <Link to={`/${lang}/staff/provinces/new`} className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newProvinceCrumb}
         </Link>
       </div>
@@ -48,14 +49,14 @@ export function ProvinceAdminList() {
           {shown.map((p) => (
             <li key={p.id} className="flex items-center gap-3 border-t border-line p-3 first:border-t-0 hover:bg-surface-2">
               <RowAvatar ownerType="province" ownerId={p.id} fallback={p.nameThai.trim().charAt(0)} />
-              <Link to={`/staff/provinces/${p.id}`} className="min-w-0 flex-1">
+              <Link to={`/${lang}/staff/provinces/${p.id}`} className="min-w-0 flex-1">
                 <p className="truncate font-medium text-ink">{p.nameThai}</p>
                 {p.nameEnglish ? <p className="truncate text-sm text-ink-soft">{p.nameEnglish}</p> : null}
               </Link>
-              <Link to={`/staff/provinces/${p.id}`} className={linkAction}>
+              <Link to={`/${lang}/staff/provinces/${p.id}`} className={linkAction}>
                 {t.staff.link.districts}
               </Link>
-              <Link to={`/staff/provinces/${p.id}/edit`} aria-label={t.staff.editName(p.nameThai)} className={iconBtn}>
+              <Link to={`/${lang}/staff/provinces/${p.id}/edit`} aria-label={t.staff.editName(p.nameThai)} className={iconBtn}>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                   <path d="M4 20h4L18 10l-4-4L4 16v4zM13.5 6.5l4 4" />
                 </svg>

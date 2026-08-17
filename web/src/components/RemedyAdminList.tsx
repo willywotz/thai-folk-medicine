@@ -1,6 +1,6 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
@@ -23,6 +23,7 @@ export function RemedyAdminList({
   healerId?: number;
 }) {
   const t = useT();
+  const { lang = "th" } = useParams();
   const [input, setInput] = useState("");
   const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
   const [page, setPage] = useState(1);
@@ -59,7 +60,7 @@ export function RemedyAdminList({
         </div>
         <span className="text-sm text-ink-faint">{t.staff.count.remedies(data?.total ?? 0)}</span>
         <Link
-          to={healerId !== undefined ? `/staff/remedies/new?healerId=${healerId}` : "/staff/remedies/new"}
+          to={healerId !== undefined ? `/${lang}/staff/remedies/new?healerId=${healerId}` : `/${lang}/staff/remedies/new`}
           className={btnPrimary}
         >
           <span aria-hidden>+</span> {t.staff.newRemedyCrumb}
@@ -81,11 +82,11 @@ export function RemedyAdminList({
                   <p className="truncate text-sm text-ink-soft">{healerName(r.healerId)}</p>
                 ) : null}
               </div>
-              <Link to={`/staff/remedies/${r.id}/treatment-cases`} className={linkAction}>
+              <Link to={`/${lang}/staff/remedies/${r.id}/treatment-cases`} className={linkAction}>
                 {t.staff.link.cases}
               </Link>
               <Link
-                to={`/staff/remedies/${r.id}/edit`}
+                to={`/${lang}/staff/remedies/${r.id}/edit`}
                 aria-label={t.staff.editName(r.name)}
                 className={iconBtn}
               >

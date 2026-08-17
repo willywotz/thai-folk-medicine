@@ -1,5 +1,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -11,6 +12,7 @@ export function LoginForm() {
   const t = useT();
   const navigate = useNavigate();
   const { lang } = useParams();
+  const queryClient = useQueryClient();
   const [serverError, setServerError] = useState("");
   const {
     register,
@@ -30,6 +32,9 @@ export function LoginForm() {
       setServerError(t.login.invalidCredentials);
       return;
     }
+    // Clear the cached session probe so StaffGuard re-fetches fresh (no stale
+    // 401 flash) after the cookie is set.
+    queryClient.removeQueries({ queryKey: ["session"] });
     navigate(`/${lang ?? "th"}/staff`);
   }
 

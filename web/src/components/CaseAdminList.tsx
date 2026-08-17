@@ -1,6 +1,6 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
@@ -19,6 +19,7 @@ export function CaseAdminList({
   remedyId?: number;
 }) {
   const t = useT();
+  const { lang = "th" } = useParams();
   const [filterRemedyId, setFilterRemedyId] = useState<number | undefined>(undefined);
   const scopedRemedyId = remedyId ?? filterRemedyId;
   const [page, setPage] = useState(1);
@@ -72,7 +73,7 @@ export function CaseAdminList({
         ) : null}
         <span className="text-sm text-ink-faint">{t.staff.count.cases(data?.total ?? 0)}</span>
         <Link
-          to={remedyId !== undefined ? `/staff/cases/new?remedyId=${remedyId}` : "/staff/cases/new"}
+          to={remedyId !== undefined ? `/${lang}/staff/cases/new?remedyId=${remedyId}` : `/${lang}/staff/cases/new`}
           className={btnPrimary}
         >
           <span aria-hidden>+</span> {t.staff.newTreatmentCaseButton}
@@ -96,7 +97,7 @@ export function CaseAdminList({
                 {c.result ? <p className="truncate text-sm text-ink-soft">{c.result}</p> : null}
               </div>
               <Link
-                to={`/staff/cases/${c.id}/edit`}
+                to={`/${lang}/staff/cases/${c.id}/edit`}
                 aria-label={t.staff.editCaseCrumb}
                 className={iconBtn}
               >

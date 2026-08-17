@@ -1,6 +1,6 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { EmptyState } from "@/components/EmptyState";
 import { RowAvatar } from "@/components/RowAvatar";
@@ -10,6 +10,7 @@ import { deleteDistrict, districtListKey, fetchDistricts } from "@/lib/staff-que
 
 export function DistrictAdminList({ provinceId }: { provinceId: number }) {
   const t = useT();
+  const { lang = "th" } = useParams();
   const queryClient = useQueryClient();
 
   const key = districtListKey(provinceId);
@@ -30,7 +31,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-ink-faint">{t.staff.count.districts(districts?.length ?? 0)}</span>
-        <Link to={`/staff/provinces/${provinceId}/districts/new`} className={btnPrimary}>
+        <Link to={`/${lang}/staff/provinces/${provinceId}/districts/new`} className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newDistrictButton}
         </Link>
       </div>
@@ -49,7 +50,7 @@ export function DistrictAdminList({ provinceId }: { provinceId: number }) {
                 {d.nameEnglish ? <p className="truncate text-sm text-ink-soft">{d.nameEnglish}</p> : null}
               </div>
               <Link
-                to={`/staff/provinces/${provinceId}/districts/${d.id}/edit`}
+                to={`/${lang}/staff/provinces/${provinceId}/districts/${d.id}/edit`}
                 aria-label={t.staff.editName(d.nameThai)}
                 className={iconBtn}
               >

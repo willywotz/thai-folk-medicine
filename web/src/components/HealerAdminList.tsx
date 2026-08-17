@@ -1,6 +1,6 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/EmptyState";
@@ -17,6 +17,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export function HealerAdminList({ districts }: { districts: District[] }) {
   const t = useT();
+  const { lang = "th" } = useParams();
   const [input, setInput] = useState("");
   const searchTerm = useDebouncedValue(input, SEARCH_DEBOUNCE_MS);
   const [page, setPage] = useState(1);
@@ -55,7 +56,7 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
           <StaffSearch value={input} onChange={setInput} placeholder={t.staff.searchHealersList} />
         </div>
         <span className="text-sm text-ink-faint">{t.staff.count.healers(data?.total ?? 0)}</span>
-        <Link to="/staff/healers/new" className={btnPrimary}>
+        <Link to={`/${lang}/staff/healers/new`} className={btnPrimary}>
           <span aria-hidden>+</span> {t.staff.newHealerCrumb}
         </Link>
       </div>
@@ -76,11 +77,11 @@ export function HealerAdminList({ districts }: { districts: District[] }) {
                   {h.specialty ? ` · ${h.specialty}` : ""}
                 </p>
               </div>
-              <Link to={`/staff/healers/${h.id}/remedies`} className={linkAction}>
+              <Link to={`/${lang}/staff/healers/${h.id}/remedies`} className={linkAction}>
                 {t.staff.link.remedies}
               </Link>
               <Link
-                to={`/staff/healers/${h.id}/edit`}
+                to={`/${lang}/staff/healers/${h.id}/edit`}
                 aria-label={t.staff.editName(h.fullName)}
                 className={iconBtn}
               >

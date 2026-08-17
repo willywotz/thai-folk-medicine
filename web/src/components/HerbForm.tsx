@@ -1,7 +1,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -16,6 +16,7 @@ import { createHerb, herbListKey, updateHerb, uploadPhoto } from "@/lib/staff-qu
 export function HerbForm({ herb }: { herb?: Herb }) {
   const t = useT();
   const navigate = useNavigate();
+  const { lang } = useParams();
   const queryClient = useQueryClient();
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
@@ -45,8 +46,8 @@ export function HerbForm({ herb }: { herb?: Herb }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: herbListKey() });
-      navigate("/staff/herbs");
-},
+      navigate(`/${lang ?? "th"}/staff/herbs`);
+    },
   });
 
   const field = staffField;
@@ -90,7 +91,7 @@ export function HerbForm({ herb }: { herb?: Herb }) {
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
             {t.staff.save}
           </button>
-          <button type="button" onClick={() => navigate("/staff/herbs")} className={btnGhost}>
+          <button type="button" onClick={() => navigate(`/${lang ?? "th"}/staff/herbs`)} className={btnGhost}>
             {t.staff.cancel}
           </button>
         </div>

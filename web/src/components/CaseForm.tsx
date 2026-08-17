@@ -1,7 +1,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -31,6 +31,7 @@ export function CaseForm({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  const { lang } = useParams();
   const queryClient = useQueryClient();
   const [remedyId, setRemedyId] = useState(
     treatmentCase?.remedyId ?? defaultRemedyId ?? remedyOptions[0]?.value ?? 0,
@@ -66,8 +67,8 @@ export function CaseForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: caseListKey() });
-      navigate("/staff/cases");
-},
+      navigate(`/${lang ?? "th"}/staff/cases`);
+    },
   });
 
   const field = staffField;
@@ -131,7 +132,7 @@ export function CaseForm({
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
             {t.staff.save}
           </button>
-          <button type="button" onClick={() => navigate("/staff/cases")} className={btnGhost}>
+          <button type="button" onClick={() => navigate(`/${lang ?? "th"}/staff/cases`)} className={btnGhost}>
             {t.staff.cancel}
           </button>
         </div>

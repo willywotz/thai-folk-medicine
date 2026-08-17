@@ -1,7 +1,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -22,8 +22,9 @@ export function DistrictForm({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  const { lang } = useParams();
   const queryClient = useQueryClient();
-  const back = `/staff/provinces/${provinceId}`;
+  const back = `/${lang ?? "th"}/staff/provinces/${provinceId}`;
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const {
     register,
@@ -50,7 +51,7 @@ export function DistrictForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: districtListKey(provinceId) });
       navigate(back);
-},
+    },
   });
 
   const field = staffField;

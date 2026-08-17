@@ -1,7 +1,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -23,6 +23,7 @@ export function HealerForm({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  const { lang } = useParams();
   const queryClient = useQueryClient();
   const [districtId, setDistrictId] = useState(healer?.districtId ?? districtOptions[0]?.value ?? 0);
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
@@ -52,8 +53,8 @@ export function HealerForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: healerListKey() });
-      navigate("/staff/healers");
-},
+      navigate(`/${lang ?? "th"}/staff/healers`);
+    },
   });
 
   const field = staffField;
@@ -103,7 +104,7 @@ export function HealerForm({
           <button type="submit" disabled={save.isPending} className={btnPrimary}>
             {t.staff.save}
           </button>
-          <button type="button" onClick={() => navigate("/staff/healers")} className={btnGhost}>
+          <button type="button" onClick={() => navigate(`/${lang ?? "th"}/staff/healers`)} className={btnGhost}>
             {t.staff.cancel}
           </button>
         </div>

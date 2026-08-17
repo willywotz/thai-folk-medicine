@@ -137,6 +137,14 @@ the Go backend are unchanged.
 4. **Scope check:** deleting 17 BFF routes + rewriting every data-fetching page as
    a client component is a large diff. The spike sizes it.
 
+**Measured scope (2026-08-17):** 17 BFF route files to delete; **9 UI dynamic
+route segments** to restructure to query-param pages —
+`remedies/[remedyId]`, `healers/[healerId]`, `herbs/[herbId]`,
+`districts/[districtId]` (public) and `staff/{cases,healers,herbs,remedies}/[id]`
+plus `staff/provinces/[provinceId]/districts/[districtId]` (a **nested**
+double-dynamic route — the most invasive one). Every `<Link>` to these routes
+changes too.
+
 ## Phased outline (after the spike de-risks the above)
 
 1. **Go:** cookie auth middleware + login/logout `Set-Cookie` + `/api/v1/session`

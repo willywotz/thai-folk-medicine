@@ -88,6 +88,12 @@ export async function listHealersByDistrict(
   return apiGet<Page<Healer>>(`/districts/${districtId}/healers${buildQuery(opts)}`);
 }
 
+export async function listHealers(
+  opts: { districtId?: number } & PageOptions = {},
+): Promise<Page<Healer>> {
+  return apiGet<Page<Healer>>(`/healers${buildQuery(opts)}`);
+}
+
 export async function getHealer(id: number): Promise<Healer | null> {
   return getOrNull<Healer>(`/healers/${id}`);
 }
@@ -131,6 +137,10 @@ export async function listRemedies(opts: PageOptions = {}): Promise<Page<Remedy>
 
 export async function listTreatmentCases(opts: PageOptions = {}): Promise<Page<TreatmentCase>> {
   return apiGet<Page<TreatmentCase>>(`/treatment-cases${buildQuery(opts)}`);
+}
+
+export async function getTreatmentCase(id: number): Promise<TreatmentCase | null> {
+  return getOrNull<TreatmentCase>(`/treatment-cases/${id}`);
 }
 
 export function photoUrl(photoId: number): string {

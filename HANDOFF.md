@@ -212,7 +212,7 @@ triggers a rebuild. The frontend has **no container hot-reload** — run `cd web
 on the host for Vite HMR. (Note: `docker compose up` runs the dev backend image but the
 production frontend image, because the override no longer touches `frontend`.)
 
-Default admin login: `admin` / `change-me`. Override the secrets in a root `.env`:
+Default admin login: `admin` / `admin`. Override the secrets in a root `.env`:
 `JWT_SECRET`, `STAFF_ADMIN_USERNAME`, `STAFF_ADMIN_PASSWORD`.
 
 **Fill the demo data** (12 curated herbs, ~50 healers, ~146 remedies each linked to 2–4

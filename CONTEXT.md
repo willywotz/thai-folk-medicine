@@ -408,7 +408,7 @@ but without file-watching; add `-f compose.yaml` to run the pure production imag
 The root `docker-compose.yml` builds `backend/Dockerfile` (static Go binary) and
 `frontend/Dockerfile` (Next.js standalone), starts Postgres, runs the migrations +
 Yasothon seed, and bootstraps the admin from `STAFF_ADMIN_USERNAME`/`STAFF_ADMIN_PASSWORD`
-(default `admin`/`change-me`). Only the frontend is published (`:3000`); it reaches the
+(default `admin`/`admin`). Only the frontend is published (`:3000`); it reaches the
 API at `http://backend:8080` over the compose network. Override `JWT_SECRET` and the admin
 creds via a root `.env`. To hit the API directly from the host, uncomment the backend
 `ports:` block. Data persists in the `postgres_data` and `photo_data` volumes.
